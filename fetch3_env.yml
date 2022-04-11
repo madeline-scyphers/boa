@@ -1,0 +1,17 @@
+name: fetch3-dev
+channels:
+- conda-forge
+- defaults
+dependencies:
+- python=3.9
+- matplotlib
+- numpy
+- pandas
+- scipy
+- xarray
+- ipympl
+- pip
+- pip:
+  - PyYAML
+  - conda-merge
+  - pytest

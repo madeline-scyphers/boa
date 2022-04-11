@@ -1,0 +1,20 @@
+name: optiwrap
+channels:
+- conda-forge
+- pytorch
+- anaconda
+- defaults
+dependencies:
+- python=3.9
+- numpy
+- pandas
+- xarray
+- pytorch
+- click
+- torchvision
+- pip
+- pip:
+  - PyYAML
+  - pytest
+  - black
+  - isort
