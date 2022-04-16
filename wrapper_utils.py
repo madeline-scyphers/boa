@@ -70,7 +70,7 @@ def read_experiment_config(config_file):
     model_settings = loaded_configs['model_options']
     return params, experiment_settings, model_settings
 
-def create_experiment_dir(working_dir, experiment_name: str):
+def make_experiment_dir(working_dir, experiment_name: str):
     """
     Creates directory for the experiment and returns the path.
     The directory is named with the experiment name and the current datetime.
@@ -114,7 +114,7 @@ def get_trial_dir(experiment_dir, trial_index):
     return trial_dir
 
 
-def create_trial_dir(experiment_dir, trial_index):
+def make_trial_dir(experiment_dir, trial_index):
     """
     Create a directory for a trial, and return the path to the directory.
     Trial directory is created inside the experiment directory, and named with the trial index.
@@ -185,11 +185,11 @@ def run_model(model_path, config_path, data_path, output_path):
     with cd_and_cd_back(model_path):
         args =["python3", "main.py", "--config_path", str(config_path), "--data_path", str(data_path),
                "--output_path", str(output_path)]
-        # result = subprocess.run(["python3", "main.py", "--config_path", str(config_path),
-        #                         "--data_path", str(data_path), "--output_path", str(output_path)],
-        #                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        #                         stderr = subprocess.PIPE)
-        subprocess.Popen(args)
+        result = subprocess.run(args,
+                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr = subprocess.PIPE)
+        # TODO: try and catch non 0 exit code, subprocess has its own exception I think
+        # TODO: but all of this runs inside its own thread. sooo that is a problem to solve
         # print("\n\n\n\n\n", result.returncode)
         # if result.returncode != 0:
         #     print("Bad result code!")
@@ -198,9 +198,9 @@ def run_model(model_path, config_path, data_path, output_path):
         #     # sys.exit()
         #     raise SystemExit(result.returncode) from Exception(result.stderr)
 
-        # print(result.stdout)
-        # print(result.stderr)
-        # print("Done running model")
+        print(result.stdout)
+        print(result.stderr)
+        print("Done running model")
 
 def get_model_obs(modelfile, obsfile, ex_settings, model_settings, parameters):
     """
@@ -242,7 +242,6 @@ def get_model_obs(modelfile, obsfile, ex_settings, model_settings, parameters):
     # Slice met data to just the time period that was modeled
     obsdf = obsdf.loc[modeldf.time.data[0]:modeldf.time.data[-1]]
 
-    print(parameters)
     # Convert model output to the same units as the input data
     modeldf['trans_scaled'] = scale_transpiration(modeldf.trans_2d, model_settings['dz'],
                                                   parameters['mean_crown_area_sp'],
@@ -258,13 +257,13 @@ def scale_transpiration(trans, dz, mean_crown_area_sp, total_crown_area_sp, plot
                         / plot_area).sum(dim='z', skipna=True)
     return scaled_trans
 
-def ssqr(model, obs):
+def mse(x1, x2):
     """
-    Sum of squares objective function (model vs observation)
+    Mean Squared Error (model vs observation)
 
     Parameters
     ----------
-    model : pandas series
+    x2 : pandas series
         Model output
     obs : pandas series
         Observation data
@@ -272,9 +271,9 @@ def ssqr(model, obs):
     Returns
     -------
     float
-        Mean sum of squares for (model - observations)
+        Mean squared error (model - observations)
     """
-    return ((model - obs) ** 2).mean()
+    return ((x1 - x2) ** 2).mean()
 
 def evaluate(modelfile, obsfile, ex_settings, model_settings, params):
     """
@@ -293,4 +292,4 @@ def evaluate(modelfile, obsfile, ex_settings, model_settings, params):
         Dict with definition of objective function
     """
     model, obs = get_model_obs(modelfile, obsfile, ex_settings, model_settings, params)
-    return {"ssqr": ssqr(model, obs)}
+    return {"ssqr": mse(model, obs)}

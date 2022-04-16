@@ -6,8 +6,9 @@ optimization_options:
   working_dir: "/Users/madelinescyphers/projs/optiwrap/output"
   output_fname: 'ds_canopy.nc'
   experiment_name: "fetch_UMBS_test_oak"
-  objective_name: "ssqr"
-  ntrials: 10
+  # objective_name: "ssqr"
+  objective_name: "mse"
+  ntrials: 3
   max_parallelism_cap: 3
 
 model_options:
