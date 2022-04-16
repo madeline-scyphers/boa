@@ -5,7 +5,7 @@ from typing import Optional
 from ax import Experiment, Trial
 from ax.core.base_trial import BaseTrial
 
-from wrapper_utils import (
+from optiwrap.wrapper_utils import (
     get_model_obs,
     get_trial_dir,
     make_trial_dir,

@@ -5,7 +5,7 @@ from ax.core.base_trial import BaseTrial, TrialStatus
 from ax.core.runner import Runner
 from ax.core.trial import Trial
 
-from wrapper_utils import get_trial_dir, make_trial_dir, run_model, write_configs
+from optiwrap.wrapper_utils import get_trial_dir, make_trial_dir, run_model, write_configs
 
 
 class QueueJobRunner(Runner):  # Deploys trials to external system.

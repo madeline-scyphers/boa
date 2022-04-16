@@ -13,9 +13,9 @@ from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.utils.common.typeutils import checked_cast
 from sklearn.metrics import mean_squared_error
 
-from utils import get_dictionary_from_callable, serialize_init_args
-from wrapper import Wrapper
-from wrapper_utils import (
+from optiwrap.utils import get_dictionary_from_callable, serialize_init_args
+from optiwrap.wrapper import Wrapper
+from optiwrap.wrapper_utils import (
     evaluate,
     get_trial_dir,
     make_trial_dir,

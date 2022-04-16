@@ -8,12 +8,12 @@ from ax import Experiment, Objective, OptimizationConfig
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.service.scheduler import Scheduler, SchedulerOptions
 
-from ax_instantiation_utils import instantiate_subspace_from_json
-from metrics import MSE
-from runner import WrappedJobRunner
-from utils import get_dictionary_from_callable
-from wrapper import Wrapper
-from wrapper_utils import make_experiment_dir, read_experiment_config
+from optiwrap.ax_instantiation_utils import instantiate_subspace_from_json
+from optiwrap.metrics import MSE
+from optiwrap.runner import WrappedJobRunner
+from optiwrap.utils import get_dictionary_from_callable
+from optiwrap.wrapper import Wrapper
+from optiwrap.wrapper_utils import make_experiment_dir, read_experiment_config
 
 # Set up logging
 
