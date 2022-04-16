@@ -11,18 +11,16 @@ These functions provide the interface between the optimization tool and FETCH3
 - Defines how results of each iteration should be evaluated
 """
 
+import datetime as dt
 import logging
-import yaml
+import os
+import subprocess
+from contextlib import contextmanager
+from pathlib import Path
+
 import pandas as pd
 import xarray as xr
-
-from pathlib import Path
-import datetime as dt
-from contextlib import contextmanager
-
-import subprocess
-import os
-
+import yaml
 
 logger = logging.getLogger(__file__)
 
@@ -62,13 +60,16 @@ def read_experiment_config(config_file):
         loaded_configs = yaml.safe_load(yml_config)
 
     # Format parameters for Ax experiment
-    for param in loaded_configs['parameters'].keys():
-        loaded_configs['parameters'][param]['name'] = param # Add "name" attribute for each parameter
+    for param in loaded_configs["parameters"].keys():
+        loaded_configs["parameters"][param][
+            "name"
+        ] = param  # Add "name" attribute for each parameter
     # Parameters from dictionary to list
-    params = list(loaded_configs['parameters'].values())
-    experiment_settings = loaded_configs['optimization_options']
-    model_settings = loaded_configs['model_options']
+    params = list(loaded_configs["parameters"].values())
+    experiment_settings = loaded_configs["optimization_options"]
+    model_settings = loaded_configs["model_options"]
     return params, experiment_settings, model_settings
+
 
 def make_experiment_dir(working_dir, experiment_name: str):
     """
@@ -88,7 +89,9 @@ def make_experiment_dir(working_dir, experiment_name: str):
         Path to the directory for the experiment
     """
     # Directory named with experiment name and datetime
-    ex_dir = Path(working_dir) / (f'{experiment_name}_{dt.datetime.now().strftime("%Y%m%dT%H%M%S")}')
+    ex_dir = Path(working_dir) / (
+        f'{experiment_name}_{dt.datetime.now().strftime("%Y%m%dT%H%M%S")}'
+    )
     ex_dir.mkdir()
     return ex_dir
 
@@ -110,7 +113,7 @@ def get_trial_dir(experiment_dir, trial_index):
     Path
         Directory for the trial
     """
-    trial_dir = (experiment_dir / str(trial_index).zfill(6))  # zero-padded trial index
+    trial_dir = experiment_dir / str(trial_index).zfill(6)  # zero-padded trial index
     return trial_dir
 
 
@@ -136,6 +139,7 @@ def make_trial_dir(experiment_dir, trial_index):
     trial_dir.mkdir()
     return trial_dir
 
+
 def write_configs(trial_dir, parameters, model_options):
     """
     Write model configuration file for each trial (model run). This is the config file used by FETCH3
@@ -157,13 +161,13 @@ def write_configs(trial_dir, parameters, model_options):
     str
         Path for the config file
     """
-    with open(trial_dir / "config.yml", 'w') as f:
+    with open(trial_dir / "config.yml", "w") as f:
         # Write model options from loaded config
         # Parameters for the trial from Ax
-        config_dict = {"model_options": model_options,
-            "parameters": parameters}
+        config_dict = {"model_options": model_options, "parameters": parameters}
         yaml.dump(config_dict, f)
         return f.name
+
 
 def run_model(model_path, config_path, data_path, output_path):
     """
@@ -183,11 +187,19 @@ def run_model(model_path, config_path, data_path, output_path):
     """
 
     with cd_and_cd_back(model_path):
-        args =["python3", "main.py", "--config_path", str(config_path), "--data_path", str(data_path),
-               "--output_path", str(output_path)]
-        result = subprocess.run(args,
-                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                stderr = subprocess.PIPE)
+        args = [
+            "python3",
+            "main.py",
+            "--config_path",
+            str(config_path),
+            "--data_path",
+            str(data_path),
+            "--output_path",
+            str(output_path),
+        ]
+        result = subprocess.run(
+            args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         # TODO: try and catch non 0 exit code, subprocess has its own exception I think
         # TODO: but all of this runs inside its own thread. sooo that is a problem to solve
         # print("\n\n\n\n\n", result.returncode)
@@ -201,6 +213,7 @@ def run_model(model_path, config_path, data_path, output_path):
         print(result.stdout)
         print(result.stderr)
         print("Done running model")
+
 
 def get_model_obs(modelfile, obsfile, ex_settings, model_settings, parameters):
     """
@@ -228,34 +241,38 @@ def get_model_obs(modelfile, obsfile, ex_settings, model_settings, parameters):
         * Add option to read from .nc file
 
     """
-    #Read config file
+    # Read config file
 
     # Read in observation data
-    obsdf = pd.read_csv(obsfile, parse_dates = [0])
-    obsdf = obsdf.set_index('Timestamp')
+    obsdf = pd.read_csv(obsfile, parse_dates=[0])
+    obsdf = obsdf.set_index("Timestamp")
     # metdf.index = metdf.index - pd.to_timedelta('30Min') # TODO: remove timestamp shift
 
     # Read in model output
     modeldf = xr.load_dataset(modelfile)
 
-
     # Slice met data to just the time period that was modeled
-    obsdf = obsdf.loc[modeldf.time.data[0]:modeldf.time.data[-1]]
+    obsdf = obsdf.loc[modeldf.time.data[0] : modeldf.time.data[-1]]
 
     # Convert model output to the same units as the input data
-    modeldf['trans_scaled'] = scale_transpiration(modeldf.trans_2d, model_settings['dz'],
-                                                  parameters['mean_crown_area_sp'],
-                                                  parameters['total_crown_area_sp'],
-                                                  parameters['plot_area'])
+    modeldf["trans_scaled"] = scale_transpiration(
+        modeldf.trans_2d,
+        model_settings["dz"],
+        parameters["mean_crown_area_sp"],
+        parameters["total_crown_area_sp"],
+        parameters["plot_area"],
+    )
 
-    return modeldf.trans_scaled.data, obsdf[ex_settings['obsvar']]
+    return modeldf.trans_scaled.data, obsdf[ex_settings["obsvar"]]
+
 
 def scale_transpiration(trans, dz, mean_crown_area_sp, total_crown_area_sp, plot_area):
     """Scales transpiration from FETCH output (in m H20 m-1stem s-1) to W m-2"""
-    scaled_trans = (trans * 1000 * dz * 2440000 /
-                        mean_crown_area_sp * total_crown_area_sp
-                        / plot_area).sum(dim='z', skipna=True)
+    scaled_trans = (
+        trans * 1000 * dz * 2440000 / mean_crown_area_sp * total_crown_area_sp / plot_area
+    ).sum(dim="z", skipna=True)
     return scaled_trans
+
 
 def mse(x1, x2):
     """
@@ -274,6 +291,7 @@ def mse(x1, x2):
         Mean squared error (model - observations)
     """
     return ((x1 - x2) ** 2).mean()
+
 
 def evaluate(modelfile, obsfile, ex_settings, model_settings, params):
     """

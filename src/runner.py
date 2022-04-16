@@ -1,4 +1,3 @@
-
 from collections import defaultdict
 from typing import Any, Dict, Iterable, Set
 
@@ -6,7 +5,8 @@ from ax.core.base_trial import BaseTrial, TrialStatus
 from ax.core.runner import Runner
 from ax.core.trial import Trial
 
-from wrapper_utils import make_trial_dir, write_configs, run_model, get_trial_dir
+from wrapper_utils import get_trial_dir, make_trial_dir, run_model, write_configs
+
 
 class QueueJobRunner(Runner):  # Deploys trials to external system.
     def __init__(self, queue, *args, **kwargs):
@@ -25,16 +25,12 @@ class QueueJobRunner(Runner):  # Deploys trials to external system.
         if not isinstance(trial, Trial):
             raise ValueError("This runner only handles `Trial`.")
 
-        job_id = self.queue.schedule_job(
-            trial=trial
-        )
+        job_id = self.queue.schedule_job(trial=trial)
         # This run metadata will be attached to trial as `trial.run_metadata`
         # by the base `Scheduler`.
         return {"job_id": job_id}
 
-    def poll_trial_status(
-        self, trials: Iterable[BaseTrial]
-    ) -> Dict[TrialStatus, Set[int]]:
+    def poll_trial_status(self, trials: Iterable[BaseTrial]) -> Dict[TrialStatus, Set[int]]:
         """Checks the status of any non-terminal trials and returns their
         indices as a mapping from TrialStatus to a list of indices. Required
         for runners used with Ax ``Scheduler``.
@@ -54,12 +50,11 @@ class QueueJobRunner(Runner):  # Deploys trials to external system.
         status_dict = defaultdict(set)
         for trial in trials:
             print(f"{trial.index=}")
-            status = self.queue.get_job_status(
-                trial=trial
-            )
+            status = self.queue.get_job_status(trial=trial)
             status_dict[status].add(trial.index)
 
         return status_dict
+
 
 class WrappedJobRunner(Runner):  # Deploys trials to external system.
     def __init__(self, wrapper, *args, **kwargs):
@@ -84,9 +79,7 @@ class WrappedJobRunner(Runner):  # Deploys trials to external system.
         # by the base `Scheduler`.
         return {"job_id": trial.index}
 
-    def poll_trial_status(
-        self, trials: Iterable[BaseTrial]
-    ) -> Dict[TrialStatus, Set[int]]:
+    def poll_trial_status(self, trials: Iterable[BaseTrial]) -> Dict[TrialStatus, Set[int]]:
         """Checks the status of any non-terminal trials and returns their
         indices as a mapping from TrialStatus to a list of indices. Required
         for runners used with Ax ``Scheduler``.

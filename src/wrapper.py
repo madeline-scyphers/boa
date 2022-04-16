@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 from typing import Optional
+
 from ax import Experiment, Trial
 from ax.core.base_trial import BaseTrial
 
-from wrapper_utils import make_trial_dir, write_configs, run_model, get_trial_dir, get_model_obs
+from wrapper_utils import (
+    get_model_obs,
+    get_trial_dir,
+    make_trial_dir,
+    run_model,
+    write_configs,
+)
 
 
 class Wrapper:
@@ -20,7 +27,9 @@ class Wrapper:
 
         config_dir = write_configs(trial_dir, trial.arm.parameters, self.model_settings)
 
-        run_model(self.ex_settings['model_path'], config_dir, self.ex_settings['data_path'], trial_dir)
+        run_model(
+            self.ex_settings["model_path"], config_dir, self.ex_settings["data_path"], trial_dir
+        )
 
     def set_trial_status(self, trial: Trial) -> None:
         """ "Get status of the job by a given ID. For simplicity of the example,
@@ -36,7 +45,15 @@ class Wrapper:
 
     def fetch_trial_data(self, trial: BaseTrial, *args, **kwargs):
 
-        modelfile = get_trial_dir(self.experiment_dir, trial.index) / self.ex_settings['output_fname']
+        modelfile = (
+            get_trial_dir(self.experiment_dir, trial.index) / self.ex_settings["output_fname"]
+        )
 
-        y_pred, y_true = get_model_obs(modelfile, self.ex_settings['obsfile'], self.ex_settings, self.model_settings, trial.arm.parameters)
+        y_pred, y_true = get_model_obs(
+            modelfile,
+            self.ex_settings["obsfile"],
+            self.ex_settings,
+            self.model_settings,
+            trial.arm.parameters,
+        )
         return dict(y_pred=y_pred, y_true=y_true)
