@@ -7,7 +7,6 @@ import click
 from ax import Experiment, Objective, OptimizationConfig
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.service.scheduler import Scheduler, SchedulerOptions
-from job_queue import JobQueue
 
 from ax_instantiation_utils import instantiate_subspace_from_json
 from metrics import MSE
