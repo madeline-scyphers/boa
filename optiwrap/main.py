@@ -12,7 +12,7 @@ from optiwrap.ax_instantiation_utils import instantiate_searchspace_from_json
 from optiwrap.metrics import MSE
 from optiwrap.runner import WrappedJobRunner
 from optiwrap.utils import get_dictionary_from_callable
-from optiwrap.wrapper import Wrapper
+from optiwrap.wrapper import Fetch3Wrapper
 from optiwrap.wrapper_utils import make_experiment_dir, read_experiment_config
 
 # Set up logging
@@ -72,7 +72,7 @@ def main(config):
 
     logger.info("LET'S START THIS SHIT! %s", dt.datetime.now().strftime("%Y%m%dT%H%M%S"))
 
-    wrapper = Wrapper(
+    wrapper = Fetch3Wrapper(
         params=params,
         ex_settings=ex_settings,
         model_settings=model_settings,

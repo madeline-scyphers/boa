@@ -14,7 +14,7 @@ from ax.utils.common.typeutils import checked_cast
 from sklearn.metrics import mean_squared_error
 
 from optiwrap.utils import get_dictionary_from_callable, serialize_init_args
-from optiwrap.wrapper import Wrapper
+from optiwrap.wrapper import Fetch3Wrapper
 from optiwrap.wrapper_utils import (
     evaluate,
     get_trial_dir,
@@ -57,7 +57,7 @@ class ModularMetric(Metric):
         param_names: list[str] = None,
         noise_sd: Optional[float] = 0.0,
         metric_func_kwargs: Optional[dict] = None,
-        wrapper: Optional[Wrapper] = None,
+        wrapper: Optional[Fetch3Wrapper] = None,
         *args,
         **kwargs
     ):

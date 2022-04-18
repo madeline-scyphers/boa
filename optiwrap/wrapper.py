@@ -14,7 +14,6 @@ from optiwrap.wrapper_utils import (
 )
 
 
-
 class BaseWrapper(ABC):
     def run_model(self, trial: Trial):
         pass
