@@ -118,10 +118,9 @@ class ModularMetric(Metric):
         """Create a copy of this Metric."""
         cls = type(self)
         return cls(
-            # **get_dictionary_from_callables([Metric, cls.__init__], vars(self), match_private=True),  # TODO don't use vars?
             **serialize_init_args(
                 self, parents=[Metric], match_private=True
-            ),  # TODO don't use vars?
+            ),
         )
 
 

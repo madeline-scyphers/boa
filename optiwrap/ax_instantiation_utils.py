@@ -4,7 +4,7 @@ from ax import SearchSpace
 from ax.service.ax_client import AxClient
 
 
-def instantiate_subspace_from_json(
+def instantiate_searchspace_from_json(
     parameters: list | None = None, parameter_constraints: list | None = None
 ) -> SearchSpace:
     parameters = parameters if parameters is not None else []

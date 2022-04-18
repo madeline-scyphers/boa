@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Optional
+from abc import ABC
 
-from ax import Experiment, Trial
+from ax import Trial
 from ax.core.base_trial import BaseTrial
 
 from optiwrap.wrapper_utils import (
@@ -14,9 +14,20 @@ from optiwrap.wrapper_utils import (
 )
 
 
-class Wrapper:
-    def __init__(self, params, ex_settings, model_settings, experiment_dir):
-        # self.params = params
+
+class BaseWrapper(ABC):
+    def run_model(self, trial: Trial):
+        pass
+
+    def set_trial_status(self, trial: Trial) -> None:
+        pass
+
+    def fetch_trial_data(self, trial: BaseTrial, *args, **kwargs):
+        pass
+
+
+class Fetch3Wrapper:
+    def __init__(self, ex_settings, model_settings, experiment_dir):
         self.ex_settings = ex_settings
         self.model_settings = model_settings
         self.experiment_dir = experiment_dir

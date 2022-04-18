@@ -8,7 +8,7 @@ from ax import Experiment, Objective, OptimizationConfig
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.service.scheduler import Scheduler, SchedulerOptions
 
-from optiwrap.ax_instantiation_utils import instantiate_subspace_from_json
+from optiwrap.ax_instantiation_utils import instantiate_searchspace_from_json
 from optiwrap.metrics import MSE
 from optiwrap.runner import WrappedJobRunner
 from optiwrap.utils import get_dictionary_from_callable
@@ -26,7 +26,7 @@ def make_fetch_experiment_with_runner_and_metric(
 
     # use default options if invalid command line arguments are given
 
-    search_space = instantiate_subspace_from_json(search_space_params, [])
+    search_space = instantiate_searchspace_from_json(search_space_params, [])
 
     objective = Objective(
         metric=MSE(name=ex_settings["objective_name"], wrapper=wrapper), minimize=True
