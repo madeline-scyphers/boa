@@ -8,6 +8,7 @@ optimization_options:
   experiment_name: "fetch_UMBS_test_oak"
   # objective_name: "ssqr"
   objective_name: "mse"
+  metric_name: "MSE"
   ntrials: 3
   max_parallelism_cap: 3
 

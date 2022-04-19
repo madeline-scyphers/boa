@@ -3,27 +3,13 @@ from __future__ import annotations
 from ax import SearchSpace
 from ax.service.ax_client import AxClient
 
-
-import datetime as dt
-from pathlib import Path
-
-
-
-import click
 from ax import Experiment, Objective, OptimizationConfig
 from ax.modelbridge.generation_strategy import GenerationStrategy
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.service.scheduler import Scheduler, SchedulerOptions
-from ax.core import GenerationStrategy
 
-from optiwrap import (
-    instantiate_search_space_from_json,
-    MSE,
-    WrappedJobRunner,
-    make_experiment_dir,
-    read_experiment_config
-)
 from optiwrap.utils import get_dictionary_from_callable
+from optiwrap.metrics import get_metric_by_class_name
 
 
 def instantiate_search_space_from_json(
@@ -34,38 +20,36 @@ def instantiate_search_space_from_json(
     return AxClient.make_search_space(parameters, parameter_constraints)
 
 
-def generation_strategy_from_experiment(experiment: Experiment, settings: dict) -> GenerationStrategy:
+def generation_strategy_from_experiment(experiment: Experiment, config: dict) -> GenerationStrategy:
     return choose_generation_strategy(
         search_space=experiment.search_space,
-        **get_dictionary_from_callable(choose_generation_strategy, settings))
+        **get_dictionary_from_callable(choose_generation_strategy, config))
 
 
-def get_Scheduler(experiment: Experiment, generation_strategy: GenerationStrategy, scheduler_options: SchedulerOptions):
+def get_Scheduler(experiment: Experiment, generation_strategy: GenerationStrategy = None,
+                  scheduler_options: SchedulerOptions = None, config: dict = None):
+    scheduler_options = scheduler_options or SchedulerOptions()
+    if generation_strategy is None:
+        generation_strategy = generation_strategy_from_experiment(experiment, config)
     return Scheduler(
         experiment=experiment,
         generation_strategy=generation_strategy,
         options=scheduler_options
     )
 
+def get_experiment(config: dict, runner, wrapper=None,):
+    settings = config["optimization_options"]
 
-def make_fetch_experiment_with_runner_and_metric(
-    ex_settings, search_space_params, wrapper
-) -> Experiment:
+    search_space = instantiate_search_space_from_json(config.get("search_space_parameters"), config.get("search_space_parameter_constraints"))
 
-    # Taking command line arguments for path of config file, input data, and output directory
-
-    # use default options if invalid command line arguments are given
-
-    search_space = instantiate_search_space_from_json(search_space_params, [])
-
+    metric = get_metric_by_class_name(settings["metric_name"])
     objective = Objective(
-        metric=MSE(name=ex_settings["objective_name"], wrapper=wrapper), minimize=True
+        metric=metric(name=settings["objective_name"], wrapper=wrapper), minimize=True
     )
 
     return Experiment(
         search_space=search_space,
         optimization_config=OptimizationConfig(objective=objective),
-        runner=WrappedJobRunner(wrapper=wrapper),
-        # is_test=True,  # Marking this experiment as a test experiment.
-        **get_dictionary_from_callable(Experiment.__init__, ex_settings),
+        runner=runner,
+        **get_dictionary_from_callable(Experiment.__init__, settings),
     )

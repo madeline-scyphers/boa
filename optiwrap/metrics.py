@@ -5,47 +5,18 @@ from typing import Callable, Optional
 
 import numpy as np
 import pandas as pd
-from ax import Data, Metric, Trial
+from ax import Data, Metric
 from ax.core.base_trial import BaseTrial
 from ax.core.data import Data
 from ax.core.types import TParameterization
-from ax.metrics.noisy_function import NoisyFunctionMetric
-from ax.utils.common.typeutils import checked_cast
-from sklearn.metrics import mean_squared_error
+import sklearn.metrics
 
 from optiwrap.utils import get_dictionary_from_callable, serialize_init_args
 from optiwrap.wrapper import BaseWrapper
-from optiwrap.wrapper_utils import (
-    get_trial_dir,
-    make_trial_dir,
-    run_model,
-    write_configs,
-)
-
-# from ax.utils.common.serialization import extract_init_args, serialize_init_args
 
 
-
-class ModelMetric(Metric):
-    def fetch_trial_data(self, trial: BaseTrial) -> Data:
-        """Obtains data via fetching it from ` for a given trial."""
-        if not isinstance(trial, Trial):
-            raise ValueError("This metric only handles `Trial`.")
-
-        data = self.properties["queue"].get_outcome_value_for_completed_job(job_id=trial.index)
-
-        df_dict = {
-            "trial_index": trial.index,
-            "metric_name": self.name,
-            "arm_name": trial.arm.name,
-            "mean": data.get(self.name),
-            # Can be set to 0.0 if function is known to be noiseless
-            # or to an actual value when SEM is known. Setting SEM to
-            # `None` results in Ax assuming unknown noise and inferring
-            # noise level from data.
-            "sem": None,
-        }
-        return Data(df=pd.DataFrame.from_records([df_dict]))
+def get_metric_by_class_name(metric_cls_name):
+    return globals()[metric_cls_name]
 
 
 class ModularMetric(Metric):
@@ -56,7 +27,6 @@ class ModularMetric(Metric):
         noise_sd: Optional[float] = 0.0,
         metric_func_kwargs: Optional[dict] = None,
         wrapper: Optional[BaseWrapper] = None,
-        *args,
         **kwargs
     ):
         self.param_names = param_names if param_names is not None else []
@@ -64,7 +34,7 @@ class ModularMetric(Metric):
         self.metric_func_kwargs = metric_func_kwargs or {}
         self.metric_to_eval = partial(metric_to_eval, **self.metric_func_kwargs)
         self.wrapper = wrapper
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
     @classmethod
     def is_available_while_running(cls) -> bool:
@@ -122,6 +92,21 @@ class ModularMetric(Metric):
         )
 
 
-class MSE(ModularMetric):
-    def __init__(self, metric_to_eval=mean_squared_error, *args, **kwargs):
-        super().__init__(metric_to_eval=metric_to_eval, *args, **kwargs)
+def setup_SklearnMetric(metric_to_eval, **kw):
+    if metric_to_eval in sklearn.metrics.__all__:
+        metric = getattr(sklearn.metrics, metric_to_eval)
+    else:
+        raise ValueError(f"Sklearn metric: {metric_to_eval} not found!")
+
+    class SklearnMetric(ModularMetric):
+        def __init__(self, *args, **kwargs):
+            k = {**kw, **kwargs}  # we make sure to expand kw first to let them be overridden on instantiation
+            super().__init__(metric_to_eval=metric, *args, **k)
+
+    return SklearnMetric
+
+
+MSE = setup_SklearnMetric("mean_squared_error")
+MeanSquaredError = MSE
+R2 = setup_SklearnMetric("r2_score")
+RSquared = R2
