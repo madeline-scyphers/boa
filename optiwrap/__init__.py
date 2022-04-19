@@ -1,8 +1,8 @@
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
-from wrapper import BaseWrapper, Fetch3Wrapper
+from optiwrap.wrapper import BaseWrapper
 
-from optiwrap.ax_instantiation_utils import instantiate_searchspace_from_json
+from optiwrap.ax_instantiation_utils import instantiate_search_space_from_json
 from optiwrap.metrics import MSE
 from optiwrap.runner import WrappedJobRunner
 from optiwrap.wrapper_utils import (

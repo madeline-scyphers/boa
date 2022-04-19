@@ -49,10 +49,7 @@ def read_experiment_config(config_file):
 
     Returns
     -------
-    params: list
-        Parameters formatted for the Ax experiment
-    experiment_settings: dict
-        Optimization options for the experiment
+    loaded_configs: dict
     """
 
     # Load the experiment config yml file
@@ -65,11 +62,8 @@ def read_experiment_config(config_file):
             "name"
         ] = param  # Add "name" attribute for each parameter
     # Parameters from dictionary to list
-    params = list(loaded_configs["parameters"].values())
-    experiment_settings = loaded_configs["optimization_options"]
-    model_settings = loaded_configs["model_options"]
-    return params, experiment_settings, model_settings
-
+    loaded_configs["search_space_parameters"] = list(loaded_configs["parameters"].values())
+    return loaded_configs
 
 def make_experiment_dir(working_dir, experiment_name: str):
     """
