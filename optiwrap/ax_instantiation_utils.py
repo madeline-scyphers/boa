@@ -26,7 +26,7 @@ def generation_strategy_from_experiment(experiment: Experiment, config: dict) ->
         **get_dictionary_from_callable(choose_generation_strategy, config))
 
 
-def get_Scheduler(experiment: Experiment, generation_strategy: GenerationStrategy = None,
+def get_scheduler(experiment: Experiment, generation_strategy: GenerationStrategy = None,
                   scheduler_options: SchedulerOptions = None, config: dict = None):
     scheduler_options = scheduler_options or SchedulerOptions()
     if generation_strategy is None:

@@ -92,7 +92,7 @@ class ModularMetric(Metric):
         )
 
 
-def setup_SklearnMetric(metric_to_eval, **kw):
+def setup_sklearn_metric(metric_to_eval, **kw):
     if metric_to_eval in sklearn.metrics.__all__:
         metric = getattr(sklearn.metrics, metric_to_eval)
     else:
@@ -106,7 +106,7 @@ def setup_SklearnMetric(metric_to_eval, **kw):
     return SklearnMetric
 
 
-MSE = setup_SklearnMetric("mean_squared_error")
+MSE = setup_sklearn_metric("mean_squared_error")
 MeanSquaredError = MSE
-R2 = setup_SklearnMetric("r2_score")
+R2 = setup_sklearn_metric("r2_score")
 RSquared = R2
