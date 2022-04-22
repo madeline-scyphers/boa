@@ -58,7 +58,10 @@ def main(config_file):
     start = time.time()
 
     config = read_experiment_config(config_file)  # Read experiment config'
-    experiment_dir = make_experiment_dir(config["optimization_options"]["working_dir"], config["optimization_options"]["experiment_name"])
+    experiment_dir = make_experiment_dir(
+        config["optimization_options"]["working_dir"],
+        config["optimization_options"]["experiment_name"],
+    )
 
     log_format = "%(levelname)s %(asctime)s - %(message)s"
     logging.basicConfig(
@@ -79,7 +82,9 @@ def main(config_file):
     )
 
     experiment = make_fetch_experiment_with_runner_and_metric(
-        ex_settings=config["optimization_options"], search_space_params=config["search_space_parameters"], wrapper=wrapper
+        ex_settings=config["optimization_options"],
+        search_space_params=config["search_space_parameters"],
+        wrapper=wrapper,
     )
 
     generation_strategy = choose_generation_strategy(
@@ -88,7 +93,9 @@ def main(config_file):
     )
 
     scheduler = Scheduler(
-        experiment=experiment, generation_strategy=generation_strategy, options=SchedulerOptions(),
+        experiment=experiment,
+        generation_strategy=generation_strategy,
+        options=SchedulerOptions(),
     )
 
     scheduler.run_n_trials(config["optimization_options"]["ntrials"])

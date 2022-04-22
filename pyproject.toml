@@ -7,9 +7,9 @@ skip_glob = ["*env*/*"]
 
 [tool.black]
 line-length = 100
-experimental-string-processing=true
+preview=true
 # These are regular expressions (hence the \. is escaping the ., and not a literal \.)
-include = 'src'
+include = 'optiwrap'
 exclude = '''
 (
     /(\.git
@@ -25,5 +25,6 @@ exclude = '''
     )/
     | .*\.yaml
     | .*\.yml
+    | __pycache__
 )
 '''

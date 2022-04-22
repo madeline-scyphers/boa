@@ -57,13 +57,14 @@ def read_experiment_config(config_file):
         loaded_configs = yaml.safe_load(yml_config)
 
     # Format parameters for Ax experiment
-    for param in loaded_configs["parameters"].keys():
+    for param in loaded_configs.get("parameters", {}).keys():
         loaded_configs["parameters"][param][
             "name"
         ] = param  # Add "name" attribute for each parameter
     # Parameters from dictionary to list
-    loaded_configs["search_space_parameters"] = list(loaded_configs["parameters"].values())
+    loaded_configs["search_space_parameters"] = list(loaded_configs.get("parameters", {}).values())
     return loaded_configs
+
 
 def make_experiment_dir(working_dir, experiment_name: str):
     """
@@ -83,9 +84,7 @@ def make_experiment_dir(working_dir, experiment_name: str):
         Path to the directory for the experiment
     """
     # Directory named with experiment name and datetime
-    ex_dir = Path(working_dir) / (
-        f'{experiment_name}_{dt.datetime.now().strftime("%Y%m%dT%H%M%S")}'
-    )
+    ex_dir = Path(working_dir) / f'{experiment_name}_{dt.datetime.now().strftime("%Y%m%dT%H%M%S")}'
     ex_dir.mkdir()
     return ex_dir
 

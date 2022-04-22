@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from functools import partial
 from typing import Callable, Optional
+from pprint import pformat
 
 import numpy as np
 import pandas as pd
@@ -15,7 +16,9 @@ from optiwrap.utils import get_dictionary_from_callable, serialize_init_args
 from optiwrap.wrapper import BaseWrapper
 
 
-def get_metric_by_class_name(metric_cls_name):
+def get_metric_by_class_name(metric_cls_name, sklearn_metric=False):
+    if sklearn_metric:
+        return setup_sklearn_metric(metric_cls_name)
     return globals()[metric_cls_name]
 
 
@@ -27,8 +30,12 @@ class ModularMetric(Metric):
         noise_sd: Optional[float] = 0.0,
         metric_func_kwargs: Optional[dict] = None,
         wrapper: Optional[BaseWrapper] = None,
-        **kwargs
+        **kwargs,
     ):
+
+        if kwargs.get("name") is None:
+            kwargs["name"] = metric_to_eval.__name__
+
         self.param_names = param_names if param_names is not None else []
         self.noise_sd = noise_sd
         self.metric_func_kwargs = metric_func_kwargs or {}
@@ -86,10 +93,18 @@ class ModularMetric(Metric):
         """Create a copy of this Metric."""
         cls = type(self)
         return cls(
-            **serialize_init_args(
-                self, parents=[Metric], match_private=True
-            ),
+            **serialize_init_args(self, parents=[Metric], match_private=True),
         )
+
+    def __repr__(self) -> str:
+        init_dict = serialize_init_args(self, parents=[Metric], match_private=True)
+        init_dict = {k: v for k, v in init_dict.items() if v}
+
+        if isinstance(init_dict["metric_to_eval"], partial):
+            init_dict["metric_to_eval"] = init_dict["metric_to_eval"].func
+
+        arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
+        return f"{self.__class__.__name__}({arg_str})"
 
 
 def setup_sklearn_metric(metric_to_eval, **kw):
@@ -98,12 +113,7 @@ def setup_sklearn_metric(metric_to_eval, **kw):
     else:
         raise ValueError(f"Sklearn metric: {metric_to_eval} not found!")
 
-    class SklearnMetric(ModularMetric):
-        def __init__(self, *args, **kwargs):
-            k = {**kw, **kwargs}  # we make sure to expand kw first to let them be overridden on instantiation
-            super().__init__(metric_to_eval=metric, *args, **k)
-
-    return SklearnMetric
+    return partial(ModularMetric, metric_to_eval=metric, **kw)
 
 
 MSE = setup_sklearn_metric("mean_squared_error")

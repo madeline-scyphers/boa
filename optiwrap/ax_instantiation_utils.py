@@ -23,24 +23,34 @@ def instantiate_search_space_from_json(
 def generation_strategy_from_experiment(experiment: Experiment, config: dict) -> GenerationStrategy:
     return choose_generation_strategy(
         search_space=experiment.search_space,
-        **get_dictionary_from_callable(choose_generation_strategy, config))
+        **get_dictionary_from_callable(choose_generation_strategy, config),
+    )
 
 
-def get_scheduler(experiment: Experiment, generation_strategy: GenerationStrategy = None,
-                  scheduler_options: SchedulerOptions = None, config: dict = None):
+def get_scheduler(
+    experiment: Experiment,
+    generation_strategy: GenerationStrategy = None,
+    scheduler_options: SchedulerOptions = None,
+    config: dict = None,
+):
     scheduler_options = scheduler_options or SchedulerOptions()
     if generation_strategy is None:
         generation_strategy = generation_strategy_from_experiment(experiment, config)
     return Scheduler(
-        experiment=experiment,
-        generation_strategy=generation_strategy,
-        options=scheduler_options
+        experiment=experiment, generation_strategy=generation_strategy, options=scheduler_options
     )
 
-def get_experiment(config: dict, runner, wrapper=None,):
+
+def get_experiment(
+    config: dict,
+    runner,
+    wrapper=None,
+):
     settings = config["optimization_options"]
 
-    search_space = instantiate_search_space_from_json(config.get("search_space_parameters"), config.get("search_space_parameter_constraints"))
+    search_space = instantiate_search_space_from_json(
+        config.get("search_space_parameters"), config.get("search_space_parameter_constraints")
+    )
 
     metric = get_metric_by_class_name(settings["metric_name"])
     objective = Objective(
