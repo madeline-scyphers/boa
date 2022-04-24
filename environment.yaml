@@ -12,6 +12,7 @@ dependencies:
 - pytorch
 - click
 - torchvision
+- sqlalchemy
 - pip
 - pip:
   - PyYAML

@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from ax import SearchSpace
-from ax.service.ax_client import AxClient
-
-from ax import Experiment, Objective, OptimizationConfig
-from ax.modelbridge.generation_strategy import GenerationStrategy
+from ax import Experiment, Objective, OptimizationConfig, Runner, SearchSpace
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
+from ax.modelbridge.generation_strategy import GenerationStrategy
+from ax.service.ax_client import AxClient
 from ax.service.scheduler import Scheduler, SchedulerOptions
 
+from optiwrap.metrics.metrics import get_metric
 from optiwrap.utils import get_dictionary_from_callable
-from optiwrap.metrics import get_metric_by_class_name
 
 
 def instantiate_search_space_from_json(
@@ -33,7 +31,9 @@ def get_scheduler(
     scheduler_options: SchedulerOptions = None,
     config: dict = None,
 ):
-    scheduler_options = scheduler_options or SchedulerOptions()
+    scheduler_options = scheduler_options or SchedulerOptions(
+        **config["optimization_options"]["scheduler"]
+    )
     if generation_strategy is None:
         generation_strategy = generation_strategy_from_experiment(experiment, config)
     return Scheduler(
@@ -43,7 +43,7 @@ def get_scheduler(
 
 def get_experiment(
     config: dict,
-    runner,
+    runner: Runner,
     wrapper=None,
 ):
     settings = config["optimization_options"]
@@ -52,14 +52,12 @@ def get_experiment(
         config.get("search_space_parameters"), config.get("search_space_parameter_constraints")
     )
 
-    metric = get_metric_by_class_name(settings["metric_name"])
-    objective = Objective(
-        metric=metric(name=settings["objective_name"], wrapper=wrapper), minimize=True
-    )
+    metric = get_metric(settings["metric"])
+    objective = Objective(metric=metric(wrapper=wrapper), minimize=True)
 
     return Experiment(
         search_space=search_space,
         optimization_config=OptimizationConfig(objective=objective),
         runner=runner,
-        **get_dictionary_from_callable(Experiment.__init__, settings),
+        **get_dictionary_from_callable(Experiment.__init__, settings["experiment"]),
     )

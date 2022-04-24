@@ -1,24 +1,31 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Callable, Optional
 from pprint import pformat
+from typing import Callable, Optional
 
 import numpy as np
 import pandas as pd
+import sklearn.metrics
 from ax import Data, Metric
 from ax.core.base_trial import BaseTrial
 from ax.core.data import Data
 from ax.core.types import TParameterization
-import sklearn.metrics
 
+from optiwrap.metrics.metric_funcs import metric_from_json, metric_from_yaml
 from optiwrap.utils import get_dictionary_from_callable, serialize_init_args
 from optiwrap.wrapper import BaseWrapper
 
 
-def get_metric_by_class_name(metric_cls_name, sklearn_metric=False):
+def get_metric(config, **kwargs):
+    if config.get("sklearn_metric"):
+        kwargs["sklearn_metric"] = config["sklearn_metric"]
+    return get_metric_by_class_name(config["metric_name"], **kwargs)
+
+
+def get_metric_by_class_name(metric_cls_name, sklearn_metric=False, **kwargs):
     if sklearn_metric:
-        return setup_sklearn_metric(metric_cls_name)
+        return setup_sklearn_metric(metric_cls_name, **kwargs)
     return globals()[metric_cls_name]
 
 
@@ -113,10 +120,17 @@ def setup_sklearn_metric(metric_to_eval, **kw):
     else:
         raise ValueError(f"Sklearn metric: {metric_to_eval} not found!")
 
-    return partial(ModularMetric, metric_to_eval=metric, **kw)
+    class SklearnMetric(ModularMetric):
+        def __init__(self, **kwargs):
+            super().__init__(metric_to_eval=metric, **{**kw, **kwargs})
+
+    return SklearnMetric
 
 
 MSE = setup_sklearn_metric("mean_squared_error")
 MeanSquaredError = MSE
 R2 = setup_sklearn_metric("r2_score")
 RSquared = R2
+
+MetricFromJSON = partial(ModularMetric, metric_to_eval=metric_from_json)
+MetricFromYAML = partial(ModularMetric, metric_to_eval=metric_from_yaml)
