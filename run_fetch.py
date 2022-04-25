@@ -23,11 +23,6 @@ from optiwrap import (
 )
 from optiwrap.utils import get_dictionary_from_callable
 
-# Set up logging
-
-
-
-
 
 @click.command()
 @click.option(
@@ -80,7 +75,7 @@ def main(config_file):
         runner_clss={WrappedJobRunner: None}
     )
     save_experiment(experiment, "experiment.json", encoder_registry=bundle.encoder_registry)
-
+    # from ax.storage.json_store.load import load_experiment
     logging.info("\nTrials completed! Total run time: %d", time.time() - start)
 
 

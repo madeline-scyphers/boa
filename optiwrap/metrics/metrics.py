@@ -120,11 +120,11 @@ def setup_sklearn_metric(metric_to_eval, **kw):
     else:
         raise ValueError(f"Sklearn metric: {metric_to_eval} not found!")
 
-    class SklearnMetric(ModularMetric):
+    class ModularSklearnMetric(ModularMetric):
         def __init__(self, **kwargs):
             super().__init__(metric_to_eval=metric, **{**kw, **kwargs})
 
-    return SklearnMetric
+    return ModularSklearnMetric
 
 
 MSE = setup_sklearn_metric("mean_squared_error")

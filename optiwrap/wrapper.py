@@ -1,22 +1,24 @@
 from __future__ import annotations
 
 import functools
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, ABCMeta
 from pathlib import Path
 
 from ax import Trial
 from ax.core.base_trial import BaseTrial
-from ax.storage.json_store.registry import CORE_ENCODER_REGISTRY
+from ax.storage.json_store.registry import CORE_ENCODER_REGISTRY, CORE_DECODER_REGISTRY
 
 from optiwrap.utils import convert_type, serialize_init_args
 
 
-class BaseWrapper(ABC):
-    def __new__(cls, *args, **kwargs):
-        # TODO add a note in the docs about overriding new
+class Watcher(ABCMeta):
+    def __init__(cls, *args, **kwargs):
         CORE_ENCODER_REGISTRY[cls] = cls.wrapper_to_dict
-        return super().__new__(cls)
+        CORE_DECODER_REGISTRY[cls.__name__] = cls
+        super().__init__(*args, **kwargs)
 
+
+class BaseWrapper(metaclass=Watcher):
     def write_configs(self) -> None:
         pass
 
