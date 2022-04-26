@@ -20,7 +20,7 @@ from optiwrap import (
     instantiate_search_space_from_json,
     make_experiment_dir,
     make_trial_dir,
-    read_experiment_config,
+    load_experiment_config,
     run_model,
     write_configs,
 )
@@ -44,7 +44,7 @@ def main(config_file):
     """
     start = time.time()
 
-    config = read_experiment_config(config_file)  # Read experiment config'
+    config = load_experiment_config(config_file)  # Read experiment config'
     experiment_dir = make_experiment_dir(config["optimization_options"]["working_dir"], config["optimization_options"]["experiment_name"])
 
     log_format = "%(levelname)s %(asctime)s - %(message)s"

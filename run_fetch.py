@@ -19,7 +19,7 @@ from optiwrap import (
     get_metric,
     get_scheduler,
     make_experiment_dir,
-    read_experiment_config,
+    load_experiment_config,
 )
 from optiwrap.utils import get_dictionary_from_callable
 
@@ -41,7 +41,7 @@ def main(config_file):
     """
     start = time.time()
 
-    config = read_experiment_config(config_file)  # Read experiment config'
+    config = load_experiment_config(config_file)  # Read experiment config'
     experiment_dir = make_experiment_dir(config["optimization_options"]["working_dir"],
                                          config["optimization_options"]["experiment_name"])
 

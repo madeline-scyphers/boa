@@ -35,7 +35,7 @@ def cd_and_cd_back(path):
         os.chdir(cwd)
 
 
-def read_experiment_config(config_file):
+def load_experiment_config(config_file):
     """
     Read experiment configuration yml file for setting up the optimization.
     yml file contains the list of parameters, and whether each parameter is a fixed
@@ -54,17 +54,20 @@ def read_experiment_config(config_file):
 
     # Load the experiment config yml file
     with open(config_file, "r") as yml_config:
-        loaded_configs = yaml.safe_load(yml_config)
+        config = yaml.safe_load(yml_config)
 
+    return normalize_config(config)
+
+
+def normalize_config(config):
     # Format parameters for Ax experiment
-    for param in loaded_configs.get("parameters", {}).keys():
-        loaded_configs["parameters"][param][
+    for param in config.get("parameters", {}).keys():
+        config["parameters"][param][
             "name"
         ] = param  # Add "name" attribute for each parameter
     # Parameters from dictionary to list
-    loaded_configs["search_space_parameters"] = list(loaded_configs.get("parameters", {}).values())
-    return loaded_configs
-
+    config["search_space_parameters"] = list(config.get("parameters", {}).values())
+    return config
 
 def make_experiment_dir(working_dir, experiment_name: str):
     """
