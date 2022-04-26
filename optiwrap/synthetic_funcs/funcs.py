@@ -1,6 +1,6 @@
 import numpy as np
 from ax.utils.common.docutils import copy_doc
-from ax.utils.measurement.synthetic_functions import from_botorch
+from ax.utils.measurement.synthetic_functions import from_botorch, SyntheticFunction
 from botorch.test_functions.synthetic import Ackley
 
 ackley = from_botorch(Ackley(dim=4))
@@ -13,7 +13,7 @@ def map_range(value, old_min, old_max, new_min, new_max):
 
 
 class FakePalm(ackley):
-    @copy_doc(ackley._f)
+    @copy_doc(SyntheticFunction._f)
     def _f(self, X: np.ndarray) -> float:
 
         X[0] = map_range(X[0], 350, 950, -32.768, 32.768)
