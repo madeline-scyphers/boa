@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import functools
-from abc import ABC, abstractmethod, ABCMeta
+from abc import ABC, ABCMeta, abstractmethod
 from pathlib import Path
 
 from ax import Trial
 from ax.core.base_trial import BaseTrial
-from ax.storage.json_store.registry import CORE_ENCODER_REGISTRY, CORE_DECODER_REGISTRY
+from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_REGISTRY
 
 from optiwrap.utils import convert_type, serialize_init_args
 

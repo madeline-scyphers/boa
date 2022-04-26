@@ -99,9 +99,7 @@ class ModularMetric(Metric):
     def clone(self) -> "Metric":
         """Create a copy of this Metric."""
         cls = type(self)
-        return cls(
-            **serialize_init_args(self, parents=[Metric], match_private=True),
-        )
+        return cls(**serialize_init_args(self, parents=[Metric], match_private=True),)
 
     def __repr__(self) -> str:
         init_dict = serialize_init_args(self, parents=[Metric], match_private=True)

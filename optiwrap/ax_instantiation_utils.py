@@ -42,9 +42,7 @@ def get_scheduler(
 
 
 def get_experiment(
-    config: dict,
-    runner: Runner,
-    wrapper=None,
+    config: dict, runner: Runner, wrapper=None,
 ):
     settings = config["optimization_options"]
 
