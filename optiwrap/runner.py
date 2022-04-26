@@ -50,7 +50,6 @@ class WrappedJobRunner(Runner):  # Deploys trials to external system.
         """
         status_dict = defaultdict(set)
         for trial in trials:
-            print(f"{trial.index=}")
             self.wrapper.set_trial_status(trial)
             status_dict[trial.status].add(trial.index)
 
