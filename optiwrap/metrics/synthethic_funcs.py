@@ -14,6 +14,7 @@ class FakePalm(Ackley):
     def __init__(self, *args, **kwargs):
         dim = 4
         super().__init__(dim=dim, *args, **kwargs)
+
     def evaluate_true(self, X: Tensor) -> float:
         X[..., 0] = map_range(X[..., 0], 350, 950, -32.768, 32.768)
         X[..., 1] = map_range(X[..., 1], 0.15, 0.9, -32.768, 32.768)
@@ -21,5 +22,6 @@ class FakePalm(Ackley):
         X[..., 3] = map_range(X[..., 3], 2.0, 6.0, -32.768, 32.768)
 
         return super().evaluate_true(X)
+
 
 fake_palm = from_botorch(FakePalm())

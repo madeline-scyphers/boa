@@ -62,12 +62,11 @@ def load_experiment_config(config_file):
 def normalize_config(config):
     # Format parameters for Ax experiment
     for param in config.get("parameters", {}).keys():
-        config["parameters"][param][
-            "name"
-        ] = param  # Add "name" attribute for each parameter
+        config["parameters"][param]["name"] = param  # Add "name" attribute for each parameter
     # Parameters from dictionary to list
     config["search_space_parameters"] = list(config.get("parameters", {}).values())
     return config
+
 
 def make_experiment_dir(working_dir, experiment_name: str):
     """

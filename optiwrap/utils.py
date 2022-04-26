@@ -13,8 +13,18 @@ def get_callable_signature(callable: Callable) -> inspect.Signature:
 def get_dictionary_matching_signature(
     signature: inspect.Signature, d: dict, match_private: bool = False
 ) -> dict:
-    params = signature.parameters
     args = {}
+    params = signature.parameters
+    for param in params.values():
+        if (
+            param.kind == param.VAR_KEYWORD
+        ):  # this accepts **kwargs, therefore let everything through
+            for key, value in d.items():
+                if match_private and (key.startswith("_") or key.startswith("__")):
+                    key = key.lstrip("_")
+                args[key] = value
+            return args
+
     for key, value in d.items():
         if match_private and (key.startswith("_") or key.startswith("__")):
             key = key.lstrip("_")

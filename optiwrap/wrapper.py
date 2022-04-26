@@ -19,7 +19,7 @@ class Watcher(ABCMeta):
 
 
 class BaseWrapper(metaclass=Watcher):
-    def write_configs(self) -> None:
+    def write_configs(self, trial: BaseTrial) -> None:
         pass
 
     @abstractmethod

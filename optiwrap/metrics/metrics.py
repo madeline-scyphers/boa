@@ -41,10 +41,11 @@ def _get_name(obj):
     elif isinstance(obj, SyntheticFunction):
         obj = obj._botorch_function
     elif isinstance(obj, partial):
-        obj =  obj.func
+        obj = obj.func
     else:
         obj = obj.__class__
     return _get_name(obj)
+
 
 class ModularMetric(Metric):
     def __init__(
@@ -110,13 +111,15 @@ class ModularMetric(Metric):
         return Data(df=df)
 
     def _evaluate(self, params: TParameterization, **kwargs) -> float:
-        kwargs["x"] = np.array([params[p] for p in self.param_names])
+        kwargs["x"] = np.array([params[p] for p in self.param_names if p in params])
         return self.metric_to_eval(**get_dictionary_from_callable(self.metric_to_eval, kwargs))
 
     def clone(self) -> "Metric":
         """Create a copy of this Metric."""
         cls = type(self)
-        return cls(**serialize_init_args(self, parents=[Metric], match_private=True),)
+        return cls(
+            **serialize_init_args(self, parents=[Metric], match_private=True),
+        )
 
     def __repr__(self) -> str:
         init_dict = serialize_init_args(self, parents=[Metric], match_private=True)
@@ -150,7 +153,8 @@ def setup_synthetic_metric(metric_to_eval, **kw):
 
     class ModularSynthethicMetric(ModularMetric):
         def __init__(self, **kwargs):
-            super().__init__(metric_to_eval=metric, **{**kw, **kwargs})
+            k = {**kw, **kwargs, **{"metric_to_eval": metric}}
+            super().__init__(**k)
 
     return ModularSynthethicMetric
 

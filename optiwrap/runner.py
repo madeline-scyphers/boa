@@ -24,7 +24,7 @@ class WrappedJobRunner(Runner):  # Deploys trials to external system.
         if not isinstance(trial, Trial):
             raise ValueError("This runner only handles `Trial`.")
 
-        self.wrapper.write_configs()
+        self.wrapper.write_configs(trial)
 
         self.wrapper.run_model(trial)
         # This run metadata will be attached to trial as `trial.run_metadata`

@@ -42,7 +42,9 @@ def get_scheduler(
 
 
 def get_experiment(
-    config: dict, runner: Runner, wrapper=None,
+    config: dict,
+    runner: Runner,
+    wrapper=None,
 ):
     settings = config["optimization_options"]
 
@@ -50,7 +52,7 @@ def get_experiment(
         config.get("search_space_parameters"), config.get("search_space_parameter_constraints")
     )
 
-    metric = get_metric(settings["metric"])
+    metric = get_metric(settings["metric"], param_names=list(search_space.parameters))
     objective = Objective(metric=metric(wrapper=wrapper), minimize=True)
 
     return Experiment(
