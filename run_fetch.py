@@ -4,10 +4,6 @@ import time
 from pathlib import Path
 
 import click
-from ax import Experiment, Objective, OptimizationConfig
-from ax.modelbridge.dispatch_utils import choose_generation_strategy
-from ax.service.scheduler import Scheduler, SchedulerOptions
-from ax.storage.json_store.load import load_experiment
 from ax.storage.json_store.save import save_experiment
 from ax.storage.registry_bundle import RegistryBundle
 
@@ -21,7 +17,6 @@ from optiwrap import (
     make_experiment_dir,
     load_experiment_config,
 )
-from optiwrap.utils import get_dictionary_from_callable
 
 
 @click.command()

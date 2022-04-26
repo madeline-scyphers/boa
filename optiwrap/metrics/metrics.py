@@ -15,12 +15,16 @@ from ax.core.types import TParameterization
 from optiwrap.metrics.metric_funcs import metric_from_json, metric_from_yaml
 from optiwrap.utils import get_dictionary_from_callable, serialize_init_args
 from optiwrap.wrapper import BaseWrapper
+import optiwrap.metrics.synthethic_funcs
 
 
 def get_metric(config, **kwargs):
-    if config.get("sklearn_metric"):
-        kwargs["sklearn_metric"] = config["sklearn_metric"]
-    return get_metric_by_class_name(config["metric_name"], **kwargs)
+    if config.get("metric_name"):
+        if config.get("sklearn_metric"):
+            kwargs["sklearn_metric"] = config["sklearn_metric"]
+        return get_metric_by_class_name(config["metric_name"], **kwargs)
+    if config.get("synthetic_metric"):
+        return setup_synthetic_metric(config["synthetic_metric"], **kwargs)
 
 
 def get_metric_by_class_name(metric_cls_name, sklearn_metric=False, **kwargs):
@@ -123,6 +127,19 @@ def setup_sklearn_metric(metric_to_eval, **kw):
             super().__init__(metric_to_eval=metric, **{**kw, **kwargs})
 
     return ModularSklearnMetric
+
+
+def setup_synthetic_metric(metric_to_eval, **kw):
+    if metric_to_eval in optiwrap.metrics.synthethic_funcs.__all__:
+        metric = getattr(optiwrap.metrics.synthethic_funcs, metric_to_eval)
+    else:
+        raise ValueError(f"optiwrap synthetic function: {metric_to_eval} not found!")
+
+    class ModularSynthethicMetric(ModularMetric):
+        def __init__(self, **kwargs):
+            super().__init__(metric_to_eval=metric, **{**kw, **kwargs})
+
+    return ModularSynthethicMetric
 
 
 MSE = setup_sklearn_metric("mean_squared_error")
