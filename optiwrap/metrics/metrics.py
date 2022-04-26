@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import partial
 from pprint import pformat
 from typing import Callable, Optional
+from inspect import isclass
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ from ax import Data, Metric
 from ax.core.base_trial import BaseTrial
 from ax.core.data import Data
 from ax.core.types import TParameterization
+from ax.utils.measurement.synthetic_functions import SyntheticFunction
 
 from optiwrap.metrics.metric_funcs import metric_from_json, metric_from_yaml
 from optiwrap.utils import get_dictionary_from_callable, serialize_init_args
@@ -33,6 +35,17 @@ def get_metric_by_class_name(metric_cls_name, sklearn_metric=False, **kwargs):
     return globals()[metric_cls_name]
 
 
+def _get_name(obj):
+    if hasattr(obj, "__name__"):
+        return obj.__name__
+    elif isinstance(obj, SyntheticFunction):
+        obj = obj._botorch_function
+    elif isinstance(obj, partial):
+        obj =  obj.func
+    else:
+        obj = obj.__class__
+    return _get_name(obj)
+
 class ModularMetric(Metric):
     def __init__(
         self,
@@ -45,7 +58,7 @@ class ModularMetric(Metric):
     ):
 
         if kwargs.get("name") is None:
-            kwargs["name"] = metric_to_eval.__name__
+            kwargs["name"] = _get_name(metric_func_kwargs)
 
         self.param_names = param_names if param_names is not None else []
         self.noise_sd = noise_sd
