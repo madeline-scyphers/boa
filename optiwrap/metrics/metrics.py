@@ -120,7 +120,7 @@ def setup_sklearn_metric(metric_to_eval, **kw):
     if metric_to_eval in sklearn.metrics.__all__:
         metric = getattr(sklearn.metrics, metric_to_eval)
     else:
-        raise ValueError(f"Sklearn metric: {metric_to_eval} not found!")
+        raise AttributeError(f"Sklearn metric: {metric_to_eval} not found!")
 
     class ModularSklearnMetric(ModularMetric):
         def __init__(self, **kwargs):
@@ -130,10 +130,10 @@ def setup_sklearn_metric(metric_to_eval, **kw):
 
 
 def setup_synthetic_metric(metric_to_eval, **kw):
-    if metric_to_eval in optiwrap.metrics.synthethic_funcs.__all__:
+    try:
         metric = getattr(optiwrap.metrics.synthethic_funcs, metric_to_eval)
-    else:
-        raise ValueError(f"optiwrap synthetic function: {metric_to_eval} not found!")
+    except AttributeError as e:
+        raise AttributeError(f"optiwrap synthetic function: {metric_to_eval} not found!") from e
 
     class ModularSynthethicMetric(ModularMetric):
         def __init__(self, **kwargs):
