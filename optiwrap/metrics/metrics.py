@@ -59,7 +59,7 @@ class ModularMetric(Metric):
     ):
 
         if kwargs.get("name") is None:
-            kwargs["name"] = _get_name(metric_func_kwargs)
+            kwargs["name"] = _get_name(metric_to_eval)
 
         self.param_names = param_names if param_names is not None else []
         self.noise_sd = noise_sd
@@ -138,6 +138,7 @@ def setup_sklearn_metric(metric_to_eval, **kw):
     else:
         raise AttributeError(f"Sklearn metric: {metric_to_eval} not found!")
 
+    # TODO turn this into a closure so I don't have to make a silly extra class
     class ModularSklearnMetric(ModularMetric):
         def __init__(self, **kwargs):
             super().__init__(metric_to_eval=metric, **{**kw, **kwargs})

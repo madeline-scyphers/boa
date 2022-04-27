@@ -65,6 +65,8 @@ def normalize_config(config):
         config["parameters"][param]["name"] = param  # Add "name" attribute for each parameter
     # Parameters from dictionary to list
     config["search_space_parameters"] = list(config.get("parameters", {}).values())
+    config["search_space_parameter_constraints"] = config.get("parameter_constraints", [])
+
     return config
 
 

@@ -35,7 +35,12 @@ def get_scheduler(
         **config["optimization_options"]["scheduler"]
     )
     if generation_strategy is None:
-        generation_strategy = generation_strategy_from_experiment(experiment, config)
+        if ("total_trials" in config["optimization_options"]["scheduler"]
+            and "num_trials" not in config["optimization_options"]["generation_strategy"]):
+           config["optimization_options"]["generation_strategy"]["num_trials"] = (
+               config["optimization_options"]["scheduler"]["total_trials"])
+        generation_strategy = generation_strategy_from_experiment(
+            experiment, config["optimization_options"]["generation_strategy"])
     return Scheduler(
         experiment=experiment, generation_strategy=generation_strategy, options=scheduler_options
     )

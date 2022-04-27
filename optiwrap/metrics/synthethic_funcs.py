@@ -1,6 +1,6 @@
 import numpy as np
 from ax.utils.measurement.synthetic_functions import from_botorch
-from botorch.test_functions.synthetic import Ackley
+from botorch.test_functions.synthetic import Ackley, Hartmann
 from torch import Tensor
 
 
@@ -16,12 +16,28 @@ class FakePalm(Ackley):
         super().__init__(dim=dim, *args, **kwargs)
 
     def evaluate_true(self, X: Tensor) -> float:
-        X[..., 0] = map_range(X[..., 0], 350, 950, -32.768, 32.768)
-        X[..., 1] = map_range(X[..., 1], 0.15, 0.9, -32.768, 32.768)
-        X[..., 2] = map_range(X[..., 2], 0.25, 0.8, -32.768, 32.768)
+        X[..., 0] = map_range(X[..., 0], 0.0, 1, -15, 50)
+        X[..., 1] = map_range(X[..., 1], 0.0, 1, -10, 50)
+        X[..., 2] = map_range(X[..., 2], 0, 1200, -20, 32.768)
         X[..., 3] = map_range(X[..., 3], 2.0, 6.0, -32.768, 32.768)
-
         return super().evaluate_true(X)
 
 
+
+class FakePalm2(Hartmann):
+    def __init__(self, *args, **kwargs):
+        dim = 4
+        super().__init__(dim=dim, *args, **kwargs)
+        self._optimizers = [(0.1873, 0.1906, 0.5566, 0.2647)]
+        self._optimal_value = 2.864526
+
+    def evaluate_true(self, X: Tensor) -> float:
+        X[..., 0] = map_range(X[..., 0], 0.1, 1, 0, 1)
+        X[..., 1] = map_range(X[..., 1], 0.2, 1, 0, 1)
+        X[..., 2] = map_range(X[..., 2], 0, 1200, 0, 1)
+        X[..., 3] = map_range(X[..., 3], 2.0, 6.0, 0, 1)
+
+        return super().evaluate_true(X) + 6
+
 fake_palm = from_botorch(FakePalm())
+fake_palm2 = from_botorch(FakePalm2())
