@@ -39,5 +39,23 @@ class FakePalm2(Hartmann):
 
         return super().evaluate_true(X) + 6
 
+
+class Hartmann4(Hartmann):
+    def __init__(self, *args, **kwargs):
+        dim = 4
+        super().__init__(dim=dim, *args, **kwargs)
+        self._optimizers = [(0.1873, 0.1906, 0.5566, 0.2647)]
+        self._optimal_value = 2.864526
+
+    @property
+    def optimal_value(self) -> float:
+        return super().optimal_value
+
+    @property
+    def optimizers(self) -> Tensor:
+        return super().optimizers
+
+
 fake_palm = from_botorch(FakePalm())
 fake_palm2 = from_botorch(FakePalm2())
+hartmann4 = from_botorch(Hartmann4())
