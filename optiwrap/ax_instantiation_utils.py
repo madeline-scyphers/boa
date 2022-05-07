@@ -6,7 +6,7 @@ from ax.modelbridge.generation_strategy import GenerationStrategy
 from ax.service.ax_client import AxClient
 from ax.service.scheduler import Scheduler, SchedulerOptions
 
-from optiwrap.metrics.metrics import get_metric
+from optiwrap.metrics.metrics import get_metric_from_config
 from optiwrap.utils import get_dictionary_from_callable
 
 
@@ -35,21 +35,23 @@ def get_scheduler(
         **config["optimization_options"]["scheduler"]
     )
     if generation_strategy is None:
-        if ("total_trials" in config["optimization_options"]["scheduler"]
-            and "num_trials" not in config["optimization_options"]["generation_strategy"]):
-           config["optimization_options"]["generation_strategy"]["num_trials"] = (
-               config["optimization_options"]["scheduler"]["total_trials"])
+        if (
+            "total_trials" in config["optimization_options"]["scheduler"]
+            and "num_trials" not in config["optimization_options"]["generation_strategy"]
+        ):
+            config["optimization_options"]["generation_strategy"]["num_trials"] = config[
+                "optimization_options"
+            ]["scheduler"]["total_trials"]
         generation_strategy = generation_strategy_from_experiment(
-            experiment, config["optimization_options"]["generation_strategy"])
+            experiment, config["optimization_options"]["generation_strategy"]
+        )
     return Scheduler(
         experiment=experiment, generation_strategy=generation_strategy, options=scheduler_options
     )
 
 
 def get_experiment(
-    config: dict,
-    runner: Runner,
-    wrapper=None,
+    config: dict, runner: Runner, wrapper=None,
 ):
     settings = config["optimization_options"]
 
@@ -57,7 +59,7 @@ def get_experiment(
         config.get("search_space_parameters"), config.get("search_space_parameter_constraints")
     )
 
-    metric = get_metric(settings["metric"], param_names=list(search_space.parameters))
+    metric = get_metric_from_config(settings["metric"], param_names=list(search_space.parameters))
     objective = Objective(metric=metric(wrapper=wrapper), minimize=True)
 
     return Experiment(

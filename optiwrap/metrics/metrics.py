@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from pprint import pformat
 from typing import Callable, Optional
-from inspect import isclass
 
 import numpy as np
 import pandas as pd
@@ -12,7 +10,9 @@ from ax import Data, Metric
 from ax.core.base_trial import BaseTrial
 from ax.core.data import Data
 from ax.core.types import TParameterization
-from ax.utils.measurement.synthetic_functions import SyntheticFunction
+from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
+import ax.utils.measurement.synthetic_functions
+import botorch.test_functions.synthetic
 
 from optiwrap.metrics.metric_funcs import metric_from_json, metric_from_yaml
 from optiwrap.utils import get_dictionary_from_callable, serialize_init_args
@@ -20,7 +20,7 @@ from optiwrap.wrapper import BaseWrapper
 import optiwrap.metrics.synthethic_funcs
 
 
-def get_metric(config, **kwargs):
+def get_metric_from_config(config, **kwargs):
     if config.get("metric_name"):
         if config.get("sklearn_metric"):
             kwargs["sklearn_metric"] = config["sklearn_metric"]
@@ -35,10 +35,58 @@ def get_metric_by_class_name(metric_cls_name, sklearn_metric=False, **kwargs):
     return globals()[metric_cls_name]
 
 
+def setup_sklearn_metric(metric_to_eval, **kw):
+    if metric_to_eval in sklearn.metrics.__all__:
+        metric = getattr(sklearn.metrics, metric_to_eval)
+    else:
+        raise AttributeError(f"Sklearn metric: {metric_to_eval} not found!")
+
+    def modular_sklearn_metric(**kwargs):
+        return ModularMetric(**{**kw, **kwargs, "metric_to_eval": metric})
+
+    return modular_sklearn_metric
+
+
+def setup_synthetic_metric(metric_to_eval, **kw):
+    synthetic_funcs_modules = [
+        optiwrap.metrics.synthethic_funcs,
+        ax.utils.measurement.synthetic_functions,
+        botorch.test_functions.synthetic
+    ]
+
+    def get_synth_metric():
+        for module in synthetic_funcs_modules:
+            try:
+                return getattr(module, metric_to_eval)
+            except AttributeError:
+                continue
+        # If we don't find the class by the end of the modules, raise attribute error
+        raise AttributeError(
+            f"optiwrap synthetic function: {metric_to_eval}"
+            f" not found in modules: {synthetic_funcs_modules}!"
+        )
+
+    metric = get_synth_metric()
+
+    if issubclass(metric, ax.utils.measurement.synthetic_functions):
+        metric = metric()  # if they pass a ax synthetic metric class, not instance
+    if issubclass(metric, botorch.test_functions.synthetic.SyntheticTestFunction):
+        # botorch synthetic functions need to be converted
+        metric = from_botorch(botorch_synthetic_function=metric())
+
+    def modular_synthetic_metric(**kwargs):
+        return ModularMetric(**{**kw, **kwargs, "metric_to_eval": metric})
+
+    return modular_synthetic_metric
+
+
 def _get_name(obj):
     if hasattr(obj, "__name__"):
         return obj.__name__
-    elif isinstance(obj, SyntheticFunction):
+    elif isinstance(obj, FromBotorch):
+        # Using metrics that are FromBotorch(botorch synthethic_funcs) leaves us with
+        # with having to rely on a private attribute to get to the funcs __name__
+        # watch for breaking someday
         obj = obj._botorch_function
     elif isinstance(obj, partial):
         obj = obj.func
@@ -117,9 +165,7 @@ class ModularMetric(Metric):
     def clone(self) -> "Metric":
         """Create a copy of this Metric."""
         cls = type(self)
-        return cls(
-            **serialize_init_args(self, parents=[Metric], match_private=True),
-        )
+        return cls(**serialize_init_args(self, parents=[Metric], match_private=True),)
 
     def __repr__(self) -> str:
         init_dict = serialize_init_args(self, parents=[Metric], match_private=True)
@@ -130,34 +176,6 @@ class ModularMetric(Metric):
 
         arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
         return f"{self.__class__.__name__}({arg_str})"
-
-
-def setup_sklearn_metric(metric_to_eval, **kw):
-    if metric_to_eval in sklearn.metrics.__all__:
-        metric = getattr(sklearn.metrics, metric_to_eval)
-    else:
-        raise AttributeError(f"Sklearn metric: {metric_to_eval} not found!")
-
-    # TODO turn this into a closure so I don't have to make a silly extra class
-    class ModularSklearnMetric(ModularMetric):
-        def __init__(self, **kwargs):
-            super().__init__(metric_to_eval=metric, **{**kw, **kwargs})
-
-    return ModularSklearnMetric
-
-
-def setup_synthetic_metric(metric_to_eval, **kw):
-    try:
-        metric = getattr(optiwrap.metrics.synthethic_funcs, metric_to_eval)
-    except AttributeError as e:
-        raise AttributeError(f"optiwrap synthetic function: {metric_to_eval} not found!") from e
-
-    class ModularSynthethicMetric(ModularMetric):
-        def __init__(self, **kwargs):
-            k = {**kw, **kwargs, **{"metric_to_eval": metric}}
-            super().__init__(**k)
-
-    return ModularSynthethicMetric
 
 
 MSE = setup_sklearn_metric("mean_squared_error")

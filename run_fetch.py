@@ -12,7 +12,7 @@ from optiwrap import (
     MSE,
     WrappedJobRunner,
     get_experiment,
-    get_metric,
+    get_metric_from_config,
     get_scheduler,
     make_experiment_dir,
     load_experiment_config,
@@ -64,7 +64,7 @@ def main(config_file):
 
     scheduler.run_all_trials()
 
-    metric = get_metric(config["optimization_options"]["metric"])
+    metric = get_metric_from_config(config["optimization_options"]["metric"])
     bundle = RegistryBundle(
         metric_clss={metric: None},
         runner_clss={WrappedJobRunner: None}

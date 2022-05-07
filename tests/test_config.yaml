@@ -1,0 +1,38 @@
+optimization_options:
+    metric:
+        synthetic_metric: hartmann4
+    experiment: {}
+    generation_strategy: {}
+    scheduler:
+        total_trials: 10
+    working_dir: "/some/path"
+    experiment_name: "test_experiment"
+    # obsvar: 'ustar'
+    # output_name: 'ds_canopy.nc'
+
+model_options:
+    model_specific_options:
+        - 1
+        - 2
+        - 3
+
+parameters:
+    x1:  # Ratio of urban area that is house (not ground, not trees)
+        type: range
+        bounds: [0, 1]
+
+    x2:  # Ratio of urban area that is ground (not house, not trees)
+        type: range
+        bounds: [0, 1]
+
+    x3:  # Size of a plot of land (area of a house and its ground it sits on)
+        type: range
+        bounds: [0, 1]
+
+    x4:  # The mean LAI of the canopy. There will be random perturbations to this
+        type: range
+        bounds: [0, 1]
+
+parameter_constraints:
+    - x2 + x1 => >.1
+    - x2 + x1 + .6*x1 <= .6
