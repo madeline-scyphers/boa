@@ -1,24 +1,16 @@
 from __future__ import annotations
 
 import functools
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod
 from pathlib import Path
 
-from ax import Trial
 from ax.core.base_trial import BaseTrial
-from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_REGISTRY
 
 from optiwrap.utils import convert_type, serialize_init_args
+from optiwrap.metaclasses import WrapperRegister
 
 
-class Watcher(ABCMeta):
-    def __init__(cls, *args, **kwargs):
-        CORE_ENCODER_REGISTRY[cls] = cls.wrapper_to_dict
-        CORE_DECODER_REGISTRY[cls.__name__] = cls
-        super().__init__(*args, **kwargs)
-
-
-class BaseWrapper(metaclass=Watcher):
+class BaseWrapper(metaclass=WrapperRegister):
     def write_configs(self, trial: BaseTrial) -> None:
         pass
 
@@ -55,6 +47,7 @@ class BaseWrapper(metaclass=Watcher):
         # TODO add sphinx link to ax trial status
         """
 
+
     @abstractmethod
     def fetch_trial_data(self, trial: BaseTrial, *args, **kwargs) -> dict:
         """
@@ -73,6 +66,10 @@ class BaseWrapper(metaclass=Watcher):
             A dictionary with the keys matching the keys of the metric function
                 used in the objective
         """
+
+    # @cd_and_cd_back_dec
+    # def _fetch_trial_data(self, *args, **kwargs):
+    #     self.fetch_trial_data(*args, **kwargs)
 
     def wrapper_to_dict(self) -> dict:
         """Convert Ax experiment to a dictionary."""

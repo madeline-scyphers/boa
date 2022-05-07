@@ -4,9 +4,11 @@ from typing import Any, Dict, Iterable, Set
 from ax.core.base_trial import BaseTrial, TrialStatus
 from ax.core.runner import Runner
 from ax.core.trial import Trial
+from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_REGISTRY
 
+from optiwrap.metaclasses import RunnerRegister
 
-class WrappedJobRunner(Runner):  # Deploys trials to external system.
+class WrappedJobRunner(Runner, metaclass=RunnerRegister):
     def __init__(self, wrapper, *args, **kwargs):
 
         self.wrapper = wrapper

@@ -7,16 +7,19 @@ import numpy as np
 import pandas as pd
 import sklearn.metrics
 from ax import Data, Metric
+from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.core.base_trial import BaseTrial
 from ax.core.data import Data
 from ax.core.types import TParameterization
 from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
+from ax.storage.json_store.encoders import metric_to_dict
 import ax.utils.measurement.synthetic_functions
 import botorch.test_functions.synthetic
 
 from optiwrap.metrics.metric_funcs import metric_from_json, metric_from_yaml
 from optiwrap.utils import get_dictionary_from_callable, serialize_init_args
 from optiwrap.wrapper import BaseWrapper
+from optiwrap.metaclasses import MetricRegister
 import optiwrap.metrics.synthethic_funcs
 
 
@@ -95,7 +98,7 @@ def _get_name(obj):
     return _get_name(obj)
 
 
-class ModularMetric(Metric):
+class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     def __init__(
         self,
         metric_to_eval: Callable,
@@ -103,18 +106,19 @@ class ModularMetric(Metric):
         noise_sd: Optional[float] = 0.0,
         metric_func_kwargs: Optional[dict] = None,
         wrapper: Optional[BaseWrapper] = None,
+        properties: Optional[dict[str]] = None,
         **kwargs,
     ):
 
         if kwargs.get("name") is None:
             kwargs["name"] = _get_name(metric_to_eval)
 
-        self.param_names = param_names if param_names is not None else []
-        self.noise_sd = noise_sd
+        param_names = param_names if param_names is not None else []
         self.metric_func_kwargs = metric_func_kwargs or {}
         self.metric_to_eval = partial(metric_to_eval, **self.metric_func_kwargs)
         self.wrapper = wrapper
-        super().__init__(**kwargs)
+        self.properties = properties
+        super().__init__(param_names=param_names, noise_sd=noise_sd, **kwargs)
 
     @classmethod
     def is_available_while_running(cls) -> bool:
@@ -165,10 +169,10 @@ class ModularMetric(Metric):
     def clone(self) -> "Metric":
         """Create a copy of this Metric."""
         cls = type(self)
-        return cls(**serialize_init_args(self, parents=[Metric], match_private=True),)
+        return cls(**serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True),)
 
     def __repr__(self) -> str:
-        init_dict = serialize_init_args(self, parents=[Metric], match_private=True)
+        init_dict = serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True)
         init_dict = {k: v for k, v in init_dict.items() if v}
 
         if isinstance(init_dict["metric_to_eval"], partial):

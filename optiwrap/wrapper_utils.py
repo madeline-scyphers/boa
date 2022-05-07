@@ -14,25 +14,32 @@ These functions provide the interface between the optimization tool and FETCH3
 import datetime as dt
 import logging
 import os
-import subprocess
 from contextlib import contextmanager
 from pathlib import Path
+from functools import wraps
 
-import pandas as pd
-import xarray as xr
 import yaml
 
 logger = logging.getLogger(__file__)
 
 
 @contextmanager
-def cd_and_cd_back(path):
+def cd_and_cd_back(path=None):
     cwd = os.getcwd()
     try:
-        os.chdir(path)
+        if path:
+            os.chdir(path)
         yield
     finally:
         os.chdir(cwd)
+
+
+def cd_and_cd_back_dec(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        with cd_and_cd_back():
+            return func(*args, **kwargs)
+    return wrapper
 
 
 def load_experiment_config(config_file):

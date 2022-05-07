@@ -64,12 +64,12 @@ def main(config_file):
 
     scheduler.run_all_trials()
 
-    metric = get_metric_from_config(config["optimization_options"]["metric"])
-    bundle = RegistryBundle(
-        metric_clss={metric: None},
-        runner_clss={WrappedJobRunner: None}
-    )
-    save_experiment(experiment, "experiment.json", encoder_registry=bundle.encoder_registry)
+    # metric = get_metric_from_config(config["optimization_options"]["metric"])
+    # bundle = RegistryBundle(
+    #     metric_clss={metric: None},
+    #     runner_clss={WrappedJobRunner: None}
+    # )
+    save_experiment(experiment, "experiment.json")
     # from ax.storage.json_store.load import load_experiment
     logging.info("\nTrials completed! Total run time: %d", time.time() - start)
 
