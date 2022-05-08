@@ -12,7 +12,17 @@ from ax.storage.json_store.load import load_experiment as ax_load_experiment
 logger = logging.getLogger(__name__)
 
 
-def save_experiment(experiment: Experiment, filepath: os.PathLike, *args, **kwargs):
+def pickle_obj(obj, filepath):
+    with open(Path(str(filepath) + ".pickle") , 'wb') as f:
+        pickle.dump(obj, f)
+
+
+def unpickle_obj(filepath):
+    with open(filepath, 'rb') as f:
+        return pickle.load(f)
+
+
+def save_experiment(experiment: Experiment, filepath: os.PathLike, pickle=True, *args, **kwargs):
     try:
         ax_save_experiment(experiment, filepath, *args, **kwargs)
     except JSONEncodeError:
