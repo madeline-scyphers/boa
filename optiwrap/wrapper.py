@@ -77,5 +77,5 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         wrapper_state = serialize_init_args(self, parents=parents, match_private=True)
 
-        wrapper_state = convert_type(wrapper_state, {Path: str})  #
+        wrapper_state = convert_type(wrapper_state, {Path: str})
         return {"__type": self.__class__.__name__, **wrapper_state}

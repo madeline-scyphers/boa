@@ -98,7 +98,7 @@ def _get_name(obj):
     return _get_name(obj)
 
 
-class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
+class ModularMetric(NoisyFunctionMetric):
     def __init__(
         self,
         metric_to_eval: Callable,
@@ -112,17 +112,17 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
         if kwargs.get("name") is None:
             kwargs["name"] = _get_name(metric_to_eval)
-
         param_names = param_names if param_names is not None else []
         self.metric_func_kwargs = metric_func_kwargs or {}
-        self.metric_to_eval = partial(metric_to_eval, **self.metric_func_kwargs)
+        # self.metric_to_eval = partial(metric_to_eval, **self.metric_func_kwargs)
+        self.metric_to_eval = metric_to_eval
         self.wrapper = wrapper
         self.properties = properties
         super().__init__(param_names=param_names, noise_sd=noise_sd, **kwargs)
 
     @classmethod
     def is_available_while_running(cls) -> bool:
-        return True
+        return False
 
     def fetch_trial_data(self, trial: BaseTrial, *args, **kwargs):
         wrapper_kwargs = (
@@ -184,6 +184,8 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
 MSE = setup_sklearn_metric("mean_squared_error")
 MeanSquaredError = MSE
+RMSE = setup_sklearn_metric("mean_squared_error", metric_func_kwargs={"squared": False})
+RootMeanSquaredError = RMSE
 R2 = setup_sklearn_metric("r2_score")
 RSquared = R2
 
