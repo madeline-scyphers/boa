@@ -14,7 +14,6 @@ class BaseWrapper(metaclass=WrapperRegister):
     def write_configs(self, trial: BaseTrial) -> None:
         pass
 
-    @abstractmethod
     def run_model(self, trial: BaseTrial) -> None:
         """
         Runs a model by deploying a given trial.
@@ -24,7 +23,6 @@ class BaseWrapper(metaclass=WrapperRegister):
         trial : BaseTrial
         """
 
-    @abstractmethod
     def set_trial_status(self, trial: BaseTrial) -> None:
         """
         The trial gets polled from time to time to see if it is completed, failed, still running,
@@ -47,8 +45,6 @@ class BaseWrapper(metaclass=WrapperRegister):
         # TODO add sphinx link to ax trial status
         """
 
-
-    @abstractmethod
     def fetch_trial_data(self, trial: BaseTrial, *args, **kwargs) -> dict:
         """
         Retrieves the trial data and prepares it for the metric(s) used in the objective
@@ -66,10 +62,6 @@ class BaseWrapper(metaclass=WrapperRegister):
             A dictionary with the keys matching the keys of the metric function
                 used in the objective
         """
-
-    # @cd_and_cd_back_dec
-    # def _fetch_trial_data(self, *args, **kwargs):
-    #     self.fetch_trial_data(*args, **kwargs)
 
     def wrapper_to_dict(self) -> dict:
         """Convert Ax experiment to a dictionary."""

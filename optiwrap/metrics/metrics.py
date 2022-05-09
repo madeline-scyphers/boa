@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from functools import partial
 from typing import Callable, Optional
+from inspect import isclass
 
 import numpy as np
 import pandas as pd
@@ -19,7 +20,7 @@ import botorch.test_functions.synthetic
 from optiwrap.metrics.metric_funcs import metric_from_json, metric_from_yaml
 from optiwrap.utils import get_dictionary_from_callable, serialize_init_args
 from optiwrap.wrapper import BaseWrapper
-from optiwrap.metaclasses import MetricRegister
+from optiwrap.metaclasses import MetricRegister, MetricToEvalRegister
 import optiwrap.metrics.synthethic_funcs
 
 
@@ -54,7 +55,7 @@ def setup_synthetic_metric(metric_to_eval, **kw):
     synthetic_funcs_modules = [
         optiwrap.metrics.synthethic_funcs,
         ax.utils.measurement.synthetic_functions,
-        botorch.test_functions.synthetic
+        botorch.test_functions.synthetic,
     ]
 
     def get_synth_metric():
@@ -71,9 +72,11 @@ def setup_synthetic_metric(metric_to_eval, **kw):
 
     metric = get_synth_metric()
 
-    if issubclass(metric, ax.utils.measurement.synthetic_functions):
+    if isclass(metric) and issubclass(metric, ax.utils.measurement.synthetic_functions):
         metric = metric()  # if they pass a ax synthetic metric class, not instance
-    if issubclass(metric, botorch.test_functions.synthetic.SyntheticTestFunction):
+    elif isclass(metric) and issubclass(
+        metric, botorch.test_functions.synthetic.SyntheticTestFunction
+    ):
         # botorch synthetic functions need to be converted
         metric = from_botorch(botorch_synthetic_function=metric())
 
@@ -98,7 +101,29 @@ def _get_name(obj):
     return _get_name(obj)
 
 
-class ModularMetric(NoisyFunctionMetric):
+class MetericToEval(metaclass=MetricToEvalRegister):
+    def __init__(
+        self,
+        *,
+        func: Callable,
+        func_kwargs: Optional[dict] = None,
+    ):
+        self.func = func
+        self.func_kwargs = func_kwargs or {}
+        self.name = _get_name(func)
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **get_dictionary_from_callable(self.func, {**self.func_kwargs, **kwargs}))
+
+    def register_cls(self):
+        return {
+            "__type": self.__class__.__name__,
+            "func": self.name,
+            "func_kwargs": self.func_kwargs,
+        }
+
+
+class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     def __init__(
         self,
         metric_to_eval: Callable,
@@ -115,8 +140,9 @@ class ModularMetric(NoisyFunctionMetric):
         param_names = param_names if param_names is not None else []
         self.metric_func_kwargs = metric_func_kwargs or {}
         # self.metric_to_eval = partial(metric_to_eval, **self.metric_func_kwargs)
-        self.metric_to_eval = metric_to_eval
-        self.wrapper = wrapper
+        # self.metric_to_eval = metric_to_eval
+        self.metric_to_eval = MetericToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs)
+        self.wrapper = wrapper or BaseWrapper()
         self.properties = properties
         super().__init__(param_names=param_names, noise_sd=noise_sd, **kwargs)
 
@@ -169,7 +195,26 @@ class ModularMetric(NoisyFunctionMetric):
     def clone(self) -> "Metric":
         """Create a copy of this Metric."""
         cls = type(self)
-        return cls(**serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True),)
+        return cls(
+            **serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True),
+        )
+
+    def to_dict(self) -> dict:
+        """Convert Ax experiment to a dictionary."""
+        parents = self.__class__.mro()[1:]  # index 0 is the class itself
+
+        # We don't want to match init args for Metric class and back, because
+        # NoisyFunctionMetric changes the init parameters22
+        try:
+            index_of_metric = parents.index(Metric)
+        except ValueError:
+            index_of_metric = None
+        p_b4_metric = parents[:index_of_metric]
+
+        wrapper_state = serialize_init_args(self, parents=p_b4_metric, match_private=True, exclude_fields=["wrapper"])
+
+        # wrapper_state = convert_type(wrapper_state, {Path: str})
+        return {"__type": self.__class__.__name__, **wrapper_state}
 
     def __repr__(self) -> str:
         init_dict = serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True)

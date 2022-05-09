@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import inspect
-from collections import Iterable, Mapping
 from collections.abc import Iterable, Mapping
-from typing import Callable
+from typing import Callable, Optional
 
 
 def get_callable_signature(callable: Callable) -> inspect.Signature:
@@ -11,24 +10,27 @@ def get_callable_signature(callable: Callable) -> inspect.Signature:
 
 
 def get_dictionary_matching_signature(
-    signature: inspect.Signature, d: dict, match_private: bool = False
+    signature: inspect.Signature, d: dict, match_private: bool = False, exclude_fields: Optional[list[str]] = None, accept_all_kwargs: bool = True
 ) -> dict:
     args = {}
+    exclude_fields = exclude_fields or []
     params = signature.parameters
-    for param in params.values():
-        if (
-            param.kind == param.VAR_KEYWORD
-        ):  # this accepts **kwargs, therefore let everything through
-            for key, value in d.items():
-                if match_private and (key.startswith("_") or key.startswith("__")):
-                    key = key.lstrip("_")
-                args[key] = value
-            return args
+    if accept_all_kwargs:
+        for param in params.values():
+            if (
+                param.kind == param.VAR_KEYWORD
+            ):  # this accepts **kwargs, therefore let everything through
+                for key, value in d.items():
+                    if match_private and (key.startswith("_") or key.startswith("__")):
+                        key = key.lstrip("_")
+                    if key not in exclude_fields:
+                        args[key] = value
+                return args
 
     for key, value in d.items():
         if match_private and (key.startswith("_") or key.startswith("__")):
             key = key.lstrip("_")
-        if key in params:
+        if key in params and key not in exclude_fields:
             args[key] = value
     return args
 
@@ -38,7 +40,7 @@ def get_dictionary_from_callable(callable: Callable, d: dict, **kwargs) -> dict:
     return get_dictionary_matching_signature(signature, d, **kwargs)
 
 
-def serialize_init_args(instance, *, parents, match_private: bool = False):
+def serialize_init_args(instance, *, parents, match_private: bool = False, **kwargs):
     parents = parents or []
     args = vars(instance)  # TODO don't use vars?
     kw = {}
@@ -46,7 +48,7 @@ def serialize_init_args(instance, *, parents, match_private: bool = False):
     parents_init = [parent.__init__ for parent in parents]
     callable_ls = [instance.__class__.__init__, *parents_init]
     for callable in callable_ls:
-        kw.update(get_dictionary_from_callable(callable, args, match_private=match_private))
+        kw.update(get_dictionary_from_callable(callable, args, match_private=match_private, **kwargs))
     return kw
 
 

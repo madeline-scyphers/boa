@@ -16,7 +16,8 @@ from optiwrap import (
     get_scheduler,
     make_experiment_dir,
     load_experiment_config,
-    save_experiment
+    save_experiment,
+    scheduler_to_json_file
 )
 
 
@@ -64,14 +65,18 @@ def main(config_file):
     scheduler = get_scheduler(experiment, config=config)
 
     scheduler.run_all_trials()
-    from optiwrap import ModularMetric
-    # metric = get_metric_from_config(config["optimization_options"]["metric"])
-    bundle = RegistryBundle(
-        metric_clss={ModularMetric: None},
-        runner_clss={}
-    )
-    save_experiment(experiment, "experiment.json", encoder_registry=bundle.encoder_registry)
-    from ax.storage.json_store.load import load_experiment
+
+
+
+    # from optiwrap import ModularMetric
+    # # metric = get_metric_from_config(config["optimization_options"]["metric"])
+    # bundle = RegistryBundle(
+    #     metric_clss={ModularMetric: None},
+    #     runner_clss={}
+    # )
+    # save_experiment(experiment, "experiment.json",)# encoder_registry=bundle.encoder_registry)
+    scheduler_to_json_file(scheduler,)# encoder_registry=bundle.encoder_registry)
+    # from ax.storage.json_store.load import load_experiment
     logging.info("\nTrials completed! Total run time: %d", time.time() - start)
 
 

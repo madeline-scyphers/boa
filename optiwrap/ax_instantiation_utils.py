@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import time
+
 from ax import Experiment, Objective, OptimizationConfig, Runner, SearchSpace
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.modelbridge.generation_strategy import GenerationStrategy
 from ax.service.ax_client import AxClient
 from ax.service.scheduler import Scheduler, SchedulerOptions
+from ax.service.ax_client import AxClient
+# from ax.storage.sqa_store.structs import DBSettings
+# from ax.storage.sqa_store.db import create_all_tables, get_engine, init_engine_and_session_factory
+# from ax.storage.sqa_store.decoder import Decoder
+# from ax.storage.sqa_store.encoder import Encoder
+# from ax.storage.sqa_store.sqa_config import SQAConfig
 
 from optiwrap.metrics.metrics import get_metric_from_config
 from optiwrap.utils import get_dictionary_from_callable
@@ -45,13 +53,28 @@ def get_scheduler(
         generation_strategy = generation_strategy_from_experiment(
             experiment, config["optimization_options"]["generation_strategy"]
         )
+    # db_settings = DBSettings(
+    #     url="sqlite:///foo.db",
+    #     decoder=Decoder(config=SQAConfig()),
+    #     encoder=Encoder(config=SQAConfig()),
+    # )
+
+    # init_engine_and_session_factory(url=db_settings.url)
+    # engine = get_engine()
+    # create_all_tables(engine)
+
     return Scheduler(
-        experiment=experiment, generation_strategy=generation_strategy, options=scheduler_options
+        experiment=experiment,
+        generation_strategy=generation_strategy,
+        options=scheduler_options,
+        # db_settings=db_settings,
     )
 
 
 def get_experiment(
-    config: dict, runner: Runner, wrapper=None,
+    config: dict,
+    runner: Runner,
+    wrapper=None,
 ):
     settings = config["optimization_options"]
 
@@ -61,6 +84,12 @@ def get_experiment(
 
     metric = get_metric_from_config(settings["metric"], param_names=list(search_space.parameters))
     objective = Objective(metric=metric(wrapper=wrapper), minimize=True)
+
+    if "name" not in settings["experiment"]:
+        if "name" in settings:
+            settings["experiment"]["name"] = settings["name"]
+        else:
+            settings["experiment"]["name"] = time.time()
 
     return Experiment(
         search_space=search_space,

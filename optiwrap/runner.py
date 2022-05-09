@@ -4,14 +4,16 @@ from typing import Any, Dict, Iterable, Set
 from ax.core.base_trial import BaseTrial, TrialStatus
 from ax.core.runner import Runner
 from ax.core.trial import Trial
-from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_REGISTRY
 
 from optiwrap.metaclasses import RunnerRegister
+from optiwrap.utils import serialize_init_args
+from optiwrap.wrapper import BaseWrapper
+
 
 class WrappedJobRunner(Runner, metaclass=RunnerRegister):
-    def __init__(self, wrapper, *args, **kwargs):
+    def __init__(self, wrapper: BaseWrapper = None, *args, **kwargs):
 
-        self.wrapper = wrapper
+        self.wrapper = wrapper or BaseWrapper()
         super().__init__(*args, **kwargs)
 
     def run(self, trial: BaseTrial) -> Dict[str, Any]:
@@ -56,3 +58,13 @@ class WrappedJobRunner(Runner, metaclass=RunnerRegister):
             status_dict[trial.status].add(trial.index)
 
         return status_dict
+
+    def to_dict(self) -> dict:
+        """Convert Ax synthetic runner to a dictionary."""
+
+        parents = self.__class__.mro()[1:]  # index 0 is the class itself
+
+        properties = serialize_init_args(self, parents=parents, match_private=True, exclude_fields=["wrapper"])
+
+        properties["__type"] = self.__class__.__name__
+        return properties

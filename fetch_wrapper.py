@@ -1,6 +1,7 @@
 
 import subprocess
 import os
+from pathlib import Path
 
 from ax import Trial
 
@@ -129,7 +130,7 @@ class Fetch3Wrapper(BaseWrapper):
     def __init__(self, ex_settings, model_settings, experiment_dir, main_prog=""):
         self.ex_settings = ex_settings
         self.model_settings = model_settings
-        self.experiment_dir = experiment_dir
+        self.experiment_dir = Path(experiment_dir)
         self.main_prog = main_prog
 
     def run_model(self, trial: Trial):
