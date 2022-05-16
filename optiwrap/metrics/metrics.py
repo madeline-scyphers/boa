@@ -7,13 +7,12 @@ from inspect import isclass
 import numpy as np
 import pandas as pd
 import sklearn.metrics
-from ax import Data, Metric
+from ax import Metric
 from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.core.base_trial import BaseTrial
 from ax.core.data import Data
 from ax.core.types import TParameterization
 from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
-from ax.storage.json_store.encoders import metric_to_dict
 import ax.utils.measurement.synthetic_functions
 import botorch.test_functions.synthetic
 
@@ -24,22 +23,23 @@ from optiwrap.metaclasses import MetricRegister, MetricToEvalRegister
 import optiwrap.metrics.synthethic_funcs
 
 
-def get_metric_from_config(config, **kwargs):
+def get_metric_from_config(config, instantiate=True, **kwargs):
     if config.get("metric_name"):
         if config.get("sklearn_metric"):
             kwargs["sklearn_metric"] = config["sklearn_metric"]
-        return get_metric_by_class_name(config["metric_name"], **kwargs)
+        metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
     if config.get("synthetic_metric"):
-        return setup_synthetic_metric(config["synthetic_metric"], **kwargs)
+        metric = setup_synthetic_metric(instantiate=instantiate, **config, **kwargs)
+    return metric
 
 
-def get_metric_by_class_name(metric_cls_name, sklearn_metric=False, **kwargs):
+def get_metric_by_class_name(metric_name, instantiate=True, sklearn_metric=False, **kwargs):
     if sklearn_metric:
-        return setup_sklearn_metric(metric_cls_name, **kwargs)
-    return globals()[metric_cls_name]
+        return setup_sklearn_metric(metric_name, instantiate=True, **kwargs)
+    return globals()[metric_name](**kwargs) if instantiate else globals()[metric_name]
 
 
-def setup_sklearn_metric(metric_to_eval, **kw):
+def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
     if metric_to_eval in sklearn.metrics.__all__:
         metric = getattr(sklearn.metrics, metric_to_eval)
     else:
@@ -48,10 +48,10 @@ def setup_sklearn_metric(metric_to_eval, **kw):
     def modular_sklearn_metric(**kwargs):
         return ModularMetric(**{**kw, **kwargs, "metric_to_eval": metric})
 
-    return modular_sklearn_metric
+    return modular_sklearn_metric(**kw) if instantiate else modular_sklearn_metric
 
 
-def setup_synthetic_metric(metric_to_eval, **kw):
+def setup_synthetic_metric(synthetic_metric, instantiate=True, **kw):
     synthetic_funcs_modules = [
         optiwrap.metrics.synthethic_funcs,
         ax.utils.measurement.synthetic_functions,
@@ -61,12 +61,12 @@ def setup_synthetic_metric(metric_to_eval, **kw):
     def get_synth_metric():
         for module in synthetic_funcs_modules:
             try:
-                return getattr(module, metric_to_eval)
+                return getattr(module, synthetic_metric)
             except AttributeError:
                 continue
         # If we don't find the class by the end of the modules, raise attribute error
         raise AttributeError(
-            f"optiwrap synthetic function: {metric_to_eval}"
+            f"optiwrap synthetic function: {synthetic_metric}"
             f" not found in modules: {synthetic_funcs_modules}!"
         )
 
@@ -83,14 +83,14 @@ def setup_synthetic_metric(metric_to_eval, **kw):
     def modular_synthetic_metric(**kwargs):
         return ModularMetric(**{**kw, **kwargs, "metric_to_eval": metric})
 
-    return modular_synthetic_metric
+    return modular_synthetic_metric(**kw) if instantiate else modular_synthetic_metric
 
 
 def _get_name(obj):
     if hasattr(obj, "__name__"):
         return obj.__name__
     elif isinstance(obj, FromBotorch):
-        # Using metrics that are FromBotorch(botorch synthethic_funcs) leaves us with
+        # Using metrics that are FromBotorch(botorch synthetic_funcs) leaves us
         # with having to rely on a private attribute to get to the funcs __name__
         # watch for breaking someday
         obj = obj._botorch_function
@@ -101,7 +101,7 @@ def _get_name(obj):
     return _get_name(obj)
 
 
-class MetericToEval(metaclass=MetricToEvalRegister):
+class MetricToEval(metaclass=MetricToEvalRegister):
     def __init__(
         self,
         *,
@@ -139,12 +139,12 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             kwargs["name"] = _get_name(metric_to_eval)
         param_names = param_names if param_names is not None else []
         self.metric_func_kwargs = metric_func_kwargs or {}
-        # self.metric_to_eval = partial(metric_to_eval, **self.metric_func_kwargs)
-        # self.metric_to_eval = metric_to_eval
-        self.metric_to_eval = MetericToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs)
+        self.metric_to_eval = MetricToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs)
         self.wrapper = wrapper or BaseWrapper()
         self.properties = properties
-        super().__init__(param_names=param_names, noise_sd=noise_sd, **kwargs)
+        super().__init__(param_names=param_names,
+                         noise_sd=noise_sd,
+                         **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs))
 
     @classmethod
     def is_available_while_running(cls) -> bool:
@@ -156,10 +156,10 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         )
         wrapper_kwargs = wrapper_kwargs or {}
         safe_kwargs = {"trial": trial, **kwargs, **wrapper_kwargs}
-        if isinstance(self.metric_to_eval, Metric):
-            return self.metric_to_eval.fetch_trial_data(
+        if isinstance(self.metric_to_eval.func, Metric):
+            return self.metric_to_eval.func.fetch_trial_data(
                 *args,
-                **get_dictionary_from_callable(self.metric_to_eval.fetch_trial_data, safe_kwargs),
+                **get_dictionary_from_callable(self.metric_to_eval.func.fetch_trial_data, safe_kwargs),
             )
         else:
             return self._fetch_trial_data_of_func(*args, **safe_kwargs)
@@ -190,7 +190,10 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def _evaluate(self, params: TParameterization, **kwargs) -> float:
         kwargs["x"] = np.array([params[p] for p in self.param_names if p in params])
-        return self.metric_to_eval(**get_dictionary_from_callable(self.metric_to_eval, kwargs))
+        return self.f(**get_dictionary_from_callable(self.metric_to_eval, kwargs))
+
+    def f(self, *args, **kwargs):
+        return self.metric_to_eval(*args, **kwargs)
 
     def clone(self) -> "Metric":
         """Create a copy of this Metric."""
@@ -227,12 +230,13 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         return f"{self.__class__.__name__}({arg_str})"
 
 
-MSE = setup_sklearn_metric("mean_squared_error")
+MSE = setup_sklearn_metric("mean_squared_error", instantiate=False)
 MeanSquaredError = MSE
-RMSE = setup_sklearn_metric("mean_squared_error", metric_func_kwargs={"squared": False})
+RMSE = setup_sklearn_metric("mean_squared_error", name="root_mean_squared_error", metric_func_kwargs={"squared": False}, instantiate=False)
 RootMeanSquaredError = RMSE
-R2 = setup_sklearn_metric("r2_score")
+R2 = setup_sklearn_metric("r2_score", instantiate=False)
 RSquared = R2
+Mean = partial(ModularMetric, metric_to_eval=np.mean)
 
 MetricFromJSON = partial(ModularMetric, metric_to_eval=metric_from_json)
 MetricFromYAML = partial(ModularMetric, metric_to_eval=metric_from_yaml)

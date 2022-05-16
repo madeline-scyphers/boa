@@ -1,7 +1,6 @@
 name: optiwrap
 channels:
 - conda-forge
-- pytorch
 - anaconda
 - defaults
 dependencies:
@@ -9,13 +8,16 @@ dependencies:
 - numpy
 - pandas
 - xarray
-- pytorch
 - click
-- torchvision
 - sqlalchemy
 - pip
 - pip:
+  - torch
+  - torchvision
+  - torchaudio
+  - ax-platform
   - PyYAML
   - pytest
   - black
   - isort
+  - -e .

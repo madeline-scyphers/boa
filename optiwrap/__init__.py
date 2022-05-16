@@ -1,4 +1,4 @@
-__version__ = "0.4.4"
+__version__ = "0.4.5"
 
 from optiwrap.ax_instantiation_utils import *  # noqa
 from optiwrap.metrics.metrics import *  # noqa

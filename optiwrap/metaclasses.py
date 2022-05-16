@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from unittest.mock import MagicMock
 
 from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_REGISTRY
 from ax.storage.metric_registry import CORE_METRIC_REGISTRY

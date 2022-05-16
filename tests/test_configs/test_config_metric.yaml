@@ -1,14 +1,9 @@
 optimization_options:
     metric:
-        synthetic_metric: hartmann4
-    experiment: {}
-    generation_strategy: {}
+        metric_name: RootMeanSquaredError
     scheduler:
         total_trials: 10
-    working_dir: "/some/path"
     experiment_name: "test_experiment"
-    # obsvar: 'ustar'
-    # output_name: 'ds_canopy.nc'
 
 model_options:
     model_specific_options:

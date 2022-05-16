@@ -82,8 +82,8 @@ def get_experiment(
         config.get("search_space_parameters"), config.get("search_space_parameter_constraints")
     )
 
-    metric = get_metric_from_config(settings["metric"], param_names=list(search_space.parameters))
-    objective = Objective(metric=metric(wrapper=wrapper), minimize=True)
+    metric = get_metric_from_config(settings["metric"], wrapper=wrapper, param_names=list(search_space.parameters))
+    objective = Objective(metric=metric, minimize=True)
 
     if "name" not in settings["experiment"]:
         if "name" in settings:

@@ -74,6 +74,10 @@ def normalize_config(config):
     config["search_space_parameters"] = list(config.get("parameters", {}).values())
     config["search_space_parameter_constraints"] = config.get("parameter_constraints", [])
 
+    config["optimization_options"] = config.get("optimization_options", {})
+    for key in ["metric", "experiment", "generation_strategy", "scheduler"]:
+        config["optimization_options"][key] = config["optimization_options"].get(key, {})
+
     return config
 
 
