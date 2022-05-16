@@ -5,14 +5,8 @@ import time
 from ax import Experiment, Objective, OptimizationConfig, Runner, SearchSpace
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.modelbridge.generation_strategy import GenerationStrategy
-from ax.service.ax_client import AxClient
 from ax.service.scheduler import Scheduler, SchedulerOptions
 from ax.service.ax_client import AxClient
-# from ax.storage.sqa_store.structs import DBSettings
-# from ax.storage.sqa_store.db import create_all_tables, get_engine, init_engine_and_session_factory
-# from ax.storage.sqa_store.decoder import Decoder
-# from ax.storage.sqa_store.encoder import Encoder
-# from ax.storage.sqa_store.sqa_config import SQAConfig
 
 from optiwrap.metrics.metrics import get_metric_from_config
 from optiwrap.utils import get_dictionary_from_callable
@@ -82,7 +76,9 @@ def get_experiment(
         config.get("search_space_parameters"), config.get("search_space_parameter_constraints")
     )
 
-    metric = get_metric_from_config(settings["metric"], wrapper=wrapper, param_names=list(search_space.parameters))
+    metric = get_metric_from_config(
+        settings["metric"], wrapper=wrapper, param_names=list(search_space.parameters)
+    )
     objective = Objective(metric=metric, minimize=True)
 
     if "name" not in settings["experiment"]:

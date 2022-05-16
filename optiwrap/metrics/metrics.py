@@ -24,12 +24,17 @@ import optiwrap.metrics.synthethic_funcs
 
 
 def get_metric_from_config(config, instantiate=True, **kwargs):
+    if config.get("metric"):
+        config = config["metric"]
     if config.get("metric_name"):
         if config.get("sklearn_metric"):
             kwargs["sklearn_metric"] = config["sklearn_metric"]
         metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
-    if config.get("synthetic_metric"):
+    elif config.get("synthetic_metric"):
         metric = setup_synthetic_metric(instantiate=instantiate, **config, **kwargs)
+    else:
+        # TODO link to docs for configuration when it exists
+        raise KeyError("No valid configuration for metric found.")
     return metric
 
 
@@ -51,26 +56,26 @@ def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
     return modular_sklearn_metric(**kw) if instantiate else modular_sklearn_metric
 
 
-def setup_synthetic_metric(synthetic_metric, instantiate=True, **kw):
+def get_synth_func(synthetic_metric):
     synthetic_funcs_modules = [
         optiwrap.metrics.synthethic_funcs,
         ax.utils.measurement.synthetic_functions,
         botorch.test_functions.synthetic,
     ]
+    for module in synthetic_funcs_modules:
+        try:
+            return getattr(module, synthetic_metric)
+        except AttributeError:
+            continue
+    # If we don't find the class by the end of the modules, raise attribute error
+    raise AttributeError(
+        f"optiwrap synthetic function: {synthetic_metric}"
+        f" not found in modules: {synthetic_funcs_modules}!"
+    )
 
-    def get_synth_metric():
-        for module in synthetic_funcs_modules:
-            try:
-                return getattr(module, synthetic_metric)
-            except AttributeError:
-                continue
-        # If we don't find the class by the end of the modules, raise attribute error
-        raise AttributeError(
-            f"optiwrap synthetic function: {synthetic_metric}"
-            f" not found in modules: {synthetic_funcs_modules}!"
-        )
 
-    metric = get_synth_metric()
+def setup_synthetic_metric(synthetic_metric, instantiate=True, **kw):
+    metric = get_synth_func(synthetic_metric)
 
     if isclass(metric) and issubclass(metric, ax.utils.measurement.synthetic_functions):
         metric = metric()  # if they pass a ax synthetic metric class, not instance
@@ -113,7 +118,9 @@ class MetricToEval(metaclass=MetricToEvalRegister):
         self.name = _get_name(func)
 
     def __call__(self, *args, **kwargs):
-        return self.func(*args, **get_dictionary_from_callable(self.func, {**self.func_kwargs, **kwargs}))
+        return self.func(
+            *args, **get_dictionary_from_callable(self.func, {**self.func_kwargs, **kwargs})
+        )
 
     def register_cls(self):
         return {
@@ -142,9 +149,11 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         self.metric_to_eval = MetricToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs)
         self.wrapper = wrapper or BaseWrapper()
         self.properties = properties
-        super().__init__(param_names=param_names,
-                         noise_sd=noise_sd,
-                         **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs))
+        super().__init__(
+            param_names=param_names,
+            noise_sd=noise_sd,
+            **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs),
+        )
 
     @classmethod
     def is_available_while_running(cls) -> bool:
@@ -159,7 +168,9 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         if isinstance(self.metric_to_eval.func, Metric):
             return self.metric_to_eval.func.fetch_trial_data(
                 *args,
-                **get_dictionary_from_callable(self.metric_to_eval.func.fetch_trial_data, safe_kwargs),
+                **get_dictionary_from_callable(
+                    self.metric_to_eval.func.fetch_trial_data, safe_kwargs
+                ),
             )
         else:
             return self._fetch_trial_data_of_func(*args, **safe_kwargs)
@@ -214,7 +225,9 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             index_of_metric = None
         p_b4_metric = parents[:index_of_metric]
 
-        wrapper_state = serialize_init_args(self, parents=p_b4_metric, match_private=True, exclude_fields=["wrapper"])
+        wrapper_state = serialize_init_args(
+            self, parents=p_b4_metric, match_private=True, exclude_fields=["wrapper"]
+        )
 
         # wrapper_state = convert_type(wrapper_state, {Path: str})
         return {"__type": self.__class__.__name__, **wrapper_state}
@@ -232,8 +245,15 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
 MSE = setup_sklearn_metric("mean_squared_error", instantiate=False)
 MeanSquaredError = MSE
-RMSE = setup_sklearn_metric("mean_squared_error", name="root_mean_squared_error", metric_func_kwargs={"squared": False}, instantiate=False)
+mean_squared_error = MSE
+RMSE = setup_sklearn_metric(
+    "mean_squared_error",
+    name="root_mean_squared_error",
+    metric_func_kwargs={"squared": False},
+    instantiate=False,
+)
 RootMeanSquaredError = RMSE
+root_mean_squared_error = RMSE
 R2 = setup_sklearn_metric("r2_score", instantiate=False)
 RSquared = R2
 Mean = partial(ModularMetric, metric_to_eval=np.mean)

@@ -9,7 +9,6 @@ skip_glob = ["*env*/*"]
 line-length = 100
 preview=true
 # These are regular expressions (hence the \. is escaping the ., and not a literal \.)
-include = 'optiwrap'
 exclude = '''
 (
     /(\.git
@@ -22,9 +21,6 @@ exclude = '''
     | build
     | dist
     | docs/*
-    )/
-    | .*\.yaml
-    | .*\.yml
-    | __pycache__
+    )
 )
 '''

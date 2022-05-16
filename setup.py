@@ -9,7 +9,9 @@ from setuptools import find_packages, setup
 
 # Get version
 def read(*names, **kwargs):
-    with io.open(os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")) as fp:
+    with io.open(
+        os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")
+    ) as fp:
         return fp.read()
 
 
@@ -26,17 +28,18 @@ version = find_version("optiwrap", "__init__.py")
 
 # set the install requirements
 torch_min = "1.9"
-install_requires = [">=".join(["torch", torch_min]),
-                    "gpytorch>=1.5",
-                    "botorch>=0.5",
-                    "ax-platform>=0.2.0",
-                    "scikit-learn",
-                    "scipy",
-                    "pandas",
-                    "numpy",
-                    "click",
-                    "PyYAML"
-                    ]
+install_requires = [
+    ">=".join(["torch", torch_min]),
+    "gpytorch>=1.5",
+    "botorch>=0.5",
+    "ax-platform>=0.2.0",
+    "scikit-learn",
+    "scipy",
+    "pandas",
+    "numpy",
+    "click",
+    "PyYAML",
+]
 
 # Run the setup
 setup(
@@ -52,13 +55,15 @@ setup(
         "Source": "https://github.com/madeline-scyphers/optiwrap",
     },
     license="MIT",
-    classifiers=["Development Status :: 4 - Beta",
-                 "Programming Language :: Python :: 3",
-                 "Programming Language :: Python :: 3.7",
-                 "Programming Language :: Python :: 3.8",
-                 "Programming Language :: Python :: 3.9",
-                 "Programming Language :: Python :: 3.10",
-                 "Operating System :: OS Independent",],
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Operating System :: OS Independent",
+    ],
     packages=find_packages(exclude=["test", "test.*"]),
     python_requires=">=3.7",
     install_requires=install_requires,

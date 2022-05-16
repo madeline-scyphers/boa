@@ -4,18 +4,19 @@ import subprocess
 import json
 
 from ax import Trial
-from ax.utils.measurement.synthetic_functions import hartmann6
 import numpy as np
 
-from optiwrap import BaseWrapper, make_trial_dir, get_trial_dir
+from optiwrap import BaseWrapper, make_trial_dir, get_trial_dir, get_synth_func
+
 
 class TestWrapper(BaseWrapper):
     _processes = []
     model_dir = Path(__file__).parent
 
-    def __init__(self, ex_settings, experiment_dir):
+    def __init__(self, ex_settings, experiment_dir, model_settings):
         self.ex_settings = ex_settings
         self.experiment_dir = experiment_dir
+        self.model_settings = model_settings
 
     def run_model(self, trial: Trial):
         trial_dir = make_trial_dir(self.experiment_dir, trial.index).resolve()
@@ -24,13 +25,16 @@ class TestWrapper(BaseWrapper):
 
         os.chdir(model_dir)
 
-        cmd = (f"python synth_func_cli.py --output_dir {trial_dir} --standard_dev {self.ex_settings['metric']['noise_sd']}"
-               f" {' '.join(str(val) for val in trial.arm.parameters.values())}")
+        cmd = (
+            f"python synth_func_cli.py --output_dir {trial_dir}"
+            f" --standard_dev {self.ex_settings['metric']['noise_sd']}"
+            f" --input_size {self.model_settings['input_size']}"
+            f" --function {self.model_settings['function']}"
+            f" -- {' '.join(str(val) for val in trial.arm.parameters.values())}"
+        )
 
         args = cmd.split()
-        popen = subprocess.Popen(
-            args, stdout=subprocess.PIPE, universal_newlines=True
-        )
+        popen = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
         self._processes.append(popen)
 
     def set_trial_status(self, trial: Trial) -> None:
@@ -49,7 +53,13 @@ class TestWrapper(BaseWrapper):
 
         # return dict(a=data["output"])
         # return dict(y_true=[hartmann6.fmin], y_pred=[np.mean(data["output"])])
-        return dict(y_true=np.full(10, hartmann6.fmin), y_pred=data["output"])
+        return dict(
+            y_true=np.full(
+                self.model_settings["input_size"],
+                get_synth_func(self.model_settings["function"]).fmin,
+            ),
+            y_pred=data["output"],
+        )
 
 
 def exit_handler():

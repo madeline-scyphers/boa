@@ -1,35 +1,12 @@
 optimization_options:
     metric:
-#        metric_name: Mean
-        metric_name: MSE
+        metric_name: RMSE
         noise_sd: .1
     scheduler:
-        total_trials: 20
-    model_dir: scripts
+        total_trials: 15
+    model_dir: tests/scripts
     experiment_name: synthetic_func_exp
 
-
-parameters:
-    x1:
-        type: range
-        bounds: [0., 1.]
-
-    x2:
-        type: range
-        bounds: [0., 1.]
-
-    x3:
-        type: range
-        bounds: [0., 1.]
-
-    x4:
-        type: range
-        bounds: [0., 1.]
-
-    x5:
-        type: range
-        bounds: [0., 1.]
-
-    x6:
-        type: range
-        bounds: [0., 1.]
+model_options:
+    input_size: 10
+    function: branin

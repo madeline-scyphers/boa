@@ -34,12 +34,16 @@ def cd_and_cd_back(path=None):
         os.chdir(cwd)
 
 
-def cd_and_cd_back_dec(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        with cd_and_cd_back():
-            return func(*args, **kwargs)
-    return wrapper
+def cd_and_cd_back_dec(path=None):
+    def _cd_and_cd_back_dec(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            with cd_and_cd_back():
+                return func(*args, **kwargs)
+
+        return wrapper
+
+    return _cd_and_cd_back_dec
 
 
 def load_experiment_config(config_file):

@@ -3,21 +3,7 @@ from pathlib import Path
 import pickle
 import logging
 import json
-from re import I
-from typing import (
-    Any,
-    Dict,
-    Generator,
-    Iterable,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    cast,
-    Callable
-)
+from typing import Any, Dict, Optional, Type, Callable
 
 
 from ax.storage.json_store.encoder import object_to_json
@@ -30,11 +16,11 @@ from ax.service.scheduler import Scheduler, SchedulerOptions
 from ax.exceptions.storage import JSONEncodeError
 from ax.storage.json_store.save import save_experiment as ax_save_experiment
 from ax.storage.json_store.load import load_experiment as ax_load_experiment
-from ax.storage.json_store.registry import(
+from ax.storage.json_store.registry import (
     CORE_CLASS_ENCODER_REGISTRY,
     CORE_ENCODER_REGISTRY,
     CORE_DECODER_REGISTRY,
-    CORE_CLASS_DECODER_REGISTRY
+    CORE_CLASS_DECODER_REGISTRY,
 )
 
 from optiwrap.runner import WrappedJobRunner
@@ -108,9 +94,7 @@ def scheduler_from_json_file(
 def scheduler_to_json_snapshot(
     scheduler: Scheduler,
     encoder_registry: Optional[Dict[Type, Callable[[Any], Dict[str, Any]]]] = None,
-    class_encoder_registry: Optional[
-        Dict[Type, Callable[[Any], Dict[str, Any]]]
-    ] = None,
+    class_encoder_registry: Optional[Dict[Type, Callable[[Any], Dict[str, Any]]]] = None,
 ) -> Dict[str, Any]:
     """Serialize this `AxClient` to JSON to be able to interrupt and restart
     optimization and save it to file by the provided path.
@@ -138,12 +122,11 @@ def scheduler_to_json_snapshot(
         ),
     }
 
+
 def scheduler_from_json_snapshot(
     serialized: Dict[str, Any],
     decoder_registry: Optional[Dict[str, Type]] = None,
-    class_decoder_registry: Optional[
-        Dict[str, Callable[[Dict[str, Any]], Any]]
-    ] = None,
+    class_decoder_registry: Optional[Dict[str, Callable[[Dict[str, Any]], Any]]] = None,
     **kwargs,
 ) -> Scheduler:
     """Recreate an `AxClient` from a JSON snapshot."""

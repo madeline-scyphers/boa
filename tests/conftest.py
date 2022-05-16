@@ -1,7 +1,10 @@
+import os
+from functools import partial
+
 import pytest
 from pathlib import Path
 
-from optiwrap import load_experiment_config
+from optiwrap import load_experiment_config, cd_and_cd_back
 from scripts.run import main
 
 
@@ -28,5 +31,18 @@ def metric_optimization_options(metric_config):
 
 
 @pytest.fixture
-def run_script_main():
-    return main
+def cd_to_root_and_back():
+    with cd_and_cd_back(Path(__file__).resolve().parent.parent):
+        yield
+
+
+@pytest.fixture(scope="session")
+def cd_to_root_and_back_session():
+    with cd_and_cd_back(Path(__file__).resolve().parent.parent):
+        yield
+
+
+@pytest.fixture(scope="session")
+def script_main_run(tmp_path_factory, cd_to_root_and_back_session):
+    output_dir = tmp_path_factory.mktemp("output")
+    yield main(output_dir)
