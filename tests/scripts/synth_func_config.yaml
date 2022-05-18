@@ -2,6 +2,12 @@ optimization_options:
     metric:
         metric_name: RMSE
         noise_sd: .1
+    generation_strategy:
+        steps:
+            - model: SOBOL
+              num_trials: 5
+            - model: GPEI
+              num_trials: -1
     scheduler:
         total_trials: 15
     model_dir: tests/scripts

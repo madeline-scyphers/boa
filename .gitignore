@@ -4,6 +4,9 @@ output/
 # docs build
 docs/_build
 
+# scratch work
+scratch
+
 # Distribution / packaging
 .Python
 env/

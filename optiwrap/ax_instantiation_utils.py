@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import copy
 import time
 
 from ax import Experiment, Objective, OptimizationConfig, Runner, SearchSpace
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
-from ax.modelbridge.generation_strategy import GenerationStrategy
+from ax.modelbridge.generation_strategy import GenerationStrategy, GenerationStep
+from ax.modelbridge.registry import Models
 from ax.service.scheduler import Scheduler, SchedulerOptions
 from ax.service.ax_client import AxClient
 
@@ -20,7 +22,27 @@ def instantiate_search_space_from_json(
     return AxClient.make_search_space(parameters, parameter_constraints)
 
 
-def generation_strategy_from_experiment(experiment: Experiment, config: dict) -> GenerationStrategy:
+def get_generation_strategy(config: dict, experiment: Experiment = None):
+    if config["steps"]:
+        return generation_strategy_from_config(config)
+    return choose_generation_strategy_from_experiment(experiment=experiment, config=config)
+
+
+def generation_strategy_from_config(config):
+    config_ = copy.deepcopy(config)
+    for i, step in enumerate(config_["steps"]):
+        try:
+            step["model"] = Models[step["model"]]
+        except KeyError:
+            step["model"] = Models(step["model"])
+        config_["steps"][i] = GenerationStep(**step)
+
+    return GenerationStrategy(**get_dictionary_from_callable(GenerationStrategy.__init__, config_))
+
+
+def choose_generation_strategy_from_experiment(
+    experiment: Experiment, config: dict
+) -> GenerationStrategy:
     return choose_generation_strategy(
         search_space=experiment.search_space,
         **get_dictionary_from_callable(choose_generation_strategy, config),
@@ -44,8 +66,8 @@ def get_scheduler(
             config["optimization_options"]["generation_strategy"]["num_trials"] = config[
                 "optimization_options"
             ]["scheduler"]["total_trials"]
-        generation_strategy = generation_strategy_from_experiment(
-            experiment, config["optimization_options"]["generation_strategy"]
+        generation_strategy = get_generation_strategy(
+            config=config["optimization_options"]["generation_strategy"], experiment=experiment
         )
     # db_settings = DBSettings(
     #     url="sqlite:///foo.db",

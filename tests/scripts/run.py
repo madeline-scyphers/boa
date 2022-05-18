@@ -7,6 +7,8 @@ from pathlib import Path
 import shutil
 import tempfile
 
+from ax.service.utils.report_utils import exp_to_df
+
 try:
     from wrappers import TestWrapper
 except ImportError:
@@ -65,6 +67,8 @@ def run_opt(output_dir):
     logging.info(scheduler.experiment.fetch_data().df)
     print(pformat(scheduler.get_best_trial()))
     print(scheduler.experiment.fetch_data().df)
+    print(exp_to_df(scheduler.experiment))
+
     logging.info("\nTrials completed! Total run time: %d", time.time() - start)
     return scheduler, config
 

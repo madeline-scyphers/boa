@@ -21,6 +21,12 @@ def metric_config():
 
 
 @pytest.fixture
+def gen_strat1_config():
+    config_path = Path(__file__).parent / "test_configs/test_config_gen_strat1.yaml"
+    return load_experiment_config(config_path)
+
+
+@pytest.fixture
 def synth_optimization_options(synth_config):
     return synth_config["optimization_options"]
 

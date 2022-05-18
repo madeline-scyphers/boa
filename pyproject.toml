@@ -4,7 +4,6 @@ multi_line_output = 3
 py_version = 39
 skip_glob = ["*env*/*"]
 
-
 [tool.black]
 line-length = 100
 preview=true
