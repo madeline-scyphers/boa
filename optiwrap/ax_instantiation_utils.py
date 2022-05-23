@@ -23,12 +23,13 @@ def instantiate_search_space_from_json(
 
 
 def get_generation_strategy(config: dict, experiment: Experiment = None):
-    if config["steps"]:
-        return generation_strategy_from_config(config)
+    if config.get("steps"):  # if they are explicitly defining the steps, use those to make gen strat
+        return generation_strategy_from_config(config=config, experiment=experiment)
+    # else auto generate the gen strat
     return choose_generation_strategy_from_experiment(experiment=experiment, config=config)
 
 
-def generation_strategy_from_config(config):
+def generation_strategy_from_config(config: dict, experiment: Experiment = None):
     config_ = copy.deepcopy(config)
     for i, step in enumerate(config_["steps"]):
         try:
@@ -37,7 +38,10 @@ def generation_strategy_from_config(config):
             step["model"] = Models(step["model"])
         config_["steps"][i] = GenerationStep(**step)
 
-    return GenerationStrategy(**get_dictionary_from_callable(GenerationStrategy.__init__, config_))
+    gs = GenerationStrategy(**get_dictionary_from_callable(GenerationStrategy.__init__, config_))
+    if experiment:
+        gs.experiment = experiment
+    return gs
 
 
 def choose_generation_strategy_from_experiment(
