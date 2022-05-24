@@ -1,0 +1,8 @@
+name: optiwrap-docs
+channels:
+  - defaults
+dependencies:
+  - pip
+  - pip:
+    - myst-nb
+    - pydata-sphinx-theme

@@ -1,3 +1,13 @@
+"""
+Metrics
+
+Built-in metrics:
+
+- MSE, MeanSquaredError
+- RMSE, RootMeanSquaredError
+- R2, RSquared
+"""
+
 from __future__ import annotations
 
 from functools import partial
