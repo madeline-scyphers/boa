@@ -24,13 +24,18 @@ Key features
   - Choice of built-in evaluation metrics, but it’s also easy to implement custom metrics
 
 
+Contents
+--------
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-   getting_started
+   overview
    user_guide/index
+   examples
+   troubleshooting
+   changelog
    Code reference <code_reference>
+   gallery
 
 
 Indices and tables
