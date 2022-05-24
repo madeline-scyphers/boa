@@ -35,6 +35,9 @@ From the root directory of the cloned repository, run::
 
 This will install optiwrap in editable mode.
 
+.. todo::
+   - instructions for installing with pip
+   - instructions for updating
 
 ********
 Test run
