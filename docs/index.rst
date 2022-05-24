@@ -2,7 +2,7 @@ Welcome to optiwrap's documentation!
 ====================================
 
 ``Optiwrap`` is a high-level Bayesian optimization framework and model wrapping tool. It provides an easy-to-use interface
-between models and the python libraries ``Ax`` and ``BoTorch``.
+between models and the python libraries `Ax <https://ax.dev>`_ and `BoTorch <https://botorch.org>`_.
 
 Key features
 ------------
@@ -23,6 +23,9 @@ Key features
   - Customizable objective functions, multi-objective optimization, acquisition functions, etc
   - Choice of built-in evaluation metrics, but it’s also easy to implement custom metrics
 
+.. important::
+
+    This site is still under construction. More content will be added soon!
 
 Contents
 --------
