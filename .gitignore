@@ -3,6 +3,8 @@ output/
 
 # docs build
 docs/_build
+docs/api
+docs/_autosummary
 
 # scratch work
 scratch

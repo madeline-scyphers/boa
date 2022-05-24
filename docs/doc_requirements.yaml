@@ -1,0 +1,8 @@
+name: optiwrap-docs
+channels:
+  - defaults
+dependencies:
+  - pip
+  - pip:
+    - m2r2
+    - pydata-sphinx-theme

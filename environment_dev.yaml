@@ -1,0 +1,24 @@
+name: optiwrap-dev
+channels:
+- conda-forge
+- anaconda
+- defaults
+dependencies:
+- python=3.9
+- numpy
+- pandas
+- xarray
+- click
+- sqlalchemy
+- pip
+- pip:
+  - torch
+  - torchvision
+  - torchaudio
+  - ax-platform
+  - PyYAML
+  - pytest
+  - black
+  - isort
+  - conda-merge
+  - -e .
