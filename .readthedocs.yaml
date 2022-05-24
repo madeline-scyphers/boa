@@ -6,4 +6,4 @@ build:
     python: "mambaforge-4.10"
 
 conda:
-  environment: docs/doc_environment.yaml
+  environment: doc_environment.yaml
