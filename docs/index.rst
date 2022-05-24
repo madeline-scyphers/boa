@@ -31,7 +31,7 @@ Contents
 
    overview
    user_guide/index
-   examples
+   notebooks/index
    troubleshooting
    changelog
    Code reference <code_reference>

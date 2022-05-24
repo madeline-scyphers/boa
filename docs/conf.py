@@ -38,11 +38,24 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.autosectionlabel',
-    'm2r2'
+    'myst_nb',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.ipynb': 'myst-nb',
+    '.md': 'myst-nb',
+    '.myst': 'myst-nb',
+    }
+
+# Use saved output in notebooks rather than executing on build
+# Since the current examples are not part of optiwrap, they need to execute locally
+nb_execution_mode = "off"
+
+html_js_files = ["https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

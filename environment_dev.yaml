@@ -10,6 +10,7 @@ dependencies:
 - xarray
 - click
 - sqlalchemy
+- jupyter
 - pip
 - pip:
   - torch

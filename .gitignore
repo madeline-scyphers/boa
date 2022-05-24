@@ -5,6 +5,7 @@ output/
 docs/_build
 docs/api
 docs/_autosummary
+docs/jupyter_execute
 
 # scratch work
 scratch
