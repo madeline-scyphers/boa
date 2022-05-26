@@ -55,7 +55,7 @@ jobs:
         id: cache
 
       - name: Update environment
-        run: mamba env update -n fetch3-dev -f environment.yaml
+        run: mamba env update -n optiwrap -f environment.yaml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Run tests
