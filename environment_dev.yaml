@@ -4,29 +4,29 @@ channels:
 - anaconda
 - defaults
 dependencies:
-- python=3.10
-- click
-- jupyter
+- python=3.9
 - numpy
 - pandas
 - sphinx
-- sqlalchemy
 - xarray
-- flake8
 - invoke
+- jupyter
+- click
+- sqlalchemy
+- flake8
 - pip
 - pip:
-  - PyYAML
-  - ax-platform
-  - black
-  - black[jupyter]
-  - conda-merge
-  - isort
-  - myst-nb
-  - pydata-sphinx-theme
-  - pytest
   - torch
   - torchaudio
   - torchvision
+  - PyYAML
+  - ax-platform
+  - isort
+  - pytest
+  - black
+  - black[jupyter]
+  - pydata-sphinx-theme
+  - myst-nb
   - flakeheaven
+  - conda-merge
   - -e .
