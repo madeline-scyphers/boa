@@ -1,12 +1,12 @@
-import os
-from pathlib import Path
-import subprocess
 import json
+import os
+import subprocess
+from pathlib import Path
 
-from ax import Trial
 import numpy as np
+from ax import Trial
 
-from optiwrap import BaseWrapper, make_trial_dir, get_trial_dir, get_synth_func
+from optiwrap import BaseWrapper, get_synth_func, get_trial_dir, make_trial_dir
 
 
 class TestWrapper(BaseWrapper):

@@ -51,12 +51,18 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: ${{ matrix.prefix }}
-          key: ${{ matrix.label }}-conda-${{ hashFiles('environment.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+          key: ${{ matrix.label }}-conda-${{ hashFiles('environment_dev.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
       - name: Update environment
-        run: mamba env update -n optiwrap -f environment.yaml
+        run: mamba env update -n optiwrap -f environment_dev.yaml
         if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: Lint
+        run: |
+          invoke lint
+          invoke black --checkonly
+          invoke isort --checkonly
 
       - name: Run tests
         shell: bash -l {0}

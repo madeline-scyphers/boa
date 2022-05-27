@@ -11,26 +11,26 @@ Built-in metrics:
 from __future__ import annotations
 
 from functools import partial
-from typing import Callable, Optional
 from inspect import isclass
+from typing import Callable, Optional
 
+import ax.utils.measurement.synthetic_functions
+import botorch.test_functions.synthetic
 import numpy as np
 import pandas as pd
 import sklearn.metrics
 from ax import Metric
-from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.core.base_trial import BaseTrial
 from ax.core.data import Data
 from ax.core.types import TParameterization
+from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
-import ax.utils.measurement.synthetic_functions
-import botorch.test_functions.synthetic
 
+import optiwrap.metrics.synthethic_funcs
+from optiwrap.metaclasses import MetricRegister, MetricToEvalRegister
 from optiwrap.metrics.metric_funcs import metric_from_json, metric_from_yaml
 from optiwrap.utils import get_dictionary_from_callable, serialize_init_args
 from optiwrap.wrapper import BaseWrapper
-from optiwrap.metaclasses import MetricRegister, MetricToEvalRegister
-import optiwrap.metrics.synthethic_funcs
 
 
 def get_metric_from_config(config, instantiate=True, **kwargs):

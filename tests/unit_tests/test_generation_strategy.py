@@ -1,4 +1,4 @@
-from ax.modelbridge.generation_strategy import GenerationStrategy, GenerationStep
+from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
 
 from optiwrap import get_generation_strategy

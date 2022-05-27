@@ -1,10 +1,10 @@
 from abc import ABCMeta
 from unittest.mock import MagicMock
 
+from ax.storage.json_store.encoders import runner_to_dict
 from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_REGISTRY
 from ax.storage.metric_registry import CORE_METRIC_REGISTRY
 from ax.storage.runner_registry import CORE_RUNNER_REGISTRY
-from ax.storage.json_store.encoders import runner_to_dict
 
 from optiwrap.wrapper_utils import cd_and_cd_back_dec
 
