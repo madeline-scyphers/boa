@@ -59,6 +59,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Lint
+        shell: bash -l {0}
         run: |
           invoke lint
           invoke black --checkonly
