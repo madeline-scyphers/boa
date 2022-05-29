@@ -6,8 +6,8 @@ from pathlib import Path
 
 from ax.core.base_trial import BaseTrial
 
-from optiwrap.utils import convert_type, serialize_init_args
 from optiwrap.metaclasses import WrapperRegister
+from optiwrap.utils import convert_type, serialize_init_args
 
 
 class BaseWrapper(metaclass=WrapperRegister):

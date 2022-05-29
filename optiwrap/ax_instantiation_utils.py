@@ -5,10 +5,10 @@ import time
 
 from ax import Experiment, Objective, OptimizationConfig, Runner, SearchSpace
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
-from ax.modelbridge.generation_strategy import GenerationStrategy, GenerationStep
+from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
-from ax.service.scheduler import Scheduler, SchedulerOptions
 from ax.service.ax_client import AxClient
+from ax.service.scheduler import Scheduler, SchedulerOptions
 
 from optiwrap.metrics.metrics import get_metric_from_config
 from optiwrap.utils import get_dictionary_from_callable
@@ -23,7 +23,9 @@ def instantiate_search_space_from_json(
 
 
 def get_generation_strategy(config: dict, experiment: Experiment = None):
-    if config.get("steps"):  # if they are explicitly defining the steps, use those to make gen strat
+    if config.get(
+        "steps"
+    ):  # if they are explicitly defining the steps, use those to make gen strat
         return generation_strategy_from_config(config=config, experiment=experiment)
     # else auto generate the gen strat
     return choose_generation_strategy_from_experiment(experiment=experiment, config=config)

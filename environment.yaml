@@ -8,9 +8,11 @@ dependencies:
 - numpy
 - pandas
 - xarray
+- dask
+- netCDF4
+- bottleneck
 - click
 - sqlalchemy
-- jupyter
 - pip
 - pip:
   - torch
@@ -18,7 +20,4 @@ dependencies:
   - torchaudio
   - ax-platform
   - PyYAML
-  - pytest
-  - black
-  - isort
   - -e .
