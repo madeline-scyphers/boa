@@ -40,7 +40,8 @@ install_requires = [
     "numpy",
     "click",
     "xarray",
-    "sqlalchemyPyYAML",
+    "sqlalchemy",
+    "PyYAML",
 ]
 
 # Run the setup
