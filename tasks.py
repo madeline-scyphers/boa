@@ -3,6 +3,7 @@ invoke --list
 from the command line for a list of all available commands.
 """
 import os
+import shutil
 
 from invoke import task
 
@@ -86,14 +87,16 @@ def docs(
     command,
 ):
     """Runs Sphinx to build the docs locally for testing"""
-
     print(
         """
 Running Sphinx to test the docs building
 ========================================
 """
     )
-    command.run("sphinx-build -b html docs docs/_build/html", echo=True, pty=POSIX)
+    shutil.rmtree("docs/_build")
+    shutil.rmtree("docs/api")
+    shutil.rmtree("docs/jupyter_execute")
+    command.run("sphinx-build -b html docs docs/_build", echo=True, pty=POSIX)
 
 
 @task(pre=[black, isort, lint, pytest, docs])
