@@ -1,4 +1,4 @@
-from optiwrap import get_metric_from_config, get_trial_dir
+from boa import get_metric_from_config, get_trial_dir
 
 
 def test_exp_dir_exists(script_main_run):

@@ -14,7 +14,7 @@ try:
 except ImportError:
     from .wrappers import TestWrapper
 
-from optiwrap import (
+from boa import (
     WrappedJobRunner,
     get_experiment,
     get_scheduler,

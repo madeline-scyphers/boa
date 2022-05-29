@@ -1,8 +1,4 @@
-from optiwrap import (
-    get_metric_by_class_name,
-    get_metric_from_config,
-    setup_synthetic_metric,
-)
+from boa import get_metric_by_class_name, get_metric_from_config, setup_synthetic_metric
 
 
 def test_load_metric_by_name():

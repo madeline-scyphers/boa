@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from scripts.run import main
 
-from optiwrap import cd_and_cd_back, load_experiment_config
+from boa import cd_and_cd_back, load_experiment_config
 
 
 @pytest.fixture

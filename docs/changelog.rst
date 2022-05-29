@@ -16,19 +16,19 @@ Bugfixes
 ==============
 
 ..
-    Bugfixes for the optiwrap code base
+    Bugfixes for the boa code base
 
 Configuration
 ==============
 
 ..
-    Changes to how optiwrap can be configured
+    Changes to how boa can be configured
 
 Depreciation
 ==============
 
 ..
-    Changes to optiwrap's code that deprecates previous code or behavior
+    Changes to boa's code that deprecates previous code or behavior
 
 Documentation
 ==============
@@ -41,25 +41,25 @@ Feature
 ==============
 
 ..
-    New Features added to optiwrap
+    New Features added to boa
 
 Packaging
 ==============
 
 ..
-    Changes to how optiwrap is packaged, such as dependency requirements
+- Package name changed to boa
 
 Refactor
 ==============
 
 ..
-    Changes to how optiwrap's code with no changes to behavior
+    Changes to how boa's code with no changes to behavior
 
 Removals
 ==============
 
 ..
-    BREAKING changes of code or behavior in optiwrap
+    BREAKING changes of code or behavior in boa
 
 Development
 ==============

@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from ax import Trial
 
-from optiwrap import BaseWrapper, get_synth_func, get_trial_dir, make_trial_dir
+from boa import BaseWrapper, get_synth_func, get_trial_dir, make_trial_dir
 
 
 class TestWrapper(BaseWrapper):

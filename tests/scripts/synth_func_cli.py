@@ -4,7 +4,7 @@ from pathlib import Path
 import click
 from numpy.random import default_rng
 
-from optiwrap import get_synth_func
+from boa import get_synth_func
 
 
 @click.command()

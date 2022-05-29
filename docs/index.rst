@@ -1,7 +1,7 @@
-Welcome to optiwrap's documentation!
+Welcome to boa's documentation!
 ====================================
 
-``Optiwrap`` is a high-level Bayesian optimization framework and model wrapping tool. It provides an easy-to-use interface
+``boa`` is a high-level Bayesian optimization framework and model wrapping tool. It provides an easy-to-use interface
 between models and the python libraries `Ax <https://ax.dev>`_ and `BoTorch <https://botorch.org>`_.
 
 Key features
