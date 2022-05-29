@@ -1,4 +1,4 @@
-name: optiwrap-dev
+name: boa-dev
 channels:
 - conda-forge
 - anaconda
@@ -7,19 +7,28 @@ dependencies:
 - python=3.9
 - numpy
 - pandas
+- sphinx
 - xarray
+- dask
+- netCDF4
+- bottleneck
+- invoke
+- jupyter
 - click
 - sqlalchemy
-- jupyter
+- flake8
 - pip
 - pip:
   - torch
-  - torchvision
   - torchaudio
-  - ax-platform
+  - torchvision
   - PyYAML
+  - ax-platform
+  - isort
   - pytest
   - black
-  - isort
-  - conda-merge
+  - black[jupyter]
+  - pydata-sphinx-theme
+  - myst-nb
+  - flakeheaven
   - -e .

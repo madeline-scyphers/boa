@@ -9,12 +9,12 @@ Installation
 Install Python
 ==============
 
-To use ``optiwrap``, you must first have Python and the conda package manager
+To use ``boa``, you must first have Python and the conda package manager
 installed. There are two options for this:
 
 - **Install Anaconda**: This is the recommended option for those who are new to
   Python. Anaconda comes with a few choices of IDEs and Jupyter Notebook, which can be used to run interactive Python
-  notebooks such as those in optiwrap's examples. To install Anaconda, see
+  notebooks such as those in boa's examples. To install Anaconda, see
   `directions for installing Anaconda <https://docs.anaconda.com/anaconda/install/index.html>`_.
 - **Install Miniconda**: If you want a more minimal installation without any extra
   packages, would prefer to handle installing a Python IDE yourself, and would prefer
@@ -24,16 +24,16 @@ installed. There are two options for this:
   and Python. To install Miniconda, see
   `directions for installing Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_.
 
-Install optiwrap
-================
+Install boa
+===========
 
-Clone the optiwrap repository from `optiwrap's GitHub page <https://github.com/madeline-scyphers/optiwrap>`_.
+Clone the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
 
 From the root directory of the cloned repository, run::
 
     conda env create --file environment.yaml
 
-This will install optiwrap in editable mode.
+This will install boa in editable mode.
 
 .. todo::
    - instructions for installing with pip

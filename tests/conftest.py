@@ -1,11 +1,11 @@
 import os
 from functools import partial
-
-import pytest
 from pathlib import Path
 
-from optiwrap import load_experiment_config, cd_and_cd_back
+import pytest
 from scripts.run import main
+
+from boa import cd_and_cd_back, load_experiment_config
 
 
 @pytest.fixture

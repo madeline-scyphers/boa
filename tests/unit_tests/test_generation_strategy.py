@@ -1,7 +1,7 @@
-from ax.modelbridge.generation_strategy import GenerationStrategy, GenerationStep
+from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
 
-from optiwrap import get_generation_strategy
+from boa import get_generation_strategy
 
 
 def test_gen_steps_from_config(gen_strat1_config):

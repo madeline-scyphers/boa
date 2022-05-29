@@ -23,3 +23,11 @@ exclude = '''
     )
 )
 '''
+
+[tool.flakeheaven]
+# make output nice
+format = "grouped"
+# 80 chars aren't enough in 21 century
+max_line_length = 100
+# show line of source code in output
+show_source = true

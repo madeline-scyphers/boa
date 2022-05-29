@@ -7,12 +7,12 @@ Code reference
     :template: custom-module-template.rst
     :recursive:
 
-    optiwrap.metrics
-    optiwrap.ax_instantiation_utils
-    optiwrap.metaclasses
-    optiwrap.runner
-    optiwrap.scheduler
-    optiwrap.storage
-    optiwrap.utils
-    optiwrap.wrapper
-    optiwrap.wrapper_utils
+    boa.metrics
+    boa.ax_instantiation_utils
+    boa.metaclasses
+    boa.runner
+    boa.scheduler
+    boa.storage
+    boa.utils
+    boa.wrapper
+    boa.wrapper_utils

@@ -8,3 +8,4 @@ User guide
     getting_started
     wrapper
     configuration
+    contributing

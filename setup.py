@@ -24,12 +24,13 @@ def find_version(*file_paths):
 
 
 readme = open("README.md").read()
-version = find_version("optiwrap", "__init__.py")
+version = find_version("boa", "__init__.py")
 
 # set the install requirements
-torch_min = "1.9"
 install_requires = [
-    ">=".join(["torch", torch_min]),
+    "torch>=1.9",
+    "torchvision",
+    "torchaudio",
     "gpytorch>=1.5",
     "botorch>=0.5",
     "ax-platform>=0.2.0",
@@ -38,21 +39,23 @@ install_requires = [
     "pandas",
     "numpy",
     "click",
+    "xarray",
+    "sqlalchemy",
     "PyYAML",
 ]
 
 # Run the setup
 setup(
-    name="optiwrap",
+    name="boa",
     version=version,
     description="An implementation of Gaussian Processes in Pytorch",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Madeline Scyphers, Justine Missik",
-    url="https://github.com/madeline-scyphers/optiwrap",
+    url="https://github.com/madeline-scyphers/boa",
     author_email="madelinescyphers@gmail.com, jemissik@gmail.com",
     project_urls={
-        "Source": "https://github.com/madeline-scyphers/optiwrap",
+        "Source": "https://github.com/madeline-scyphers/boa",
     },
     license="MIT",
     classifiers=[
@@ -68,7 +71,8 @@ setup(
     python_requires=">=3.7",
     install_requires=install_requires,
     extras_require={
-        "dev": ["black", "black[jupyter]", "isort", "twine", "pre-commit"],
+        "dev": ["black", "black[jupyter]", "isort", "flake8", "flakeheaven", "pytest", "invoke"],
+        "docs": ["sphinx", "myst-nb", "pydata-sphinx-theme"],
+        "examples": ["jupyter", "hvplot"],
     },
-    test_suite="test",
 )
