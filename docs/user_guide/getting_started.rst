@@ -27,7 +27,7 @@ installed. There are two options for this:
 Install boa
 ===========
 
-Clone the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/optiwrap>`_.
+Clone the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
 
 From the root directory of the cloned repository, run::
 

@@ -52,10 +52,10 @@ setup(
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Madeline Scyphers, Justine Missik",
-    url="https://github.com/madeline-scyphers/optiwrap",
+    url="https://github.com/madeline-scyphers/boa",
     author_email="madelinescyphers@gmail.com, jemissik@gmail.com",
     project_urls={
-        "Source": "https://github.com/madeline-scyphers/optiwrap",
+        "Source": "https://github.com/madeline-scyphers/boa",
     },
     license="MIT",
     classifiers=[
