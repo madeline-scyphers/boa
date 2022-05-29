@@ -1,6 +1,6 @@
-########################
-Contributing To Optiwrap
-########################
+###################
+Contributing to boa
+###################
 
 Format the code and lint it (check the style)
 ---------------------------------------------

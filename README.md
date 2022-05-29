@@ -1,6 +1,6 @@
 WIP
 
-[Click here for optiwrap's documentation](https://optiwrap.readthedocs.io/)
+[Click here for boa's documentation](https://optiwrap.readthedocs.io/)
 
 Install requirements:
 - Install environment.yaml

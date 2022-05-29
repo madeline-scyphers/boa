@@ -1,4 +1,4 @@
-name: optiwrap-dev
+name: boa-dev
 channels:
 - conda-forge
 - anaconda

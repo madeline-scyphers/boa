@@ -24,7 +24,7 @@ def find_version(*file_paths):
 
 
 readme = open("README.md").read()
-version = find_version("optiwrap", "__init__.py")
+version = find_version("boa", "__init__.py")
 
 # set the install requirements
 install_requires = [
@@ -46,7 +46,7 @@ install_requires = [
 
 # Run the setup
 setup(
-    name="optiwrap",
+    name="boa",
     version=version,
     description="An implementation of Gaussian Processes in Pytorch",
     long_description=readme,

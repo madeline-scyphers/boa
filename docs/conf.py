@@ -15,12 +15,12 @@ import sys
 
 # sys.path.insert(0, os.path.abspath('.'))
 # sys.path.insert(0, os.path.abspath('..'))
-sys.path.insert(0, os.path.abspath("../optiwrap/"))
+sys.path.insert(0, os.path.abspath("../boa/"))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'optiwrap'
+project = 'boa'
 copyright = '2022, Madeline Scyphers, Justine Missik'
 author = 'Madeline Scyphers, Justine Missik'
 
@@ -52,7 +52,7 @@ source_suffix = {
     }
 
 # Use saved output in notebooks rather than executing on build
-# Since the current examples are not part of optiwrap, they need to execute locally
+# Since the current examples are not part of boa, they need to execute locally
 nb_execution_mode = "off"
 
 html_js_files = ["https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"]

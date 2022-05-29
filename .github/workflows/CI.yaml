@@ -22,15 +22,15 @@ jobs:
         include:
           - os: ubuntu-latest
             label: linux-64
-            prefix: /usr/share/miniconda3/envs/optiwrap
+            prefix: /usr/share/miniconda3/envs/boa
 
           - os: macos-latest
             label: osx-64
-            prefix: /Users/runner/miniconda3/envs/optiwrap
+            prefix: /Users/runner/miniconda3/envs/boa
 
           - os: windows-latest
             label: win-64
-            prefix: C:\Miniconda3\envs\optiwrap
+            prefix: C:\Miniconda3\envs\boa
 
     name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
@@ -42,7 +42,7 @@ jobs:
         with:
             miniforge-variant: Mambaforge
             miniforge-version: latest
-            activate-environment: optiwrap
+            activate-environment: boa
             use-mamba: true
 
       - name: Set cache date
@@ -55,7 +55,7 @@ jobs:
         id: cache
 
       - name: Update environment
-        run: mamba env update -n optiwrap -f environment_dev.yaml
+        run: mamba env update -n boa -f environment_dev.yaml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Lint
