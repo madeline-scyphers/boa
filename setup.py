@@ -40,8 +40,7 @@ install_requires = [
     "numpy",
     "click",
     "xarray",
-    "sqlalchemy"
-    "PyYAML",
+    "sqlalchemyPyYAML",
 ]
 
 # Run the setup
@@ -73,6 +72,6 @@ setup(
     extras_require={
         "dev": ["black", "black[jupyter]", "isort", "flake8", "flakeheaven", "pytest", "invoke"],
         "docs": ["sphinx", "myst-nb", "pydata-sphinx-theme"],
-        "examples": ["jupyter", "hvplot"]
+        "examples": ["jupyter", "hvplot"],
     },
 )
