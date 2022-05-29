@@ -9,6 +9,9 @@ dependencies:
 - pandas
 - sphinx
 - xarray
+- dask
+- netCDF4
+- bottleneck
 - invoke
 - jupyter
 - click
@@ -28,5 +31,4 @@ dependencies:
   - pydata-sphinx-theme
   - myst-nb
   - flakeheaven
-  - conda-merge
   - -e .
