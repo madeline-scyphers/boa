@@ -47,6 +47,8 @@ Packaging
 ==============
 
 ..
+    Changes to how boa is packaged, such as dependency requirements
+
 - Package name changed to boa
 
 Refactor
