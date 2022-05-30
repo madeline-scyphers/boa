@@ -1,0 +1,36 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - 'develop'
+      - 'main'
+
+  pull_request:
+    branches:
+      - 'develop'
+      - 'main'
+
+jobs:
+  windows-ci:
+    name: CI Windows
+    runs-on: "windows-latest"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: anaconda-client-env
+          environment-file: example-environment.yml
+          python-version: 3.9
+          auto-activate-base: false
+
+      - name: Lint
+        shell: pwsh
+        run: |
+          invoke lint
+          invoke black --checkonly
+          invoke isort --checkonly
+
+      - name: Run tests
+        shell: pwsh
+        run: pytest -s
