@@ -1,4 +1,4 @@
-name: ci
+name: ci-win
 
 on:
   push:
@@ -12,17 +12,43 @@ on:
       - 'main'
 
 jobs:
+#  windows-ci:
+#    name: CI Windows
+#    runs-on: "windows-latest"
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: conda-incubator/setup-miniconda@v2
+#        with:
+#          activate-environment: anaconda-client-env
+#          environment-file: environment_dev.yaml
+#          python-version: 3.9
+#          auto-activate-base: false
+#
+#      - name: Lint
+#        shell: pwsh
+#        run: |
+#          invoke lint
+#          invoke black --checkonly
+#          invoke isort --checkonly
+#
+#      - name: Run tests
+#        shell: pwsh
+#        run: pytest -s
   windows-ci:
-    name: CI Windows
-    runs-on: "windows-latest"
+    name: Ex1 (${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["windows-latest"]
+        python-version: ["3.9"]
     steps:
-      - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          activate-environment: anaconda-client-env
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          activate-environment: boa
           environment-file: environment_dev.yaml
-          python-version: 3.9
-          auto-activate-base: false
 
       - name: Lint
         shell: pwsh
