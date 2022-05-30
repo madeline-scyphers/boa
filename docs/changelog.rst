@@ -2,9 +2,83 @@
 Changelog
 #########
 
-************
+*******************
 Unreleased
-************
+*******************
+
+Highlights
+==============
+
+..
+    Include any especially major or disruptive changes here
+
+Bugfixes
+==============
+
+..
+    Bugfixes for the boa code base
+
+Configuration
+==============
+
+..
+    Changes to how boa can be configured
+
+Depreciation
+==============
+
+..
+    Changes to boa's code that deprecates previous code or behavior
+
+Documentation
+==============
+
+..
+    Major changes to documentation and policies. Small docs changes
+     don't need a changelog entry.
+
+Feature
+==============
+
+..
+    New Features added to boa
+
+Packaging
+==============
+
+..
+    Changes to how boa is packaged, such as dependency requirements
+
+
+Refactor
+==============
+
+..
+    Changes to how boa's code with no changes to behavior
+
+Removals
+==============
+
+..
+    BREAKING changes of code or behavior in boa
+
+Development
+==============
+
+..
+    Changes to development environment, tools, etc.
+
+
+Other
+==============
+
+..
+    Things that don't fit into the above categories
+
+
+*******************
+0.5.0 - 2022/05/29
+*******************
 
 Highlights
 ==============
