@@ -34,22 +34,25 @@ jobs:
 #      - name: Run tests
 #        shell: pwsh
 #        run: pytest -s
-  windows-ci:
-    name: Ex1 (${{ matrix.python-version }}, ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+  build:
+
     strategy:
-      fail-fast: false
       matrix:
-        os: ["windows-latest"]
-        python-version: ["3.9"]
+        include:
+          - os: windows-latest
+            label: win-64
+            prefix: C:\Miniconda3\envs\boa
+
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.9
           activate-environment: boa
           environment-file: environment_dev.yaml
-          auto-activate-base: false
 
       - name: Lint
         shell: pwsh
