@@ -7,7 +7,6 @@ dependencies:
 - python=3.9
 - numpy
 - pandas
-- sphinx
 - xarray
 - dask
 - netCDF4
@@ -19,6 +18,7 @@ dependencies:
 - flake8
 - pip
 - pip:
+  - sphinx
   - torch
   - torchaudio
   - torchvision
