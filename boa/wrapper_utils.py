@@ -11,6 +11,7 @@ These functions provide the interface between the optimization tool and FETCH3
 - Defines how results of each iteration should be evaluated
 """
 
+from copy import deepcopy
 import datetime as dt
 import logging
 import os
@@ -38,7 +39,7 @@ def cd_and_cd_back_dec(path=None):
     def _cd_and_cd_back_dec(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            with cd_and_cd_back():
+            with cd_and_cd_back(path):
                 return func(*args, **kwargs)
 
         return wrapper
@@ -72,10 +73,21 @@ def load_experiment_config(config_file):
 
 def normalize_config(config):
     # Format parameters for Ax experiment
+    search_space_parameters = []
     for param in config.get("parameters", {}).keys():
-        config["parameters"][param]["name"] = param  # Add "name" attribute for each parameter
+        d = deepcopy(config["parameters"][param])
+        d["name"] = param  # Add "name" attribute for each parameter
+        # remove bounds on fixed params
+        if d.get("type", "") == "fixed" and "bounds" in d:
+            del d["bounds"]
+        # Remove value on range params
+        if d.get("type", "") == "range" and "value" in d:
+            del d["value"]
+
+        search_space_parameters.append(d)
+
     # Parameters from dictionary to list
-    config["search_space_parameters"] = list(config.get("parameters", {}).values())
+    config["search_space_parameters"] = search_space_parameters
     config["search_space_parameter_constraints"] = config.get("parameter_constraints", [])
 
     config["optimization_options"] = config.get("optimization_options", {})
