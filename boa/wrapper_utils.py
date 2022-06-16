@@ -38,7 +38,7 @@ def cd_and_cd_back_dec(path=None):
     def _cd_and_cd_back_dec(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            with cd_and_cd_back():
+            with cd_and_cd_back(path):
                 return func(*args, **kwargs)
 
         return wrapper

@@ -6,18 +6,18 @@ from pathlib import Path
 import numpy as np
 from ax import Trial
 
-from boa import BaseWrapper, get_synth_func, get_trial_dir, make_trial_dir
-
+from boa import BaseWrapper, get_synth_func, get_trial_dir, make_trial_dir, cd_and_cd_back_dec
+from boa.definitions import ROOT
 
 class TestWrapper(BaseWrapper):
     _processes = []
-    model_dir = Path(__file__).parent
 
     def __init__(self, ex_settings, experiment_dir, model_settings):
         self.ex_settings = ex_settings
         self.experiment_dir = experiment_dir
         self.model_settings = model_settings
 
+    @cd_and_cd_back_dec(path=ROOT)
     def run_model(self, trial: Trial):
         trial_dir = make_trial_dir(self.experiment_dir, trial.index).resolve()
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from functools import partial
 from inspect import isclass
+import logging
 from typing import Callable, Optional
 
 import ax.utils.measurement.synthetic_functions
@@ -33,14 +34,20 @@ from boa.utils import get_dictionary_from_callable, serialize_init_args
 from boa.wrapper import BaseWrapper
 
 
+logger = logging.getLogger(__name__)
+
+
 def get_metric_from_config(config, instantiate=True, **kwargs):
     if config.get("metric"):
         config = config["metric"]
     if config.get("metric_name"):
+        kwargs["type_"] = "boa_metric"
         if config.get("sklearn_metric"):
+            kwargs["type_"] = "sklearn_metric"
             kwargs["sklearn_metric"] = config["sklearn_metric"]
         metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
     elif config.get("synthetic_metric"):
+        kwargs["type_"] = "synthetic_metric"
         metric = setup_synthetic_metric(instantiate=instantiate, **config, **kwargs)
     else:
         # TODO link to docs for configuration when it exists
@@ -54,11 +61,16 @@ def get_metric_by_class_name(metric_name, instantiate=True, sklearn_metric=False
     return globals()[metric_name](**kwargs) if instantiate else globals()[metric_name]
 
 
-def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
+def get_sklearn_func(metric_to_eval):
     if metric_to_eval in sklearn.metrics.__all__:
         metric = getattr(sklearn.metrics, metric_to_eval)
     else:
         raise AttributeError(f"Sklearn metric: {metric_to_eval} not found!")
+    return metric
+
+
+def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
+    metric = get_sklearn_func(metric_to_eval)
 
     def modular_sklearn_metric(**kwargs):
         return ModularMetric(**{**kw, **kwargs, "metric_to_eval": metric})
@@ -120,24 +132,50 @@ class MetricToEval(metaclass=MetricToEvalRegister):
     def __init__(
         self,
         *,
-        func: Callable,
+        func: Callable | str,
         func_kwargs: Optional[dict] = None,
+        type_: str = None
     ):
+        if isinstance(func, str):
+            func = self.func_from_str(func, type_)
         self.func = func
         self.func_kwargs = func_kwargs or {}
         self.name = _get_name(func)
+        self.type_ = type_
 
     def __call__(self, *args, **kwargs):
         return self.func(
             *args, **get_dictionary_from_callable(self.func, {**self.func_kwargs, **kwargs})
         )
 
-    def register_cls(self):
+    def to_dict(self):
         return {
             "__type": self.__class__.__name__,
             "func": self.name,
             "func_kwargs": self.func_kwargs,
+            "type_": self.type_
         }
+
+    @classmethod
+    def func_from_str(cls, name: str, type_: str = None):
+        if type_ == "sklearn_metric":
+            func = get_sklearn_func(name)
+        elif type_ == "synthetic_metric":
+            func = get_synth_func(name)
+        elif type_ == "boa_metric" or type_ is None:
+            func = globals()[name]
+            try:
+                func = func()
+            except Exception as e:
+                logger.debug("func: %s not callable because of: %r", getattr(func, "__name__", func), e)
+            if isinstance(func, ModularMetric):
+                func = func.metric_to_eval.func
+            elif isinstance(func, MetricToEval):
+                func = func.func
+            # else func is just func
+        else:
+            raise ValueError(f"{cls.__name__} type_: {type_} invalid!")
+        return func
 
 
 class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
@@ -149,6 +187,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         metric_func_kwargs: Optional[dict] = None,
         wrapper: Optional[BaseWrapper] = None,
         properties: Optional[dict[str]] = None,
+        type_: Optional[str] = None,
         **kwargs,
     ):
 
@@ -156,7 +195,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             kwargs["name"] = _get_name(metric_to_eval)
         param_names = param_names if param_names is not None else []
         self.metric_func_kwargs = metric_func_kwargs or {}
-        self.metric_to_eval = MetricToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs)
+        self.metric_to_eval = MetricToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs, type_=type_)
         self.wrapper = wrapper or BaseWrapper()
         self.properties = properties
         super().__init__(
