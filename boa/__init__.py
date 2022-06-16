@@ -1,7 +1,7 @@
 """
 boa package
 """
-__version__ = "0.4.8"
+__version__ = "0.4.9"
 
 from boa.ax_instantiation_utils import *  # noqa
 from boa.metrics.metrics import *  # noqa

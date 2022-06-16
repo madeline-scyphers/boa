@@ -33,6 +33,12 @@ parameters:
     x4:  # The mean LAI of the canopy. There will be random perturbations to this
         type: range
         bounds: [0, 1]
+        value: .5  # dummy value for testing
+
+    x5: # dummy value for testing
+        type: fixed
+        bounds: [ 0, 1 ]
+        values: .5  # dummy value for testing
 
 parameter_constraints:
     - x2 + x1 => >.1
