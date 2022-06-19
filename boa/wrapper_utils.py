@@ -11,25 +11,21 @@ These functions provide the interface between the optimization tool and FETCH3
 - Defines how results of each iteration should be evaluated
 """
 
-from copy import deepcopy
 import datetime as dt
 import logging
 import os
 from contextlib import contextmanager
+from copy import deepcopy
 from functools import wraps
 from pathlib import Path
+from pprint import pformat
 
 import yaml
-from pprint import pformat
-from ax.service.utils.instantiation import PARAM_CLASSES as PARAM_CLASSES_AX, EXPECTED_KEYS_IN_PARAM_REPR
-from ax.core.parameter import (
-    ChoiceParameter,
-    FixedParameter,
-    RangeParameter
-)
+from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
+from ax.service.utils.instantiation import EXPECTED_KEYS_IN_PARAM_REPR
+from ax.service.utils.instantiation import PARAM_CLASSES as PARAM_CLASSES_AX
 
-from boa.utils import get_dictionary_from_callable, get_callable_signature
-
+from boa.utils import get_callable_signature, get_dictionary_from_callable
 
 logger = logging.getLogger(__file__)
 
@@ -64,7 +60,7 @@ def cd_and_cd_back_dec(path=None):
     return _cd_and_cd_back_dec
 
 
-def load_experiment_config(config_file):
+def load_experiment_config(config_file: os.PathLike) -> dict:
     """
     Read experiment configuration yml file for setting up the optimization.
     yml file contains the list of parameters, and whether each parameter is a fixed
@@ -73,7 +69,7 @@ def load_experiment_config(config_file):
 
     Parameters
     ----------
-    config_file : str
+    config_file : os.PathLike
         File path for the experiment configuration file
 
     Returns
@@ -88,21 +84,26 @@ def load_experiment_config(config_file):
     return normalize_config(config)
 
 
-def normalize_config(config):
+def normalize_config(config: os.PathLike) -> dict:
     # Format parameters for Ax experiment
     search_space_parameters = []
-    assert PARAM_CLASSES_AX == list(PARAM_CLASSES.keys()), (
-        "PARAM_CLASSES has changed, normalize_config util function may be out of date.")
+    assert PARAM_CLASSES_AX == list(
+        PARAM_CLASSES.keys()
+    ), "PARAM_CLASSES has changed, normalize_config util function may be out of date."
     for param in config.get("parameters", {}).keys():
         param_dict = config["parameters"][param]
         parameter_type = param_dict["type"]
         parameter_cls = PARAM_CLASSES[parameter_type]
         for p in param_dict:
             if p not in EXPECTED_KEYS_IN_PARAM_REPR:
-                logger.warning("Parameter %s includes unexpected parameter %s. "
-                               "\nIt is fine to use other arguments here for your model "
-                               "and not the optimization"
-                               "\nbut check that this isn't a typo or mistake.", param, p)
+                logger.warning(
+                    "Parameter %s includes unexpected parameter %s. "
+                    "\nIt is fine to use other arguments here for your model "
+                    "and not the optimization"
+                    "\nbut check that this isn't a typo or mistake.",
+                    param,
+                    p,
+                )
 
         d = get_dictionary_from_callable(parameter_cls.__init__, deepcopy(param_dict))
         removed_params = set(param_dict) - set(d)
@@ -113,8 +114,10 @@ def normalize_config(config):
         search_space_parameters.append(d)
 
     # Parameters from dictionary to list
-    config["search_space_parameters"] = search_space_parameters
-    config["search_space_parameter_constraints"] = config.get("parameter_constraints", [])
+    config["parameters_orig"] = deepcopy(config.get("parameters", {}))
+    config["parameter_constraints_orig"] = config.get("parameter_constraints", [])
+
+    config["parameters"] = search_space_parameters
 
     config["optimization_options"] = config.get("optimization_options", {})
     for key in ["metric", "experiment", "generation_strategy", "scheduler"]:
@@ -123,7 +126,7 @@ def normalize_config(config):
     return config
 
 
-def make_experiment_dir(working_dir, experiment_name: str):
+def make_experiment_dir(working_dir: str, experiment_name: str):
     """
     Creates directory for the experiment and returns the path.
     The directory is named with the experiment name and the current datetime.

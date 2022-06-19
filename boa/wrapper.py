@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import os
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
 
@@ -11,6 +12,20 @@ from boa.utils import convert_type, serialize_init_args
 
 
 class BaseWrapper(metaclass=WrapperRegister):
+    def load_config(self, config_file: os.PathLike):
+        """
+        Load config file and return a dictionary # TODO finish this
+
+        Parameters
+        ----------
+        config_file : os.PathLike
+            File path for the experiment configuration file
+
+        Returns
+        -------
+        loaded_config: dict
+        """
+
     def write_configs(self, trial: BaseTrial) -> None:
         pass
 

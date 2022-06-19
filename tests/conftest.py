@@ -27,6 +27,20 @@ def gen_strat1_config():
 
 
 @pytest.fixture
+def soo_config():
+    """ScalarizedObjective Optimization config"""
+    config_path = Path(__file__).parent / "test_configs/test_config_soo.yaml"
+    return load_experiment_config(config_path)
+
+
+@pytest.fixture
+def moo_config():
+    """MultiObjective Optimization config"""
+    config_path = Path(__file__).parent / "test_configs/test_config_moo.yaml"
+    return load_experiment_config(config_path)
+
+
+@pytest.fixture
 def synth_optimization_options(synth_config):
     return synth_config["optimization_options"]
 

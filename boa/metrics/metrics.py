@@ -36,9 +36,12 @@ from boa.wrapper import BaseWrapper
 def get_metric_from_config(config, instantiate=True, **kwargs):
     if config.get("metric"):
         config = config["metric"]
-    if config.get("metric_name"):
-        if config.get("sklearn_metric"):
-            kwargs["sklearn_metric"] = config["sklearn_metric"]
+    if config.get("boa_metric"):
+        kwargs["metric_name"] = config["boa_metric"]
+        metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
+    elif config.get("sklearn_metric"):
+        kwargs["metric_name"] = config["sklearn_metric"]
+        kwargs["sklearn_"] = True
         metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
     elif config.get("synthetic_metric"):
         metric = setup_synthetic_metric(instantiate=instantiate, **config, **kwargs)
@@ -48,8 +51,8 @@ def get_metric_from_config(config, instantiate=True, **kwargs):
     return metric
 
 
-def get_metric_by_class_name(metric_name, instantiate=True, sklearn_metric=False, **kwargs):
-    if sklearn_metric:
+def get_metric_by_class_name(metric_name, instantiate=True, sklearn_=False, **kwargs):
+    if sklearn_:
         return setup_sklearn_metric(metric_name, instantiate=True, **kwargs)
     return globals()[metric_name](**kwargs) if instantiate else globals()[metric_name]
 
@@ -253,12 +256,13 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         return f"{self.__class__.__name__}({arg_str})"
 
 
-MSE = setup_sklearn_metric("mean_squared_error", instantiate=False)
+MSE = setup_sklearn_metric("mean_squared_error", lower_is_better=True, instantiate=False)
 MeanSquaredError = MSE
 mean_squared_error = MSE
 RMSE = setup_sklearn_metric(
     "mean_squared_error",
     name="root_mean_squared_error",
+    lower_is_better=True,
     metric_func_kwargs={"squared": False},
     instantiate=False,
 )
@@ -266,7 +270,7 @@ RootMeanSquaredError = RMSE
 root_mean_squared_error = RMSE
 R2 = setup_sklearn_metric("r2_score", instantiate=False)
 RSquared = R2
-Mean = partial(ModularMetric, metric_to_eval=np.mean)
+Mean = partial(ModularMetric, metric_to_eval=np.mean, lower_is_better=True)
 
 MetricFromJSON = partial(ModularMetric, metric_to_eval=metric_from_json)
 MetricFromYAML = partial(ModularMetric, metric_to_eval=metric_from_yaml)

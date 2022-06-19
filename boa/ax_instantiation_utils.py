@@ -3,7 +3,19 @@ from __future__ import annotations
 import copy
 import time
 
-from ax import Experiment, Objective, OptimizationConfig, Runner, SearchSpace
+from ax import (
+    ComparisonOp,
+    Experiment,
+    MultiObjective,
+    MultiObjectiveOptimizationConfig,
+    Objective,
+    ObjectiveThreshold,
+    OptimizationConfig,
+    OutcomeConstraint,
+    Runner,
+    SearchSpace,
+)
+from ax.core.objective import ScalarizedObjective
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
@@ -98,26 +110,82 @@ def get_experiment(
     runner: Runner,
     wrapper=None,
 ):
-    settings = config["optimization_options"]
+    opt_options = config["optimization_options"]
 
     search_space = instantiate_search_space_from_json(
         config.get("search_space_parameters"), config.get("search_space_parameter_constraints")
     )
 
-    metric = get_metric_from_config(
-        settings["metric"], wrapper=wrapper, param_names=list(search_space.parameters)
+    optimization_config = get_optimization_config(
+        opt_options, wrapper, list(search_space.parameters)
     )
-    objective = Objective(metric=metric, minimize=True)
 
-    if "name" not in settings["experiment"]:
-        if "name" in settings:
-            settings["experiment"]["name"] = settings["name"]
+    if "name" not in opt_options["experiment"]:
+        if "name" in opt_options:
+            opt_options["experiment"]["name"] = opt_options["name"]
         else:
-            settings["experiment"]["name"] = time.time()
+            opt_options["experiment"]["name"] = time.time()
 
     return Experiment(
         search_space=search_space,
-        optimization_config=OptimizationConfig(objective=objective),
+        optimization_config=optimization_config,
         runner=runner,
-        **get_dictionary_from_callable(Experiment.__init__, settings["experiment"]),
+        **get_dictionary_from_callable(Experiment.__init__, opt_options["experiment"]),
     )
+
+
+def get_optimization_config(
+    config, wrapper=None, param_names=None
+) -> OptimizationConfig | MultiObjectiveOptimizationConfig:
+    if "scalarized_objective_options" in config:
+        objective_options = config["scalarized_objective_options"]
+        metrics = []
+        weights = []
+        kw = {}
+        outcome_constraints = []
+        for objective_opts in objective_options["objectives"]:
+            if "weight" in objective_opts:
+                weights.append(objective_opts["weight"])
+            metric = get_metric_from_config(
+                objective_opts, wrapper=wrapper, param_names=param_names
+            )
+            metrics.append(metric)
+        if weights:
+            kw["weights"] = weights
+        if "minimize" in objective_opts:
+            kw["minimize"] = objective_opts["minimize"]
+        objective = ScalarizedObjective(metrics=metrics, **kw)
+    # if config.get("objective_options"):
+    #     objective_options = config["objective_options"]
+    #     objectives = []
+    #     objective_thresholds = []
+    #     outcome_constraints = []
+    #     for options in objective_options:
+    #         metric = get_metric_from_config(options, wrapper=wrapper, param_names=param_names)
+    #         objectives.append(Objective(metric=metric))
+    #
+    #         outcome_kw = options.get("outcome_constraints", {})
+    #         op = outcome_kw.get("op", "")
+    #         op = ComparisonOp(op)
+    #
+    #         outcome_constraints.append(OutcomeConstraint(metric=metric, op=op, **outcome_kw),)
+    #         objective_thresholds.append(ObjectiveThreshold(metric=metric, **options.get("objective_thresholds", {})))
+    #
+    #     if len(objectives) > 1:
+    #         objective = MultiObjective(objectives)
+    #
+    #         opt_conf = MultiObjectiveOptimizationConfig(
+    #             objective=objective,
+    #             outcome_constraints=outcome_constraints,
+    #             objective_thresholds=objective_thresholds,
+    #         )
+    #     else:
+    #         objective = Objective(metric=metric)
+    #         opt_conf = OptimizationConfig(objective=objective)
+
+    else:
+        metric = get_metric_from_config(config["metric"], wrapper=wrapper, param_names=param_names)
+        objective = Objective(metric=metric)
+    opt_conf = OptimizationConfig(objective=objective)
+
+    return opt_conf

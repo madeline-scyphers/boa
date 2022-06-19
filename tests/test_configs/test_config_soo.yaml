@@ -1,0 +1,67 @@
+# ScalarizedObjective Optimization config
+optimization_options:
+  scalarized_objective_options:  # can also use the key soo
+    objectives:
+      - boa_metric: RootMeanSquaredError
+        properties:
+          obs_file: path
+        weight: 1
+#        upper_bound:
+#          bound: 100
+#          relative: false
+#        lower_bound:
+#          bound: 0
+#          relative: false
+      - boa_metric: R2
+        weight: 2
+    minimize: true
+#    outcome_constraints:
+#      - metric:
+#          boa_metric: mean
+#          name: something
+#        op: LEQ
+#        bound: 10
+#        relative: true
+
+  generation_strategy:
+    steps:
+      - model: SOBOL
+        num_trials: 5
+      - model: GPEI
+        num_trials: -1
+  scheduler:
+    total_trials: 10
+  experiment_name: "test_experiment"
+
+model_options:
+  model_specific_options:
+    - 1
+    - 2
+    - 3
+
+parameters:
+  x1:  # Ratio of urban area that is house (not ground, not trees)
+    type: range
+    bounds: [0, 1]
+
+  x2:  # Ratio of urban area that is ground (not house, not trees)
+    type: range
+    bounds: [0, 1]
+
+  x3:  # Size of a plot of land (area of a house and its ground it sits on)
+    type: range
+    bounds: [0, 1]
+
+  x4:  # The mean LAI of the canopy. There will be random perturbations to this
+    type: range
+    bounds: [0, 1]
+    value: .5  # dummy value for testing
+
+  x5: # dummy value for testing
+    type: fixed
+    bounds: [ 0, 1 ]
+    values: .5  # dummy value for testing
+
+parameter_constraints:
+  - x2 + x1 => >.1
+  - x2 + x1 + .6*x1 <= .6
