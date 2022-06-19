@@ -161,12 +161,12 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         self.metric_func_kwargs = metric_func_kwargs or {}
         self.metric_to_eval = MetricToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs)
         self.wrapper = wrapper or BaseWrapper()
-        self.properties = properties or {}
         super().__init__(
             param_names=param_names,
             noise_sd=noise_sd,
             **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs),
         )
+        self.properties = properties or {}
 
     @classmethod
     def is_available_while_running(cls) -> bool:
