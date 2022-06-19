@@ -14,6 +14,7 @@ def read(*names, **kwargs):
     ) as fp:
         return fp.read()
 
+
 readme = open("README.md").read()
 
 # set the install requirements
@@ -37,11 +38,9 @@ install_requires = [
 # Run the setup
 setup(
     name="boa",
-    use_scm_version={
-        "write_to": "boa/_version.py"
-    },
+    use_scm_version={"write_to": "boa/_version.py"},
     # use_scm_version=True,
-    setup_requires=['setuptools_scm'],
+    setup_requires=["setuptools_scm"],
     description="An implementation of Gaussian Processes in Pytorch",
     long_description=readme,
     long_description_content_type="text/markdown",

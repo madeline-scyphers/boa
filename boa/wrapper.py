@@ -60,7 +60,9 @@ class BaseWrapper(metaclass=WrapperRegister):
         # TODO add sphinx link to ax trial status
         """
 
-    def fetch_trial_data(self, trial: BaseTrial, *args, **kwargs) -> dict:
+    def fetch_trial_data(
+        self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs
+    ) -> dict:
         """
         Retrieves the trial data and prepares it for the metric(s) used in the objective
         function. The return value needs to be a dictionary with the keys matching the keys
@@ -70,6 +72,8 @@ class BaseWrapper(metaclass=WrapperRegister):
         Parameters
         ----------
         trial : BaseTrial
+        metric_properties: dict
+        metric_name: str
 
         Returns
         -------

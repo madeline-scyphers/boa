@@ -161,7 +161,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         self.metric_func_kwargs = metric_func_kwargs or {}
         self.metric_to_eval = MetricToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs)
         self.wrapper = wrapper or BaseWrapper()
-        self.properties = properties
+        self.properties = properties or {}
         super().__init__(
             param_names=param_names,
             noise_sd=noise_sd,
@@ -174,7 +174,15 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def fetch_trial_data(self, trial: BaseTrial, *args, **kwargs):
         wrapper_kwargs = (
-            self.wrapper.fetch_trial_data(trial=trial, *args, **kwargs) if self.wrapper else {}
+            self.wrapper.fetch_trial_data(
+                trial=trial,
+                metric_properties=self.properties,
+                metric_name=self.name,
+                *args,
+                **kwargs,
+            )
+            if self.wrapper
+            else {}
         )
         wrapper_kwargs = wrapper_kwargs or {}
         safe_kwargs = {"trial": trial, **kwargs, **wrapper_kwargs}
