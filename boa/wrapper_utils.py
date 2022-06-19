@@ -11,6 +11,7 @@ These functions provide the interface between the optimization tool and FETCH3
 - Defines how results of each iteration should be evaluated
 """
 
+from copy import deepcopy
 import datetime as dt
 import logging
 import os
@@ -19,8 +20,25 @@ from functools import wraps
 from pathlib import Path
 
 import yaml
+from pprint import pformat
+from ax.service.utils.instantiation import PARAM_CLASSES as PARAM_CLASSES_AX, EXPECTED_KEYS_IN_PARAM_REPR
+from ax.core.parameter import (
+    ChoiceParameter,
+    FixedParameter,
+    RangeParameter
+)
+
+from boa.utils import get_dictionary_from_callable, get_callable_signature
+
 
 logger = logging.getLogger(__file__)
+
+
+PARAM_CLASSES = {
+    "range": RangeParameter,
+    "choice": ChoiceParameter,
+    "fixed": FixedParameter,
+}
 
 
 @contextmanager
@@ -38,7 +56,7 @@ def cd_and_cd_back_dec(path=None):
     def _cd_and_cd_back_dec(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            with cd_and_cd_back():
+            with cd_and_cd_back(path):
                 return func(*args, **kwargs)
 
         return wrapper
@@ -72,10 +90,30 @@ def load_experiment_config(config_file):
 
 def normalize_config(config):
     # Format parameters for Ax experiment
+    search_space_parameters = []
+    assert PARAM_CLASSES_AX == list(PARAM_CLASSES.keys()), (
+        "PARAM_CLASSES has changed, normalize_config util function may be out of date.")
     for param in config.get("parameters", {}).keys():
-        config["parameters"][param]["name"] = param  # Add "name" attribute for each parameter
+        param_dict = config["parameters"][param]
+        parameter_type = param_dict["type"]
+        parameter_cls = PARAM_CLASSES[parameter_type]
+        for p in param_dict:
+            if p not in EXPECTED_KEYS_IN_PARAM_REPR:
+                logger.warning("Parameter %s includes unexpected parameter %s. "
+                               "\nIt is fine to use other arguments here for your model "
+                               "and not the optimization"
+                               "\nbut check that this isn't a typo or mistake.", param, p)
+
+        d = get_dictionary_from_callable(parameter_cls.__init__, deepcopy(param_dict))
+        removed_params = set(param_dict) - set(d)
+        logger.info("Removed parameters from param %s:\n%s", param, pformat(removed_params))
+
+        d["name"] = param  # Add "name" attribute for each parameter
+
+        search_space_parameters.append(d)
+
     # Parameters from dictionary to list
-    config["search_space_parameters"] = list(config.get("parameters", {}).values())
+    config["search_space_parameters"] = search_space_parameters
     config["search_space_parameter_constraints"] = config.get("parameter_constraints", [])
 
     config["optimization_options"] = config.get("optimization_options", {})
