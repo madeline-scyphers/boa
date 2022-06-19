@@ -40,7 +40,7 @@ def run_opt(output_dir):
     )
     # setup the paramb bounds based on the synth func bounds and synth func number of params
     function = get_synth_func(config["model_options"]["function"])
-    config["search_space_parameters"] = [
+    config["parameters"] = [
         {"bounds": list(param), "name": f"x{i}", "type": "range", "value_type": "float"}
         for i, param in enumerate(function.domain)
     ]

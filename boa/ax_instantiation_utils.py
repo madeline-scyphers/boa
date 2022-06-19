@@ -113,7 +113,7 @@ def get_experiment(
     opt_options = config["optimization_options"]
 
     search_space = instantiate_search_space_from_json(
-        config.get("search_space_parameters"), config.get("search_space_parameter_constraints")
+        config.get("parameters"), config.get("parameter_constraints")
     )
 
     optimization_config = get_optimization_config(
