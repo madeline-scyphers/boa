@@ -5,39 +5,46 @@ from pathlib import Path
 import pytest
 from scripts.run import main
 
-from boa import cd_and_cd_back, load_experiment_config
+from boa import cd_and_cd_back, load_yaml
 
 
 @pytest.fixture
 def synth_config():
     config_path = Path(__file__).parent / "test_configs/test_config_synth.yaml"
-    return load_experiment_config(config_path)
+    return load_yaml(config_path)
 
 
 @pytest.fixture
 def metric_config():
     config_path = Path(__file__).parent / "test_configs/test_config_metric.yaml"
-    return load_experiment_config(config_path)
+    return load_yaml(config_path)
 
 
 @pytest.fixture
 def gen_strat1_config():
     config_path = Path(__file__).parent / "test_configs/test_config_gen_strat1.yaml"
-    return load_experiment_config(config_path)
+    return load_yaml(config_path)
 
 
 @pytest.fixture
 def soo_config():
     """ScalarizedObjective Optimization config"""
     config_path = Path(__file__).parent / "test_configs/test_config_soo.yaml"
-    return load_experiment_config(config_path)
+    return load_yaml(config_path)
 
 
 @pytest.fixture
 def moo_config():
     """MultiObjective Optimization config"""
     config_path = Path(__file__).parent / "test_configs/test_config_moo.yaml"
-    return load_experiment_config(config_path)
+    return load_yaml(config_path)
+
+
+@pytest.fixture
+def denormed_param_parse_config():
+    """MultiObjective Optimization config"""
+    config_path = Path(__file__).parent / "test_configs/test_config_param_parse.yaml"
+    return load_yaml(config_path)
 
 
 @pytest.fixture
