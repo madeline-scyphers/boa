@@ -10,17 +10,31 @@ These functions provide the interface between the optimization tool and FETCH3
 - Defines objective function for optimization, and other performance metrics of interest
 - Defines how results of each iteration should be evaluated
 """
+from __future__ import annotations
 
 import datetime as dt
 import logging
 import os
 from contextlib import contextmanager
+from copy import deepcopy
 from functools import wraps
 from pathlib import Path
 
 import yaml
+from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
+from ax.service.utils.instantiation import EXPECTED_KEYS_IN_PARAM_REPR
+from ax.service.utils.instantiation import PARAM_CLASSES as PARAM_CLASSES_AX
+
+from boa.utils import get_callable_signature, get_dictionary_from_callable
 
 logger = logging.getLogger(__file__)
+
+
+PARAM_CLASSES = {
+    "range": RangeParameter,
+    "choice": ChoiceParameter,
+    "fixed": FixedParameter,
+}
 
 
 @contextmanager
@@ -46,7 +60,7 @@ def cd_and_cd_back_dec(path=None):
     return _cd_and_cd_back_dec
 
 
-def load_experiment_config(config_file):
+def load_yaml(config_file: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
     """
     Read experiment configuration yml file for setting up the optimization.
     yml file contains the list of parameters, and whether each parameter is a fixed
@@ -55,8 +69,11 @@ def load_experiment_config(config_file):
 
     Parameters
     ----------
-    config_file : str
+    config_file : os.PathLike
         File path for the experiment configuration file
+    normalize : bool
+        Whether to run boa.wrapper_utils.normalize_config after loading config
+        to run certain predictable configuration normalization. (default true)
 
     Returns
     -------
@@ -67,25 +84,133 @@ def load_experiment_config(config_file):
     with open(config_file, "r") as yml_config:
         config = yaml.safe_load(yml_config)
 
-    return normalize_config(config)
+    if normalize:
+        return normalize_config(config, *args, **kwargs)
+    return config
 
 
-def normalize_config(config):
-    # Format parameters for Ax experiment
-    for param in config.get("parameters", {}).keys():
-        config["parameters"][param]["name"] = param  # Add "name" attribute for each parameter
-    # Parameters from dictionary to list
-    config["search_space_parameters"] = list(config.get("parameters", {}).values())
-    config["search_space_parameter_constraints"] = config.get("parameter_constraints", [])
-
+def normalize_config(config: os.PathLike, parameter_keys=None) -> dict:
     config["optimization_options"] = config.get("optimization_options", {})
     for key in ["metric", "experiment", "generation_strategy", "scheduler"]:
         config["optimization_options"][key] = config["optimization_options"].get(key, {})
 
+    if parameter_keys:
+        parameters, mapping = wpr_params_to_boa(config, parameter_keys)
+        config["parameters"] = parameters
+        config["optimization_options"]["mapping"] = mapping
+
+    # Format parameters for Ax experiment
+    config["parameters_orig"] = deepcopy(config.get("parameters", {}))
+    config["parameter_constraints_orig"] = deepcopy(config.get("parameter_constraints", []))
+
+    search_space_parameters = []
+    for param in config.get("parameters", {}).keys():
+        d = deepcopy(config["parameters"][param])
+        d["name"] = param  # Add "name" attribute for each parameter
+        # remove bounds on fixed params
+        if d.get("type", "") == "fixed" and "bounds" in d:
+            del d["bounds"]
+        # Remove value on range params
+        if d.get("type", "") == "range" and "value" in d:
+            del d["value"]
+
+        search_space_parameters.append(d)
+
+    config["parameters"] = search_space_parameters
+
     return config
 
 
-def make_experiment_dir(working_dir, experiment_name: str):
+def wpr_params_to_boa(
+    params: dict, parameter_keys: str | list[str | list[str] | tuple[str]]
+) -> dict:
+    # if only one key is passed in as a str, wrap it in a list
+    if isinstance(parameter_keys, str):
+        parameter_keys = [parameter_keys]
+
+    new_params = {}
+    mapping = {}
+    for maybe_key in parameter_keys:
+        path_type = []
+        if isinstance(maybe_key, str):
+            key = maybe_key
+            d = params[key]
+            # mapping[new_key] = dict(path=maybe_key, original_key=parameter_name)
+        elif isinstance(maybe_key, (list, tuple)):
+            d = params[maybe_key[0]]
+            if len(maybe_key) > 1:
+                for k in maybe_key[1:]:
+                    if isinstance(d, dict):
+                        path_type.append("dict")
+                    else:
+                        path_type.append("list")
+                    d = d[k]
+            path_type.append("dict")  # the last key is always a dict to the param info
+
+            key = "_".join(str(k) for k in maybe_key)
+        else:
+            raise TypeError(
+                "wpr_params_to_boa accepts str, a list of str, or a list of lists of str "
+                "\nfor the keys (or paths of keys) to the AX parameters you wish to prepend."
+            )
+        for parameter_name, dct in d.items():
+            new_key = f"{key}_{parameter_name}"
+            key_index = 0
+            while new_key in new_params:
+                new_key += f"_{key_index}"
+                if new_key in new_params:
+                    key_index += 1
+                    new_key = new_key[:-2]
+            new_params[new_key] = dct
+            mapping[new_key] = dict(
+                path=maybe_key, original_name=parameter_name, path_type=path_type
+            )
+
+    return new_params, mapping
+
+
+def boa_params_to_wpr(params: list[dict], mapping, from_trial=True):
+    new_params = {}
+    for parameter in params:
+        if from_trial:
+            name = parameter
+        else:
+            name = parameter["name"]
+        path = mapping[name]["path"]
+        original_name = mapping[name]["original_name"]
+        path_type = mapping[name]["path_type"]
+
+        p1 = path[0]
+        pt1 = path_type[0]
+
+        if path[0] not in new_params:
+            if pt1 == "dict":
+                new_params[p1] = {}
+            else:
+                new_params[p1] = []
+
+        d = new_params[p1]
+        if len(path) > 1:
+            for key, typ in zip(path[1:], path_type[1:]):
+                if (isinstance(d, list) and key + 1 > len(d)) or (
+                    isinstance(d, dict) and key not in d
+                ):
+                    if isinstance(d, list):
+                        d.extend([None for _ in range(key + 1 - len(d))])
+                    if typ == "dict":
+                        d[key] = {}
+                    else:
+                        d[key] = []
+                d = d[key]
+        if from_trial:
+            d[original_name] = params[parameter]
+        else:
+            d[original_name] = {k: v for k, v in parameter.items() if k != "name"}
+
+    return new_params
+
+
+def make_experiment_dir(working_dir: str, experiment_name: str):
     """
     Creates directory for the experiment and returns the path.
     The directory is named with the experiment name and the current datetime.
