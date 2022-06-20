@@ -29,6 +29,9 @@ from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
 import boa.metrics.synthethic_funcs
 from boa.metaclasses import MetricRegister, MetricToEvalRegister
 from boa.metrics.metric_funcs import metric_from_json, metric_from_yaml
+from boa.metrics.metric_funcs import (
+    normalized_root_mean_squared_error as normalized_root_mean_squared_error_,
+)
 from boa.utils import get_dictionary_from_callable, serialize_init_args
 from boa.wrapper import BaseWrapper
 
@@ -267,6 +270,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 MSE = setup_sklearn_metric("mean_squared_error", lower_is_better=True, instantiate=False)
 MeanSquaredError = MSE
 mean_squared_error = MSE
+
 RMSE = setup_sklearn_metric(
     "mean_squared_error",
     name="root_mean_squared_error",
@@ -276,9 +280,16 @@ RMSE = setup_sklearn_metric(
 )
 RootMeanSquaredError = RMSE
 root_mean_squared_error = RMSE
+
 R2 = setup_sklearn_metric("r2_score", instantiate=False)
 RSquared = R2
 Mean = partial(ModularMetric, metric_to_eval=np.mean, lower_is_better=True)
 
 MetricFromJSON = partial(ModularMetric, metric_to_eval=metric_from_json)
 MetricFromYAML = partial(ModularMetric, metric_to_eval=metric_from_yaml)
+
+NRMSE = partial(
+    ModularMetric, metric_to_eval=normalized_root_mean_squared_error_, lower_is_better=True
+)
+NormalizedRootMeanSquaredError = NRMSE
+normalized_root_mean_squared_error = NRMSE

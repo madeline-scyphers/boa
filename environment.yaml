@@ -9,6 +9,8 @@ dependencies:
 - pandas
 - xarray
 - dask
+- scipy
+- sklearn
 - netCDF4
 - bottleneck
 - click
