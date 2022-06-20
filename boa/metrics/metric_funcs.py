@@ -8,7 +8,6 @@ from sklearn.metrics import mean_squared_error
 
 from boa.utils import get_dictionary_from_callable
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -62,7 +61,9 @@ def normalized_root_mean_squared_error(y_true, y_pred, normalizer="iqr", **kwarg
     nrmse : float or ndarray of floats
         A normalized version of RMSE
     """
-    rmse = mean_squared_error(y_true, y_pred, squared=False, **get_dictionary_from_callable(mean_squared_error, kwargs))
+    rmse = mean_squared_error(
+        y_true, y_pred, squared=False, **get_dictionary_from_callable(mean_squared_error, kwargs)
+    )
     if normalizer == "iqr":
         norm = stats.iqr(y_pred)
     elif normalizer == "std":

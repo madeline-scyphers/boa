@@ -119,6 +119,11 @@ def scheduler_to_json_snapshot(
             encoder_registry=encoder_registry,
             class_encoder_registry=class_encoder_registry,
         ),
+        "options": object_to_json(
+            scheduler.options,
+            encoder_registry=encoder_registry,
+            class_encoder_registry=class_encoder_registry,
+        ),
     }
 
 
@@ -135,6 +140,11 @@ def scheduler_from_json_snapshot(
     if class_decoder_registry is None:
         class_decoder_registry = CORE_CLASS_DECODER_REGISTRY
 
+    scheduler_options = object_from_json(
+        serialized.pop("options"),
+        decoder_registry=decoder_registry,
+        class_decoder_registry=class_decoder_registry,
+    )
     experiment = object_from_json(
         serialized.pop("experiment"),
         decoder_registry=decoder_registry,
@@ -147,7 +157,7 @@ def scheduler_from_json_snapshot(
             experiment=experiment,
         ),
         experiment=experiment,
-        options=SchedulerOptions(),
+        options=scheduler_options,
         **kwargs,
     )
     ax_client._experiment = experiment
