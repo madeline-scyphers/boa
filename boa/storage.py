@@ -123,7 +123,7 @@ def scheduler_to_json_snapshot(
             scheduler.options,
             encoder_registry=encoder_registry,
             class_encoder_registry=class_encoder_registry,
-        )
+        ),
     }
 
 

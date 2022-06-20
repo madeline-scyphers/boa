@@ -1,7 +1,7 @@
-from abc import ABCMeta
-from functools import wraps
 import logging
 import traceback
+from abc import ABCMeta
+from functools import wraps
 from unittest.mock import MagicMock
 
 from ax.storage.json_store.encoders import runner_to_dict
@@ -20,9 +20,12 @@ def write_exception_to_log(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            logger.warning("Exception encountered in %s. Traceback: %s", func.__name__, traceback.format_exc())
+            logger.warning(
+                "Exception encountered in %s. Traceback: %s", func.__name__, traceback.format_exc()
+            )
 
             raise
+
     return wrapper
 
 

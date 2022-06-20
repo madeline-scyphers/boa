@@ -10,9 +10,9 @@ Built-in metrics:
 
 from __future__ import annotations
 
+import logging
 from functools import partial
 from inspect import isclass
-import logging
 from typing import Callable, Optional
 
 import ax.utils.measurement.synthetic_functions
@@ -35,7 +35,6 @@ from boa.metrics.metric_funcs import (
 )
 from boa.utils import get_dictionary_from_callable, serialize_init_args
 from boa.wrapper import BaseWrapper
-
 
 logger = logging.getLogger(__name__)
 
@@ -133,11 +132,7 @@ def _get_name(obj):
 
 class MetricToEval(metaclass=MetricToEvalRegister):
     def __init__(
-        self,
-        *,
-        func: Callable | str,
-        func_kwargs: Optional[dict] = None,
-        type_: str = None
+        self, *, func: Callable | str, func_kwargs: Optional[dict] = None, type_: str = None
     ):
         if isinstance(func, str):
             func = self.func_from_str(func, type_)
@@ -156,7 +151,7 @@ class MetricToEval(metaclass=MetricToEvalRegister):
             "__type": self.__class__.__name__,
             "func": self.name,
             "func_kwargs": self.func_kwargs,
-            "type_": self.type_
+            "type_": self.type_,
         }
 
     @classmethod
@@ -170,7 +165,9 @@ class MetricToEval(metaclass=MetricToEvalRegister):
             try:
                 func = func()
             except Exception as e:
-                logger.debug("func: %s not callable because of: %r", getattr(func, "__name__", func), e)
+                logger.debug(
+                    "func: %s not callable because of: %r", getattr(func, "__name__", func), e
+                )
             if isinstance(func, ModularMetric):
                 func = func.metric_to_eval.func
             elif isinstance(func, MetricToEval):
@@ -198,7 +195,9 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             kwargs["name"] = _get_name(metric_to_eval)
         param_names = param_names if param_names is not None else []
         self.metric_func_kwargs = metric_func_kwargs or {}
-        self.metric_to_eval = MetricToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs, type_=type_)
+        self.metric_to_eval = MetricToEval(
+            func=metric_to_eval, func_kwargs=metric_func_kwargs, type_=type_
+        )
         self.wrapper = wrapper or BaseWrapper()
         super().__init__(
             param_names=param_names,

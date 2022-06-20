@@ -6,8 +6,15 @@ from pathlib import Path
 import numpy as np
 from ax import Trial
 
-from boa import BaseWrapper, get_synth_func, get_trial_dir, make_trial_dir, cd_and_cd_back_dec
+from boa import (
+    BaseWrapper,
+    cd_and_cd_back_dec,
+    get_synth_func,
+    get_trial_dir,
+    make_trial_dir,
+)
 from boa.definitions import ROOT
+
 
 class TestWrapper(BaseWrapper):
     _processes = []
