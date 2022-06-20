@@ -28,10 +28,6 @@ jobs:
             label: osx-64
             prefix: /Users/runner/miniconda3/envs/boa
 
-          - os: windows-latest
-            label: win-64
-            prefix: C:\Miniconda3\envs\boa
-
     name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
     steps:

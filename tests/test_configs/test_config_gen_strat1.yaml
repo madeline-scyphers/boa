@@ -1,6 +1,6 @@
 optimization_options:
-    metric:
-        metric_name: RootMeanSquaredError
+    objective_options:
+        - boa_metric: RootMeanSquaredError
     generation_strategy:
         steps:
             - model: SOBOL

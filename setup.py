@@ -15,16 +15,7 @@ def read(*names, **kwargs):
         return fp.read()
 
 
-def find_version(*file_paths):
-    version_file = read(*file_paths)
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
-    if version_match:
-        return version_match.group(1)
-    raise RuntimeError("Unable to find version string.")
-
-
 readme = open("README.md").read()
-version = find_version("boa", "__init__.py")
 
 # set the install requirements
 install_requires = [
@@ -47,7 +38,9 @@ install_requires = [
 # Run the setup
 setup(
     name="boa",
-    version=version,
+    use_scm_version={"write_to": "boa/_version.py"},
+    # use_scm_version=True,
+    setup_requires=["setuptools_scm"],
     description="An implementation of Gaussian Processes in Pytorch",
     long_description=readme,
     long_description_content_type="text/markdown",

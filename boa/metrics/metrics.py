@@ -29,6 +29,9 @@ from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
 import boa.metrics.synthethic_funcs
 from boa.metaclasses import MetricRegister, MetricToEvalRegister
 from boa.metrics.metric_funcs import metric_from_json, metric_from_yaml
+from boa.metrics.metric_funcs import (
+    normalized_root_mean_squared_error as normalized_root_mean_squared_error_,
+)
 from boa.utils import get_dictionary_from_callable, serialize_init_args
 from boa.wrapper import BaseWrapper
 
@@ -36,9 +39,12 @@ from boa.wrapper import BaseWrapper
 def get_metric_from_config(config, instantiate=True, **kwargs):
     if config.get("metric"):
         config = config["metric"]
-    if config.get("metric_name"):
-        if config.get("sklearn_metric"):
-            kwargs["sklearn_metric"] = config["sklearn_metric"]
+    if config.get("boa_metric"):
+        kwargs["metric_name"] = config["boa_metric"]
+        metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
+    elif config.get("sklearn_metric"):
+        kwargs["metric_name"] = config["sklearn_metric"]
+        kwargs["sklearn_"] = True
         metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
     elif config.get("synthetic_metric"):
         metric = setup_synthetic_metric(instantiate=instantiate, **config, **kwargs)
@@ -48,8 +54,8 @@ def get_metric_from_config(config, instantiate=True, **kwargs):
     return metric
 
 
-def get_metric_by_class_name(metric_name, instantiate=True, sklearn_metric=False, **kwargs):
-    if sklearn_metric:
+def get_metric_by_class_name(metric_name, instantiate=True, sklearn_=False, **kwargs):
+    if sklearn_:
         return setup_sklearn_metric(metric_name, instantiate=True, **kwargs)
     return globals()[metric_name](**kwargs) if instantiate else globals()[metric_name]
 
@@ -158,12 +164,12 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         self.metric_func_kwargs = metric_func_kwargs or {}
         self.metric_to_eval = MetricToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs)
         self.wrapper = wrapper or BaseWrapper()
-        self.properties = properties
         super().__init__(
             param_names=param_names,
             noise_sd=noise_sd,
             **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs),
         )
+        self.properties = properties or {}
 
     @classmethod
     def is_available_while_running(cls) -> bool:
@@ -171,7 +177,15 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def fetch_trial_data(self, trial: BaseTrial, *args, **kwargs):
         wrapper_kwargs = (
-            self.wrapper.fetch_trial_data(trial=trial, *args, **kwargs) if self.wrapper else {}
+            self.wrapper.fetch_trial_data(
+                trial=trial,
+                metric_properties=self.properties,
+                metric_name=self.name,
+                *args,
+                **kwargs,
+            )
+            if self.wrapper
+            else {}
         )
         wrapper_kwargs = wrapper_kwargs or {}
         safe_kwargs = {"trial": trial, **kwargs, **wrapper_kwargs}
@@ -253,20 +267,29 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         return f"{self.__class__.__name__}({arg_str})"
 
 
-MSE = setup_sklearn_metric("mean_squared_error", instantiate=False)
+MSE = setup_sklearn_metric("mean_squared_error", lower_is_better=True, instantiate=False)
 MeanSquaredError = MSE
 mean_squared_error = MSE
+
 RMSE = setup_sklearn_metric(
     "mean_squared_error",
     name="root_mean_squared_error",
+    lower_is_better=True,
     metric_func_kwargs={"squared": False},
     instantiate=False,
 )
 RootMeanSquaredError = RMSE
 root_mean_squared_error = RMSE
+
 R2 = setup_sklearn_metric("r2_score", instantiate=False)
 RSquared = R2
-Mean = partial(ModularMetric, metric_to_eval=np.mean)
+Mean = partial(ModularMetric, metric_to_eval=np.mean, lower_is_better=True)
 
 MetricFromJSON = partial(ModularMetric, metric_to_eval=metric_from_json)
 MetricFromYAML = partial(ModularMetric, metric_to_eval=metric_from_yaml)
+
+NRMSE = partial(
+    ModularMetric, metric_to_eval=normalized_root_mean_squared_error_, lower_is_better=True
+)
+NormalizedRootMeanSquaredError = NRMSE
+normalized_root_mean_squared_error = NRMSE
