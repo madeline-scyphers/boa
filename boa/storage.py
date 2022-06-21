@@ -141,13 +141,13 @@ def scheduler_from_json_snapshot(
         class_decoder_registry = CORE_CLASS_DECODER_REGISTRY
 
     if "options" in serialized:
-        kwargs["options"] = object_from_json(
+        options = object_from_json(
             serialized.pop("options"),
             decoder_registry=decoder_registry,
             class_decoder_registry=class_decoder_registry,
         )
     else:
-        kwargs["options"] = SchedulerOptions()
+        options = SchedulerOptions()
 
     experiment = object_from_json(
         serialized.pop("experiment"),
@@ -161,6 +161,10 @@ def scheduler_from_json_snapshot(
         experiment=experiment
     )
 
-    ax_client = Scheduler(generation_strategy=generation_strategy, **kwargs)
+    ax_client = Scheduler(
+        generation_strategy=generation_strategy,
+        experiment=experiment,
+        options=options,
+        **kwargs)
     ax_client._experiment = experiment
     return ax_client
