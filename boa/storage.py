@@ -146,19 +146,21 @@ def scheduler_from_json_snapshot(
             decoder_registry=decoder_registry,
             class_decoder_registry=class_decoder_registry,
         )
-    if "experiment" in serialized:
-        kwargs["experiment"] = object_from_json(
-            serialized.pop("experiment"),
-            decoder_registry=decoder_registry,
-            class_decoder_registry=class_decoder_registry,
-        )
-    if "generation_strategy" in serialized:
-        serialized_generation_strategy = serialized.pop("generation_strategy")
-        kwargs["generation_strategy"] = generation_strategy_from_json(
-            generation_strategy_json=serialized_generation_strategy,
-            experiment=kwargs.get("experiment")
-        )
-    exp = kwargs.get("experiment")
-    ax_client = Scheduler(**kwargs)
-    ax_client._experiment = exp
+    else:
+        kwargs["options"] = SchedulerOptions()
+
+    experiment = object_from_json(
+        serialized.pop("experiment"),
+        decoder_registry=decoder_registry,
+        class_decoder_registry=class_decoder_registry,
+    )
+
+    serialized_generation_strategy = serialized.pop("generation_strategy")
+    generation_strategy = generation_strategy_from_json(
+        generation_strategy_json=serialized_generation_strategy,
+        experiment=kwargs.pop("experiment")
+    )
+
+    ax_client = Scheduler(generation_strategy=generation_strategy, **kwargs)
+    ax_client._experiment = experiment
     return ax_client
