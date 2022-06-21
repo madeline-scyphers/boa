@@ -50,7 +50,7 @@ def save_experiment(experiment: Experiment, filepath: os.PathLike, pickle=True, 
         )
 
 
-def load_experiment(filepath: str, *args, **kwargs) -> Experiment:
+def load_experiment(filepath: os.PathLike, *args, **kwargs) -> Experiment:
     """Load experiment from file.
 
     1) Read file.
@@ -63,7 +63,7 @@ def load_experiment(filepath: str, *args, **kwargs) -> Experiment:
         return ax_load_experiment(filepath, *args, **kwargs)
 
 
-def scheduler_to_json_file(scheduler, filepath: str = "scheduler_snapshot.json") -> None:
+def scheduler_to_json_file(scheduler, filepath: os.PathLike = "scheduler_snapshot.json") -> None:
     """Save a JSON-serialized snapshot of this `AxClient`'s settings and state
     to a .json file by the given path.
     """
@@ -73,7 +73,7 @@ def scheduler_to_json_file(scheduler, filepath: str = "scheduler_snapshot.json")
 
 
 def scheduler_from_json_file(
-    filepath: str = "scheduler_snapshot.json", wrapper=None, **kwargs
+    filepath: os.PathLike = "scheduler_snapshot.json", wrapper=None, **kwargs
 ) -> Scheduler:
     """Restore an `AxClient` and its state from a JSON-serialized snapshot,
     residing in a .json file by the given path.
@@ -140,25 +140,25 @@ def scheduler_from_json_snapshot(
     if class_decoder_registry is None:
         class_decoder_registry = CORE_CLASS_DECODER_REGISTRY
 
-    scheduler_options = object_from_json(
-        serialized.pop("options"),
-        decoder_registry=decoder_registry,
-        class_decoder_registry=class_decoder_registry,
-    )
-    experiment = object_from_json(
-        serialized.pop("experiment"),
-        decoder_registry=decoder_registry,
-        class_decoder_registry=class_decoder_registry,
-    )
-    serialized_generation_strategy = serialized.pop("generation_strategy")
-    ax_client = Scheduler(
-        generation_strategy=generation_strategy_from_json(
+    if "options" in serialized:
+        kwargs["options"] = object_from_json(
+            serialized.pop("options"),
+            decoder_registry=decoder_registry,
+            class_decoder_registry=class_decoder_registry,
+        )
+    if "experiment" in serialized:
+        kwargs["experiment"] = object_from_json(
+            serialized.pop("experiment"),
+            decoder_registry=decoder_registry,
+            class_decoder_registry=class_decoder_registry,
+        )
+    if "generation_strategy" in serialized:
+        serialized_generation_strategy = serialized.pop("generation_strategy")
+        kwargs["generation_strategy"] = generation_strategy_from_json(
             generation_strategy_json=serialized_generation_strategy,
-            experiment=experiment,
-        ),
-        experiment=experiment,
-        options=scheduler_options,
-        **kwargs,
-    )
-    ax_client._experiment = experiment
+            experiment=kwargs.get("experiment")
+        )
+    exp = kwargs.get("experiment")
+    ax_client = Scheduler(**kwargs)
+    ax_client._experiment = exp
     return ax_client
