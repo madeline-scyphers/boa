@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from ax import Objective
 from ax.core.objective import ScalarizedObjective
-from ax.service.utils.instantiation import (
-    InstantiationBase,
-)
+from ax.service.utils.instantiation import InstantiationBase
 
 from boa.metrics.metrics import get_metric_from_config
 

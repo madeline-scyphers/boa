@@ -3,11 +3,7 @@ from __future__ import annotations
 import copy
 import time
 
-from ax import (
-    Experiment,
-    Runner,
-    SearchSpace,
-)
+from ax import Experiment, Runner, SearchSpace
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
