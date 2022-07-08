@@ -1,4 +1,3 @@
-import numpy as np
 from ax.utils.measurement.synthetic_functions import from_botorch
 from botorch.test_functions.synthetic import Hartmann
 from torch import Tensor

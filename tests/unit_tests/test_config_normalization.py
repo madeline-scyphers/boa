@@ -1,4 +1,3 @@
-from pprint import pprint
 from unittest import TestCase
 
 from boa import boa_params_to_wpr, normalize_config

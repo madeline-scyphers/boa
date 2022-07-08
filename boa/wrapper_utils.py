@@ -22,10 +22,6 @@ from pathlib import Path
 
 import yaml
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
-from ax.service.utils.instantiation import EXPECTED_KEYS_IN_PARAM_REPR
-from ax.service.utils.instantiation import PARAM_CLASSES as PARAM_CLASSES_AX
-
-from boa.utils import get_callable_signature, get_dictionary_from_callable
 
 logger = logging.getLogger(__file__)
 

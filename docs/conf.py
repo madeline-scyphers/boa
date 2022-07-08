@@ -49,7 +49,7 @@ source_suffix = {
     '.ipynb': 'myst-nb',
     '.md': 'myst-nb',
     '.myst': 'myst-nb',
-    }
+}
 
 # Use saved output in notebooks rather than executing on build
 # Since the current examples are not part of boa, they need to execute locally
@@ -91,8 +91,7 @@ html_theme_options = {
             # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
             "icon": "fab fa-github-square",
             # Whether icon should be a FontAwesome class, or a local file
-        }
-   ]
+        }]
 }
 
 

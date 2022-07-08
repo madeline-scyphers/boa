@@ -1,17 +1,10 @@
-from pprint import pprint
-
 from ax import (
-    ComparisonOp,
-    Experiment,
     Metric,
     MultiObjective,
     MultiObjectiveOptimizationConfig,
     Objective,
-    ObjectiveThreshold,
     OptimizationConfig,
     OutcomeConstraint,
-    Runner,
-    SearchSpace,
 )
 from ax.core.objective import ScalarizedObjective
 

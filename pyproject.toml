@@ -25,9 +25,15 @@ exclude = '''
 '''
 
 [tool.flakeheaven]
-# make output nice
-format = "grouped"
 # 80 chars aren't enough in 21 century
-max_line_length = 100
+max_line_length = 120  # 110 for wiggle room for doc strings
 # show line of source code in output
 show_source = true
+
+# list of plugins and rules for them
+[tool.flakeheaven.plugins]
+pyflakes = ["+*"]
+# all pycodestyle except line break before binary operator because we use binary break after line break as recommended
+# And ignore module level imports not at top of file because of jupyter notebook examples
+pycodestyle = ["+*", "-W503", "-E402"]
+

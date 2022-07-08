@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
-from pprint import pformat, pprint
+from pprint import pformat
 
 from ax.service.utils.report_utils import exp_to_df
 

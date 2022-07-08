@@ -4,26 +4,17 @@ import copy
 import time
 
 from ax import (
-    ComparisonOp,
     Experiment,
-    MultiObjective,
-    MultiObjectiveOptimizationConfig,
-    Objective,
-    ObjectiveThreshold,
-    OptimizationConfig,
-    OutcomeConstraint,
     Runner,
     SearchSpace,
 )
-from ax.core.objective import ScalarizedObjective
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
 from ax.service.scheduler import Scheduler, SchedulerOptions
 
-from boa.metrics.metrics import get_metric_from_config
-from boa.utils import get_dictionary_from_callable
 from boa.instantiation_base import BoaInstantiationBase
+from boa.utils import get_dictionary_from_callable
 
 
 def instantiate_search_space_from_json(

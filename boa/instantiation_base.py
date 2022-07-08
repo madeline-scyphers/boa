@@ -4,8 +4,6 @@ from ax import Objective
 from ax.core.objective import ScalarizedObjective
 from ax.service.utils.instantiation import (
     InstantiationBase,
-    MetricObjective,
-    ObjectiveProperties,
 )
 
 from boa.metrics.metrics import get_metric_from_config
