@@ -1,6 +1,8 @@
 optimization_options:
-    metric:
-        boa_metric: RootMeanSquaredError
+    objective_options:
+        objectives:
+            - name: rmse
+              boa_metric: RootMeanSquaredError
     scheduler:
         total_trials: 10
     experiment_name: "test_experiment"

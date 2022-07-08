@@ -1,23 +1,29 @@
 import json
 import os
 import subprocess
-from pathlib import Path
 
 import numpy as np
 from ax import Trial
 
-from boa import BaseWrapper, get_synth_func, get_trial_dir, make_trial_dir
+from boa import (
+    BaseWrapper,
+    cd_and_cd_back_dec,
+    get_synth_func,
+    get_trial_dir,
+    make_trial_dir,
+)
+from boa.definitions import ROOT
 
 
 class TestWrapper(BaseWrapper):
     _processes = []
-    model_dir = Path(__file__).parent
 
     def __init__(self, ex_settings, experiment_dir, model_settings):
         self.ex_settings = ex_settings
         self.experiment_dir = experiment_dir
         self.model_settings = model_settings
 
+    @cd_and_cd_back_dec(path=ROOT)
     def run_model(self, trial: Trial):
         trial_dir = make_trial_dir(self.experiment_dir, trial.index).resolve()
 
@@ -27,7 +33,7 @@ class TestWrapper(BaseWrapper):
 
         cmd = (
             f"python synth_func_cli.py --output_dir {trial_dir}"
-            f" --standard_dev {self.ex_settings['metric']['noise_sd']}"
+            f" --standard_dev {self.ex_settings['objective_options']['objectives'][0]['noise_sd']}"
             f" --input_size {self.model_settings['input_size']}"
             f" --function {self.model_settings['function']}"
             f" -- {' '.join(str(val) for val in trial.arm.parameters.values())}"

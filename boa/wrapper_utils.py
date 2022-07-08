@@ -22,10 +22,6 @@ from pathlib import Path
 
 import yaml
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
-from ax.service.utils.instantiation import EXPECTED_KEYS_IN_PARAM_REPR
-from ax.service.utils.instantiation import PARAM_CLASSES as PARAM_CLASSES_AX
-
-from boa.utils import get_callable_signature, get_dictionary_from_callable
 
 logger = logging.getLogger(__file__)
 
@@ -89,9 +85,9 @@ def load_yaml(config_file: os.PathLike, normalize: bool = True, *args, **kwargs)
     return config
 
 
-def normalize_config(config: os.PathLike, parameter_keys=None) -> dict:
+def normalize_config(config: dict, parameter_keys=None) -> dict:
     config["optimization_options"] = config.get("optimization_options", {})
-    for key in ["metric", "experiment", "generation_strategy", "scheduler"]:
+    for key in ["experiment", "generation_strategy", "scheduler"]:
         config["optimization_options"][key] = config["optimization_options"].get(key, {})
 
     if parameter_keys:
@@ -296,7 +292,7 @@ def write_configs(trial_dir, parameters, model_options):
     Returns
     -------
     str
-        Path for the config file
+        Path for the config file.
     """
     with open(trial_dir / "config.yml", "w") as f:
         # Write model options from loaded config

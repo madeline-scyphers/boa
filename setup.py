@@ -2,7 +2,6 @@
 
 import io
 import os
-import re
 
 from setuptools import find_packages, setup
 
@@ -39,7 +38,6 @@ install_requires = [
 setup(
     name="boa",
     use_scm_version={"write_to": "boa/_version.py"},
-    # use_scm_version=True,
     setup_requires=["setuptools_scm"],
     description="An implementation of Gaussian Processes in Pytorch",
     long_description=readme,

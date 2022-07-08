@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import functools
 import os
-from abc import ABCMeta, abstractmethod
 from pathlib import Path
 
 from ax.core.base_trial import BaseTrial

@@ -26,9 +26,10 @@ def test_output_file_exists(script_main_run):
 
 def test_df(script_main_run):
     scheduler, config = script_main_run
+    config_metric = config["optimization_options"]["objective_options"]["objectives"][0]
 
     df = scheduler.experiment.fetch_data().df
-    metric = get_metric_from_config(config["optimization_options"])
+    metric = get_metric_from_config(config_metric)
     assert df["metric_name"].unique()[0] == metric.name
-    assert df["sem"].unique()[0] == config["optimization_options"]["metric"]["noise_sd"]
+    assert df["sem"].unique()[0] == config_metric["noise_sd"]
     assert len(df) == config["optimization_options"]["scheduler"]["total_trials"]

@@ -32,6 +32,7 @@ def main(output_dir: os.PathLike = None):
 
 
 def run_opt(output_dir):
+    print(os.getcwd())
     config_file = Path(__file__).parent / "synth_func_config.yaml"
     start = time.time()
     config = load_yaml(config_file)  # Read experiment config'

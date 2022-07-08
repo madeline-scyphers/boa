@@ -1,19 +1,22 @@
 # ScalarizedObjective Optimization config
 optimization_options:
-  scalarized_objective_options:  # can also use the key soo
+  objective_options:  # can also use the key soo
     objectives:
-      - boa_metric: RootMeanSquaredError
+      - name: rmse
+        boa_metric: RootMeanSquaredError
         properties:
           obs_file: path
-        weight: 1
 #        upper_bound:
 #          bound: 100
 #          relative: false
 #        lower_bound:
 #          bound: 0
 #          relative: false
-      - boa_metric: R2
-        weight: 2
+      - name: r2
+        boa_metric: R2
+    weights:
+      - 1
+      - 2
     minimize: true
 #    outcome_constraints:
 #      - metric:

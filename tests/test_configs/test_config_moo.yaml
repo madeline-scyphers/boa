@@ -1,9 +1,11 @@
 # MultiObjective Optimization config
 optimization_options:
-    multi_objective_options:  # can also use the key moo
+    objective_options:  # can also use the key moo
         objectives:
-            - boa_metric: RootMeanSquaredError
-            - boa_metric: R2
+            - name: rmse
+              boa_metric: RootMeanSquaredError
+            - name: r2
+              boa_metric: R2
         outcome_constraints: null
         objective_thresholds: null
     generation_strategy:
@@ -12,8 +14,8 @@ optimization_options:
               num_trials: 5
             - model: GPEI
               num_trials: -1
-    scheduler:
-        total_trials: 10
+#    scheduler:
+    n_trials: 10
     experiment_name: "test_experiment"
 
 model_options:
