@@ -292,7 +292,7 @@ def write_configs(trial_dir, parameters, model_options):
     Returns
     -------
     str
-        Path for the config file
+        Path for the config file.
     """
     with open(trial_dir / "config.yml", "w") as f:
         # Write model options from loaded config
