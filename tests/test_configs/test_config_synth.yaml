@@ -1,6 +1,7 @@
 optimization_options:
-    metric:
-        synthetic_metric: hartmann4
+    objective_options:
+        objectives:
+            - synthetic_metric: hartmann4
     scheduler:
         total_trials: 10
     experiment_name: "test_experiment"

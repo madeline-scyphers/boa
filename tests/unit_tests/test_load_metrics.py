@@ -19,11 +19,15 @@ def test_load_metric_by_name():
     assert metric_sklearn.metric_to_eval.func.__name__ == "mean_squared_error"
 
 
-def test_load_metric_from_config(synth_optimization_options, metric_optimization_options):
-    metric = get_metric_from_config(synth_optimization_options["metric"])
-    assert metric.name == "Hartmann4"
-    assert metric.metric_to_eval.func.name == "FromBotorch_Hartmann4"
+def test_load_metric_from_config(synth_config, metric_config):
+    objectives = synth_config["optimization_options"]["objective_options"]["objectives"]
+    for objective in objectives:
+        metric = get_metric_from_config(objective)
+        assert metric.name == "Hartmann4"
+        assert metric.metric_to_eval.func.name == "FromBotorch_Hartmann4"
 
-    metric = get_metric_from_config(metric_optimization_options["metric"])
-    assert metric.name == "root_mean_squared_error"
-    assert metric.metric_to_eval.func.__name__ == "mean_squared_error"
+    objectives = metric_config["optimization_options"]["objective_options"]["objectives"]
+    for objective in objectives:
+        metric = get_metric_from_config(objective)
+        assert metric.name == "rmse"
+        assert metric.metric_to_eval.func.__name__ == "mean_squared_error"

@@ -157,14 +157,11 @@ def scheduler_from_json_snapshot(
 
     serialized_generation_strategy = serialized.pop("generation_strategy")
     generation_strategy = generation_strategy_from_json(
-        generation_strategy_json=serialized_generation_strategy,
-        experiment=experiment
+        generation_strategy_json=serialized_generation_strategy, experiment=experiment
     )
 
     ax_client = Scheduler(
-        generation_strategy=generation_strategy,
-        experiment=experiment,
-        options=options,
-        **kwargs)
+        generation_strategy=generation_strategy, experiment=experiment, options=options, **kwargs
+    )
     ax_client._experiment = experiment
     return ax_client

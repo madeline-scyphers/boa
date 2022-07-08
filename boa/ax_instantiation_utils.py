@@ -19,11 +19,11 @@ from ax.core.objective import ScalarizedObjective
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
-from ax.service.ax_client import AxClient
 from ax.service.scheduler import Scheduler, SchedulerOptions
 
 from boa.metrics.metrics import get_metric_from_config
 from boa.utils import get_dictionary_from_callable
+from boa.instantiation_base import BoaInstantiationBase
 
 
 def instantiate_search_space_from_json(
@@ -31,7 +31,7 @@ def instantiate_search_space_from_json(
 ) -> SearchSpace:
     parameters = parameters if parameters is not None else []
     parameter_constraints = parameter_constraints if parameter_constraints is not None else []
-    return AxClient.make_search_space(parameters, parameter_constraints)
+    return BoaInstantiationBase.make_search_space(parameters, parameter_constraints)
 
 
 def get_generation_strategy(config: dict, experiment: Experiment = None):
@@ -116,8 +116,11 @@ def get_experiment(
         config.get("parameters"), config.get("parameter_constraints")
     )
 
-    optimization_config = get_optimization_config(
-        opt_options, wrapper, list(search_space.parameters)
+    optimization_config = BoaInstantiationBase.make_optimization_config(
+        **get_dictionary_from_callable(
+            BoaInstantiationBase.make_optimization_config, opt_options["objective_options"]
+        ),
+        wrapper=wrapper,
     )
 
     if "name" not in opt_options["experiment"]:
@@ -132,60 +135,3 @@ def get_experiment(
         runner=runner,
         **get_dictionary_from_callable(Experiment.__init__, opt_options["experiment"]),
     )
-
-
-def get_optimization_config(
-    config, wrapper=None, param_names=None
-) -> OptimizationConfig | MultiObjectiveOptimizationConfig:
-    if "scalarized_objective_options" in config:
-        objective_options = config["scalarized_objective_options"]
-        metrics = []
-        weights = []
-        kw = {}
-        outcome_constraints = []
-        for objective_opts in objective_options["objectives"]:
-            if "weight" in objective_opts:
-                weights.append(objective_opts["weight"])
-            metric = get_metric_from_config(
-                objective_opts, wrapper=wrapper, param_names=param_names
-            )
-            metrics.append(metric)
-        if weights:
-            kw["weights"] = weights
-        if "minimize" in objective_opts:
-            kw["minimize"] = objective_opts["minimize"]
-        objective = ScalarizedObjective(metrics=metrics, **kw)
-    # if config.get("objective_options"):
-    #     objective_options = config["objective_options"]
-    #     objectives = []
-    #     objective_thresholds = []
-    #     outcome_constraints = []
-    #     for options in objective_options:
-    #         metric = get_metric_from_config(options, wrapper=wrapper, param_names=param_names)
-    #         objectives.append(Objective(metric=metric))
-    #
-    #         outcome_kw = options.get("outcome_constraints", {})
-    #         op = outcome_kw.get("op", "")
-    #         op = ComparisonOp(op)
-    #
-    #         outcome_constraints.append(OutcomeConstraint(metric=metric, op=op, **outcome_kw),)
-    #         objective_thresholds.append(ObjectiveThreshold(metric=metric, **options.get("objective_thresholds", {})))
-    #
-    #     if len(objectives) > 1:
-    #         objective = MultiObjective(objectives)
-    #
-    #         opt_conf = MultiObjectiveOptimizationConfig(
-    #             objective=objective,
-    #             outcome_constraints=outcome_constraints,
-    #             objective_thresholds=objective_thresholds,
-    #         )
-    #     else:
-    #         objective = Objective(metric=metric)
-    #         opt_conf = OptimizationConfig(objective=objective)
-
-    else:
-        metric = get_metric_from_config(config["metric"], wrapper=wrapper, param_names=param_names)
-        objective = Objective(metric=metric)
-    opt_conf = OptimizationConfig(objective=objective)
-
-    return opt_conf

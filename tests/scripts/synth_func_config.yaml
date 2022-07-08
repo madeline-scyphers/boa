@@ -1,7 +1,9 @@
 optimization_options:
-    metric:
-        boa_metric: RMSE
-        noise_sd: .1
+    objective_options: # can also use the key moo
+        objectives:
+            - name: rmse
+              boa_metric: RMSE
+              noise_sd: .1
     generation_strategy:
         steps:
             - model: SOBOL

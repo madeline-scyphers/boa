@@ -34,7 +34,7 @@ class TestWrapper(BaseWrapper):
 
         cmd = (
             f"python synth_func_cli.py --output_dir {trial_dir}"
-            f" --standard_dev {self.ex_settings['metric']['noise_sd']}"
+            f" --standard_dev {self.ex_settings['objective_options']['objectives'][0]['noise_sd']}"
             f" --input_size {self.model_settings['input_size']}"
             f" --function {self.model_settings['function']}"
             f" -- {' '.join(str(val) for val in trial.arm.parameters.values())}"

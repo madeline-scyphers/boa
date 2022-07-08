@@ -89,9 +89,9 @@ def load_yaml(config_file: os.PathLike, normalize: bool = True, *args, **kwargs)
     return config
 
 
-def normalize_config(config: os.PathLike, parameter_keys=None) -> dict:
+def normalize_config(config: dict, parameter_keys=None) -> dict:
     config["optimization_options"] = config.get("optimization_options", {})
-    for key in ["metric", "experiment", "generation_strategy", "scheduler"]:
+    for key in ["experiment", "generation_strategy", "scheduler"]:
         config["optimization_options"][key] = config["optimization_options"].get(key, {})
 
     if parameter_keys:

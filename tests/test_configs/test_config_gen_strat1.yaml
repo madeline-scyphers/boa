@@ -1,6 +1,8 @@
 optimization_options:
     objective_options:
-        - boa_metric: RootMeanSquaredError
+        objectives:
+            - name: rmse
+              boa_metric: RootMeanSquaredError
     generation_strategy:
         steps:
             - model: SOBOL
