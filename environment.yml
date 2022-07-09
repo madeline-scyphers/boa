@@ -1,25 +1,26 @@
 name: boa
 channels:
+- pytorch
 - conda-forge
 - anaconda
 - defaults
 dependencies:
 - python=3.9
 - numpy
+- pytorch
+- torchvision
+- torchaudio
 - pandas
 - xarray
 - dask
-- scipy
-- sklearn
 - netCDF4
 - bottleneck
+- scipy
+- scikit-learn
 - click
 - sqlalchemy
 - pip
 - pip:
-  - torch
-  - torchvision
-  - torchaudio
   - ax-platform
   - PyYAML
   - -e .

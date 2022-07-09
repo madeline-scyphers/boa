@@ -31,7 +31,8 @@ Clone the boa repository from `boa's GitHub page <https://github.com/madeline-sc
 
 From the root directory of the cloned repository, run::
 
-    conda env create --file environment.yaml
+     conda env create; conda env update --name boa --file environment_dev_update.yml
+
 
 This will install boa in editable mode.
 

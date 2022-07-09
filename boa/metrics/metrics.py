@@ -1,13 +1,3 @@
-"""
-Metrics
-
-Built-in metrics:
-
-- MSE, MeanSquaredError
-- RMSE, RootMeanSquaredError
-- R2, RSquared
-"""
-
 from __future__ import annotations
 
 import logging
@@ -29,7 +19,6 @@ from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
 
 import boa.metrics.synthethic_funcs
 from boa.metaclasses import MetricRegister, MetricToEvalRegister
-from boa.metrics.metric_funcs import metric_from_json, metric_from_yaml
 from boa.metrics.metric_funcs import (
     normalized_root_mean_squared_error as normalized_root_mean_squared_error_,
 )
@@ -60,7 +49,7 @@ def get_metric_from_config(config, instantiate=True, **kwargs):
 def get_metric_by_class_name(metric_name, instantiate=True, sklearn_=False, **kwargs):
     if sklearn_:
         return setup_sklearn_metric(metric_name, instantiate=True, **kwargs)
-    return globals()[metric_name](**kwargs) if instantiate else globals()[metric_name]
+    return get_boa_metric(metric_name)(**kwargs) if instantiate else get_boa_metric(metric_name)
 
 
 def get_sklearn_func(metric_to_eval):
@@ -80,7 +69,7 @@ def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
     return modular_sklearn_metric(**kw) if instantiate else modular_sklearn_metric
 
 
-def get_synth_func(synthetic_metric):
+def get_synth_func(synthetic_metric: str):
     synthetic_funcs_modules = [
         boa.metrics.synthethic_funcs,
         ax.utils.measurement.synthetic_functions,
@@ -161,7 +150,7 @@ class MetricToEval(metaclass=MetricToEvalRegister):
         elif type_ == "synthetic_metric":
             func = get_synth_func(name)
         elif type_ == "boa_metric" or type_ is None:
-            func = globals()[name]
+            func = get_boa_metric(name)
             try:
                 func = func()
             except Exception as e:
@@ -176,6 +165,13 @@ class MetricToEval(metaclass=MetricToEvalRegister):
         else:
             raise ValueError(f"{cls.__name__} type_: {type_} invalid!")
         return func
+
+
+def generic_closure(close_around, instantiate=True, **kw):
+    def modular_metric(**kwargs):
+        return close_around(**{**kw, **kwargs})
+
+    return modular_metric(**kw) if instantiate else modular_metric
 
 
 class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
@@ -302,29 +298,58 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         return f"{self.__class__.__name__}({arg_str})"
 
 
-MSE = setup_sklearn_metric("mean_squared_error", lower_is_better=True, instantiate=False)
-MeanSquaredError = MSE
-mean_squared_error = MSE
+class METRICS:
+    MSE = setup_sklearn_metric("mean_squared_error", lower_is_better=True, instantiate=False)
+    MSE.__doc__ = """
+    Mean squared error regression loss. Read more from sklearn mean squared error
+    """
 
-RMSE = setup_sklearn_metric(
-    "mean_squared_error",
-    name="root_mean_squared_error",
-    lower_is_better=True,
-    metric_func_kwargs={"squared": False},
-    instantiate=False,
-)
-RootMeanSquaredError = RMSE
-root_mean_squared_error = RMSE
+    MeanSquaredError = MSE
+    mean_squared_error = MSE
 
-R2 = setup_sklearn_metric("r2_score", instantiate=False)
-RSquared = R2
-Mean = partial(ModularMetric, metric_to_eval=np.mean, lower_is_better=True)
+    RMSE = setup_sklearn_metric(
+        "mean_squared_error",
+        name="root_mean_squared_error",
+        lower_is_better=True,
+        metric_func_kwargs={"squared": False},
+        instantiate=False,
+    )
+    RMSE.__doc__ = """
+    Root mean squared error regression loss. Read more from sklearn mean squared error with squared=False
+    """
+    RootMeanSquaredError = RMSE
+    root_mean_squared_error = RMSE
 
-MetricFromJSON = partial(ModularMetric, metric_to_eval=metric_from_json)
-MetricFromYAML = partial(ModularMetric, metric_to_eval=metric_from_yaml)
+    R2 = setup_sklearn_metric("r2_score", instantiate=False)
+    R2.__doc__ = """
+    :math:`R^2` (coefficient of determination) regression score function.
 
-NRMSE = partial(
-    ModularMetric, metric_to_eval=normalized_root_mean_squared_error_, lower_is_better=True
-)
-NormalizedRootMeanSquaredError = NRMSE
-normalized_root_mean_squared_error = NRMSE
+    Best possible score is 1.0 and it can be negative (because the
+    model can be arbitrarily worse). In the general case when the true y is
+    non-constant, a constant model that always predicts the average y
+    disregarding the input features would get a :math:`R^2` score of 0.0.
+    """
+    RSquared = R2
+
+    Mean = generic_closure(
+        close_around=ModularMetric, metric_to_eval=np.mean, lower_is_better=True, instantiate=False
+    )
+    Mean.__doc__ = """
+    Arithmetic mean along the specified axis for your metric
+    """
+    NRMSE = generic_closure(
+        close_around=ModularMetric,
+        metric_to_eval=normalized_root_mean_squared_error_,
+        lower_is_better=True,
+        instantiate=False,
+    )
+    NRMSE.__doc__ = """
+    Normalized root mean squared error. Like a normalized version of RMSE.
+    Normalization defaults to IQR (inner quartile range).
+    """
+    NormalizedRootMeanSquaredError = NRMSE
+    normalized_root_mean_squared_error = NRMSE
+
+
+def get_boa_metric(name):
+    return getattr(METRICS, name)
