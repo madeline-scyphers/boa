@@ -40,8 +40,8 @@ jobs:
           key: ${{ matrix.label }}-conda-${{ hashFiles('environment_dev.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
-      - name: Update environment
-        run: mamba env update -n boa -f environment.yml
+      - name: Update base environment
+        run: mamba env update -n boa -f environment.yml --prune
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Update environment with development env
@@ -90,8 +90,8 @@ jobs:
           key: ${{ matrix.label }}-conda-${{ hashFiles('environment_dev.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
-      - name: Update environment
-        run: mamba env update -n boa -f environment.yml
+      - name: Update base environment
+        run: mamba env update -n boa -f environment.yml --prune
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Update environment with development env

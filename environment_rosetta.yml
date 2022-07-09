@@ -6,13 +6,11 @@ channels:
 - defaults
 dependencies:
 - python=3.9
-- pytorch
+- mkl<2022
+- pytorch<1.12.0
 - torchvision
 - torchaudio
 - numpy
-- pytorch
-- torchvision
-- torchaudio
 - pandas
 - xarray
 - dask
