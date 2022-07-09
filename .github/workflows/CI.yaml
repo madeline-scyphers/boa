@@ -41,7 +41,11 @@ jobs:
         id: cache
 
       - name: Update environment
-        run: mamba env update -n boa -f environment.yml -f environment_dev_update.yml
+        run: mamba env update -n boa -f environment.yml
+        if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: Update environment with development env
+        run: mamba env update -n boa -f environment_dev_update.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Lint
@@ -87,7 +91,11 @@ jobs:
         id: cache
 
       - name: Update environment
-        run: mamba env update -n boa -f environment.yml -f environment_dev_update.yml
+        run: mamba env update -n boa -f environment.yml
+        if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: Update environment with development env
+        run: mamba env update -n boa -f environment_dev_update.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Run tests
@@ -117,6 +125,7 @@ jobs:
           python-version: 3.9
           activate-environment: boa
           environment-file: environment.yml
+
       - name: Update env with env req
         shell: pwsh
         run: conda env update -n boa -f environment_dev_update.yml
