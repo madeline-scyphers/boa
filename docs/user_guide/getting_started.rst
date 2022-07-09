@@ -49,5 +49,8 @@ Once everything is installed, try to run the test example.
     Add simple test run
 
 If this test case runs successfully, you can move on to the next steps.
+
+`contributing <contributing.rst#Contributing to boa>`__
+
 If you have errors, see the :ref:`Troubleshooting` section.
 

@@ -1,7 +1,7 @@
 name: ci
 
 on:
-  push:
+  pull_request:
     branches:
       - 'develop'
       - 'main'
@@ -37,11 +37,15 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: ${{ matrix.prefix }}
-          key: ${{ matrix.label }}-conda-${{ hashFiles('environment_dev.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+          key: ${{ matrix.label }}-conda-${{ hashFiles('environment_dev.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
-      - name: Update environment
-        run: mamba env update -n boa -f environment_dev.yaml
+      - name: Update base environment
+        run: mamba env update -n boa -f environment.yml --prune
+        if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: Update environment with development env
+        run: mamba env update -n boa -f environment_dev_update.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Lint
@@ -83,11 +87,15 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: ${{ matrix.prefix }}
-          key: ${{ matrix.label }}-conda-${{ hashFiles('environment_dev.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+          key: ${{ matrix.label }}-conda-${{ hashFiles('environment_dev.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
-      - name: Update environment
-        run: mamba env update -n boa -f environment_dev.yaml
+      - name: Update base environment
+        run: mamba env update -n boa -f environment.yml --prune
+        if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: Update environment with development env
+        run: mamba env update -n boa -f environment_dev_update.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Run tests
@@ -116,7 +124,11 @@ jobs:
           # Or pin it to a higher version
           python-version: 3.9
           activate-environment: boa
-          environment-file: environment_dev.yaml
+          environment-file: environment.yml
+
+      - name: Update env with env req
+        shell: pwsh
+        run: conda env update -n boa -f environment_dev_update.yml
 
       - name: Run tests
         shell: pwsh
