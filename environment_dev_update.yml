@@ -7,4 +7,4 @@ channels:
 dependencies:
   - pip
   - pip:
-    -e .[dev,docs,examples]
+    - -e .[dev,docs,examples]

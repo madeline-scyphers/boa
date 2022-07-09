@@ -36,18 +36,17 @@ From the root directory of the cloned repository, run::
 
 This will install boa in editable mode.
 
-.. todo::
-   - instructions for installing with pip
-   - instructions for updating
+To use install it with pip, run::
+
+    pip install -e .[dev,docs,examples]
 
 ********
 Test run
 ********
 
-Once everything is installed, try to run the test example.
+Once everything is installed, try to run the test suite::
 
-.. todo::
-    Add simple test run
+    invoke test
 
 If this test case runs successfully, you can move on to the next steps.
 If you have errors, see the :ref:`Troubleshooting` section.
