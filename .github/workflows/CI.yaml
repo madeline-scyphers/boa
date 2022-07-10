@@ -91,7 +91,7 @@ jobs:
         id: cache
 
       - name: Update base environment
-        run: mamba env update -n boa -f environment.yml --prune
+        run: mamba env update -n boa -f environment_mac_x86.yml --prune
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Update environment with development env

@@ -29,10 +29,13 @@ Install boa
 
 Clone the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
 
-From the root directory of the cloned repository, run::
+If you are not on an x86 mac, from the root directory of the cloned repository, run::
 
      conda env create; conda env update --name boa --file environment_dev_update.yml
 
+x86 macs, run::
+
+     conda env create --file environment_mac_x86.yml; conda env update --name boa --file environment_dev_update.yml
 
 This will install boa in editable mode.
 
