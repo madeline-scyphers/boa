@@ -1,20 +1,10 @@
 WIP
 
-[Click here for boa's documentation](https://optiwrap.readthedocs.io/)
+[Click here for boa's documentation](https://pyboa.readthedocs.io/)
 
-Install requirements:
-- Install environment.yml
+Install requirements
 
-On all machines that are not x86 macs, run
-
-```bash
-conda env create
-```
- on x86 macs, run
-
-```bash
-conda env create --file environment_mac_x86.yml
-```
+- see [installation guide](https://pyboa.readthedocs.io/en/latest/user_guide/getting_started.html#installation) 
 
 Ax should be installed for you, but if you have any problems, see the link below.
 

@@ -31,11 +31,15 @@ Clone the boa repository from `boa's GitHub page <https://github.com/madeline-sc
 
 If you are not on an x86 mac, from the root directory of the cloned repository, run::
 
-     conda env create; conda env update --name boa --file environment_dev_update.yml
+     conda env create
+     # If you want to install the dev requirements for development, run this line
+     conda env update --name boa --file environment_dev_update.yml
 
 x86 macs, run::
 
-     conda env create --file environment_mac_x86.yml; conda env update --name boa --file environment_dev_update.yml
+     conda env create --file environment_mac_x86.yml
+     # If you want to install the dev requirements for development, run this line
+     conda env update --name boa --file environment_dev_update.yml
 
 This will install boa in editable mode.
 
