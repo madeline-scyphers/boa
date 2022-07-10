@@ -57,7 +57,9 @@ Once everything is installed, try to run the test suite::
 
 If this test case runs successfully, you can move on to the next steps.
 
-`contributing <contributing.rst#Contributing to boa>`__
+`contributing <contributing.html>`__
+
+
+`contributing <contributing.rst>`__
 
 If you have errors, see the :ref:`Troubleshooting` section.
-
