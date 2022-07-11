@@ -4,6 +4,11 @@ build:
   os: "ubuntu-20.04"
   tools:
     python: "mambaforge-4.10"
+  jobs:
+    post_install:
+      conda env update --name boa --file environment_dev_update.yml
 
 conda:
-  environment: environment_dev.yml
+  environment: environment.yml
+
+
