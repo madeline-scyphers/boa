@@ -23,3 +23,6 @@ formatting or scaling model outputs,  )
 
 See :doc:`FETCH3 <fetch3:user_guide/optimization>`'s :mod:`Wrapper <fetch3:fetch3.optimize.fetch_wrapper>` for an
 example.
+
+.. rli:: https://raw.githubusercontent.com/jemissik/fetch3_nhl/develop/fetch3/optimize/fetch_wrapper.py
+   :language: python

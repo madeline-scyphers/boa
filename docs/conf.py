@@ -40,6 +40,7 @@ extensions = [
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
+    'sphinxext.remoteliteralinclude',
     'myst_nb',
 ]
 
