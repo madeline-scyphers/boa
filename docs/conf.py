@@ -39,6 +39,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.viewcode',
     'myst_nb',
 ]
 
