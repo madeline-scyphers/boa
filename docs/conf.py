@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.autosectionlabel',
+    'sphinx.ext.intersphinx',
     'myst_nb',
 ]
 
@@ -97,3 +98,9 @@ html_theme_options = {
 
 # For to-do extension
 todo_include_todos = True
+
+
+# external project mapping for intersphinx
+intersphinx_mapping = {
+    'fetch3': ('https://fetch3-nhl.readthedocs.io/en/latest', None),
+}

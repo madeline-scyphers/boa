@@ -21,4 +21,5 @@ wrapper:
 Apart from these core functions, your model wrapper can have additional functions as needed (for example, to help with
 formatting or scaling model outputs,  )
 
-See `FETCH3 <https://fetch3-nhl.readthedocs.io/en/latest/index.html>`_ for an example.
+See :doc:`FETCH3 <fetch3:user_guide/optimization>`'s :mod:`Wrapper <fetch3:fetch3.optimize.fetch_wrapper>` for an
+example.
