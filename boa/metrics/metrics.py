@@ -173,6 +173,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         metric_func_kwargs: Optional[dict] = None,
         # param_names: list[str] = None,
         noise_sd: Optional[float] = 0.0,
+        name: Optional[str] = None,
         wrapper: Optional[BaseWrapper] = None,
         properties: Optional[dict[str]] = None,
         metric_type: Optional[str] = None,
@@ -215,8 +216,10 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         kwargs
         """
 
-        if kwargs.get("name") is None:
-            kwargs["name"] = _get_name(metric_to_eval)
+        if name is None:
+            name = _get_name(metric_to_eval)
+        if "param_names" not in kwargs:
+            kwargs["param_names"] = []
         # param_names = param_names if param_names is not None else []
         self.metric_func_kwargs = metric_func_kwargs or {}
         self.metric_to_eval = MetricToEval(
@@ -224,8 +227,8 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         )
         self.wrapper = wrapper or BaseWrapper()
         super().__init__(
-            param_names=[],
             noise_sd=noise_sd,
+            name=name,
             **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs),
         )
         self.properties = properties or {}
