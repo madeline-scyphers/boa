@@ -25,7 +25,16 @@ class BaseWrapper(metaclass=WrapperRegister):
         """
 
     def write_configs(self, trial: BaseTrial) -> None:
-        pass
+        """
+
+        Parameters
+        ----------
+        trial :
+
+        Returns
+        -------
+
+        """
 
     def run_model(self, trial: BaseTrial) -> None:
         """
@@ -38,9 +47,17 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     def set_trial_status(self, trial: BaseTrial) -> None:
         """
-        The trial gets polled from time to time to see if it is completed, failed, still running,
-        etc. This marks the trial as one of those options based on some criteria of the model.
-        If the model is still running, don't do anything with the trial.
+        Marks the status of a trial to reflect the status of the model run for the trial.
+
+        Each trial will be polled periodically to determine its status (completed, failed, still running,
+        etc). This function defines the criteria for determining the status of the model run for a trial (e.g., whether the model
+        run is completed/still running, failed, etc). The trial status is updated accordingly when the trial is polled.
+
+        The approach for determining the trial status will depend on the structure of the particular model and its
+        outputs. One example is checking the log files of the model.
+
+        .. todo::
+            Add examples/links of different approaches
 
         Parameters
         ----------
@@ -80,11 +97,13 @@ class BaseWrapper(metaclass=WrapperRegister):
                 used in the objective
         """
 
-    def wrapper_to_dict(self) -> dict:
-        """Convert Ax experiment to a dictionary."""
-        parents = self.__class__.mro()[1:]  # index 0 is the class itself
-
-        wrapper_state = serialize_init_args(self, parents=parents, match_private=True)
-
-        wrapper_state = convert_type(wrapper_state, {Path: str})
-        return {"__type": self.__class__.__name__, **wrapper_state}
+    # TODO remove this method
+    # def wrapper_to_dict(self) -> dict:
+    #     """Convert Ax experiment to a dictionary.
+    #     """
+    #     parents = self.__class__.mro()[1:]  # index 0 is the class itself
+    #
+    #     wrapper_state = serialize_init_args(self, parents=parents, match_private=True)
+    #
+    #     wrapper_state = convert_type(wrapper_state, {Path: str})
+    #     return {"__type": self.__class__.__name__, **wrapper_state}
