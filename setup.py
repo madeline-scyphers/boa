@@ -62,7 +62,16 @@ setup(
     python_requires=">=3.7",
     install_requires=install_requires,
     extras_require={
-        "dev": ["black<=22.3.0", "black[jupyter]", "isort", "flake8", "flakeheaven", "pytest", "invoke"],
+        "dev": [
+            "black<=22.3.0",
+            "black[jupyter]",
+            "isort",
+            "flake8",
+            "flakeheaven",
+            "pytest",
+            "invoke",
+            "setuptools_scm",
+        ],
         "docs": ["sphinx", "myst-nb", "pydata-sphinx-theme"],
         "examples": ["jupyter", "hvplot"],
     },

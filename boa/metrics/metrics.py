@@ -8,11 +8,9 @@ from typing import Callable, Optional
 import ax.utils.measurement.synthetic_functions
 import botorch.test_functions.synthetic
 import numpy as np
-import pandas as pd
 import sklearn.metrics
 from ax import Metric
 from ax.core.base_trial import BaseTrial
-from ax.core.data import Data
 from ax.core.types import TParameterization
 from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
@@ -121,14 +119,14 @@ def _get_name(obj):
 
 class MetricToEval(metaclass=MetricToEvalRegister):
     def __init__(
-        self, *, func: Callable | str, func_kwargs: Optional[dict] = None, type_: str = None
+        self, *, func: Callable | str, func_kwargs: Optional[dict] = None, metric_type: str = None
     ):
         if isinstance(func, str):
-            func = self.func_from_str(func, type_)
+            func = self.func_from_str(func, metric_type)
         self.func = func
         self.func_kwargs = func_kwargs or {}
         self.name = _get_name(func)
-        self.type_ = type_
+        self.metric_type = metric_type
 
     def __call__(self, *args, **kwargs):
         return self.func(
@@ -140,30 +138,24 @@ class MetricToEval(metaclass=MetricToEvalRegister):
             "__type": self.__class__.__name__,
             "func": self.name,
             "func_kwargs": self.func_kwargs,
-            "type_": self.type_,
+            "metric_type": self.metric_type,
         }
 
+    # TODO make a better way to do a None option
     @classmethod
-    def func_from_str(cls, name: str, type_: str = None):
-        if type_ == "sklearn_metric":
+    def func_from_str(cls, name: str, metric_type: str = None):
+        if metric_type == "sklearn_metric":
             func = get_sklearn_func(name)
-        elif type_ == "synthetic_metric":
+        elif metric_type == "synthetic_metric":
             func = get_synth_func(name)
-        elif type_ == "boa_metric" or type_ is None:
+        elif metric_type == "boa_metric" or metric_type is None:
             func = get_boa_metric(name)
-            try:
-                func = func()
-            except Exception as e:
-                logger.debug(
-                    "func: %s not callable because of: %r", getattr(func, "__name__", func), e
-                )
             if isinstance(func, ModularMetric):
                 func = func.metric_to_eval.func
             elif isinstance(func, MetricToEval):
                 func = func.func
-            # else func is just func
         else:
-            raise ValueError(f"{cls.__name__} type_: {type_} invalid!")
+            raise ValueError(f"{cls.__name__} metric_type: {metric_type} invalid!")
         return func
 
 
@@ -178,26 +170,64 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     def __init__(
         self,
         metric_to_eval: Callable,
-        param_names: list[str] = None,
-        noise_sd: Optional[float] = 0.0,
         metric_func_kwargs: Optional[dict] = None,
+        # param_names: list[str] = None,
+        noise_sd: Optional[float] = 0.0,
+        name: Optional[str] = None,
         wrapper: Optional[BaseWrapper] = None,
         properties: Optional[dict[str]] = None,
-        type_: Optional[str] = None,
+        metric_type: Optional[str] = None,
         **kwargs,
     ):
+        """
+        A wrappable metric defined by a generic deterministic function with the
+        ability to inject a wrapper for higher customizability.
+        The metric function can have some known or unknown noise such that each
+        evaluation may be different, they will be centered around a true value with
+        some ``noise_sd``
 
-        if kwargs.get("name") is None:
-            kwargs["name"] = _get_name(metric_to_eval)
-        param_names = param_names if param_names is not None else []
+        The deterministic metric function to compute is implemented by passing
+        some callable (a function or class with ``__call__``) to argument
+        ``metric_to_eval``.
+
+        You can further customize the behavior of your metric by passing a
+        :class:`Wrapper<boa.wrapper.BaseWrapper>`, which has will run methods
+        such as  :meth:`~boa.wrapper.BaseWrapper.fetch_trial_data` before
+        calling the specified metric to evaluate, which can allow you
+        to preprocess/prepare model output data for your metric calculation.
+
+
+        Parameters
+        ----------
+        metric_to_eval : Callable
+        metric_func_kwargs : Optional[dict]
+            dictionary of keyword arguments to pass to the metric to eval function
+        noise_sd : Optional[float]
+            Scale of normal noise added to the function result. If None, interpret the function as
+            noisy with unknown noise level.
+        name : Optional[str]
+            name: Name of the metric, if not specified, defaults to name of ``metric_to_eval``
+        wrapper : Optional[BaseWrapper]
+            Boa wrapper to handle running the model and getting the data, allows injecting custom
+            function in the middle of ``ModularMetric``
+        properties : Optional[dict[str]]
+            Arbitrary dictionary of properties to store. Properties need to be json
+            serializable
+        kwargs
+        """
+
+        if name is None:
+            name = _get_name(metric_to_eval)
+        # param_names = param_names if param_names is not None else []
         self.metric_func_kwargs = metric_func_kwargs or {}
         self.metric_to_eval = MetricToEval(
-            func=metric_to_eval, func_kwargs=metric_func_kwargs, type_=type_
+            func=metric_to_eval, func_kwargs=metric_func_kwargs, metric_type=metric_type
         )
         self.wrapper = wrapper or BaseWrapper()
         super().__init__(
-            param_names=param_names,
+            param_names=[],
             noise_sd=noise_sd,
+            name=name,
             **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs),
         )
         self.properties = properties or {}
@@ -206,13 +236,12 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     def is_available_while_running(cls) -> bool:
         return False
 
-    def fetch_trial_data(self, trial: BaseTrial, *args, **kwargs):
+    def fetch_trial_data(self, trial: BaseTrial, **kwargs):
         wrapper_kwargs = (
             self.wrapper.fetch_trial_data(
                 trial=trial,
                 metric_properties=self.properties,
                 metric_name=self.name,
-                *args,
                 **kwargs,
             )
             if self.wrapper
@@ -220,42 +249,27 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         )
         wrapper_kwargs = wrapper_kwargs or {}
         safe_kwargs = {"trial": trial, **kwargs, **wrapper_kwargs}
-        if isinstance(self.metric_to_eval.func, Metric):
-            return self.metric_to_eval.func.fetch_trial_data(
-                *args,
-                **get_dictionary_from_callable(
-                    self.metric_to_eval.func.fetch_trial_data, safe_kwargs
-                ),
-            )
-        else:
-            return self._fetch_trial_data_of_func(*args, **safe_kwargs)
-
-    def _fetch_trial_data_of_func(self, trial: BaseTrial, noisy: bool = True, **kwargs) -> Data:
-        noise_sd = self.noise_sd if noisy else 0.0
-        arm_names = []
-        mean = []
-        for name, arm in trial.arms_by_name.items():
-            arm_names.append(name)
-            val = self._evaluate(params=arm.parameters, **kwargs)
-            if noise_sd:
-                val = val + noise_sd * np.random.randn()
-            mean.append(val)
-        # indicate unknown noise level in data
-        if noise_sd is None:
-            noise_sd = float("nan")
-        df = pd.DataFrame(
-            {
-                "arm_name": arm_names,
-                "metric_name": self.name,
-                "mean": mean,
-                "sem": noise_sd,
-                "trial_index": trial.index,
-            }
-        )
-        return Data(df=df)
+        trial = safe_kwargs.pop("trial")
+        # We add our extra kwargs to the arm parameters so they can be passed to evaluate
+        for arm in trial.arms_by_name.values():
+            arm._parameters["kwargs"] = safe_kwargs
+        try:
+            if isinstance(self.metric_to_eval.func, Metric):
+                trial_data = self.metric_to_eval.func.fetch_trial_data(
+                    trial=trial,
+                    **get_dictionary_from_callable(
+                        self.metric_to_eval.func.fetch_trial_data, safe_kwargs
+                    ),
+                )
+            else:
+                trial_data = super().fetch_trial_data(trial=trial, **safe_kwargs)
+        finally:
+            # We remove the extra parameters from the arms for json serialization
+            [arm._parameters.pop("kwargs") for arm in trial.arms_by_name.values()]
+        return trial_data
 
     def _evaluate(self, params: TParameterization, **kwargs) -> float:
-        kwargs["x"] = np.array([params[p] for p in self.param_names if p in params])
+        kwargs.update(params.pop("kwargs"))
         return self.f(**get_dictionary_from_callable(self.metric_to_eval, kwargs))
 
     def f(self, *args, **kwargs):

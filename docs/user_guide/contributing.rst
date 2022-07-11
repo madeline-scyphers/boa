@@ -1,3 +1,4 @@
+.. _contributions:
 ###################
 Contributing to boa
 ###################

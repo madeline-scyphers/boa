@@ -89,6 +89,9 @@ def normalize_config(config: dict, parameter_keys=None) -> dict:
     config["optimization_options"] = config.get("optimization_options", {})
     for key in ["experiment", "generation_strategy", "scheduler"]:
         config["optimization_options"][key] = config["optimization_options"].get(key, {})
+    config["optimization_options"]["experiment"]["name"] = config["optimization_options"][
+        "experiment"
+    ].get("name", "")
 
     if parameter_keys:
         parameters, mapping = wpr_params_to_boa(config, parameter_keys)
@@ -206,7 +209,7 @@ def boa_params_to_wpr(params: list[dict], mapping, from_trial=True):
     return new_params
 
 
-def make_experiment_dir(working_dir: str, experiment_name: str):
+def make_experiment_dir(working_dir: str, experiment_name: str = ""):
     """
     Creates directory for the experiment and returns the path.
     The directory is named with the experiment name and the current datetime.
@@ -224,7 +227,8 @@ def make_experiment_dir(working_dir: str, experiment_name: str):
         Path to the directory for the experiment
     """
     # Directory named with experiment name and datetime
-    ex_dir = Path(working_dir) / f'{experiment_name}_{dt.datetime.now().strftime("%Y%m%dT%H%M%S")}'
+    experiment_name = experiment_name + "_" if experiment_name else experiment_name
+    ex_dir = Path(working_dir) / f'{experiment_name}{dt.datetime.now().strftime("%Y%m%dT%H%M%S")}'
     ex_dir.mkdir()
     return ex_dir
 

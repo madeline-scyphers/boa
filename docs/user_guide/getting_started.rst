@@ -57,9 +57,6 @@ Once everything is installed, try to run the test suite::
 
 If this test case runs successfully, you can move on to the next steps.
 
-`contributing <contributing.html>`__
-
-
-`contributing <contributing.rst>`__
+:ref:`contributions`
 
 If you have errors, see the :ref:`Troubleshooting` section.
