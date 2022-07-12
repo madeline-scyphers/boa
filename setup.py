@@ -72,7 +72,7 @@ setup(
             "invoke",
             "setuptools_scm",
         ],
-        "docs": ["sphinx", "myst-nb", "pydata-sphinx-theme"],
+        "docs": ["sphinx", "myst-nb", "pydata-sphinx-theme", "sphinxext-remoteliteralinclude"],
         "examples": ["jupyter", "hvplot"],
     },
 )
