@@ -89,6 +89,7 @@ def normalize_config(config: dict, parameter_keys=None) -> dict:
     config["optimization_options"] = config.get("optimization_options", {})
     for key in ["experiment", "generation_strategy", "scheduler"]:
         config["optimization_options"][key] = config["optimization_options"].get(key, {})
+    config["optimization_options"]["experiment"]["name"] = config["optimization_options"]["experiment"].get("name", "")
 
     if parameter_keys:
         parameters, mapping = wpr_params_to_boa(config, parameter_keys)
@@ -117,9 +118,7 @@ def normalize_config(config: dict, parameter_keys=None) -> dict:
     return config
 
 
-def wpr_params_to_boa(
-    params: dict, parameter_keys: str | list[str | list[str] | tuple[str]]
-) -> dict:
+def wpr_params_to_boa(params: dict, parameter_keys: str | list[str | list[str] | tuple[str]]) -> dict:
     # if only one key is passed in as a str, wrap it in a list
     if isinstance(parameter_keys, str):
         parameter_keys = [parameter_keys]
@@ -158,9 +157,7 @@ def wpr_params_to_boa(
                     key_index += 1
                     new_key = new_key[:-2]
             new_params[new_key] = dct
-            mapping[new_key] = dict(
-                path=maybe_key, original_name=parameter_name, path_type=path_type
-            )
+            mapping[new_key] = dict(path=maybe_key, original_name=parameter_name, path_type=path_type)
 
     return new_params, mapping
 
@@ -188,9 +185,7 @@ def boa_params_to_wpr(params: list[dict], mapping, from_trial=True):
         d = new_params[p1]
         if len(path) > 1:
             for key, typ in zip(path[1:], path_type[1:]):
-                if (isinstance(d, list) and key + 1 > len(d)) or (
-                    isinstance(d, dict) and key not in d
-                ):
+                if (isinstance(d, list) and key + 1 > len(d)) or (isinstance(d, dict) and key not in d):
                     if isinstance(d, list):
                         d.extend([None for _ in range(key + 1 - len(d))])
                     if typ == "dict":
@@ -206,7 +201,11 @@ def boa_params_to_wpr(params: list[dict], mapping, from_trial=True):
     return new_params
 
 
-def make_experiment_dir(working_dir: str, experiment_name: str):
+def get_dt_now_as_str(fmt: str = "%Y%m%dT%H%M%S"):
+    return dt.datetime.now().strftime(fmt)
+
+
+def make_experiment_dir(working_dir: str, experiment_name: str = ""):
     """
     Creates directory for the experiment and returns the path.
     The directory is named with the experiment name and the current datetime.
@@ -224,33 +223,41 @@ def make_experiment_dir(working_dir: str, experiment_name: str):
         Path to the directory for the experiment
     """
     # Directory named with experiment name and datetime
-    ex_dir = Path(working_dir) / f'{experiment_name}_{dt.datetime.now().strftime("%Y%m%dT%H%M%S")}'
+    experiment_name = experiment_name + "_" if experiment_name else experiment_name
+    ex_dir = Path(working_dir) / f"{experiment_name}{get_dt_now_as_str()}"
     ex_dir.mkdir()
     return ex_dir
 
 
-def get_trial_dir(experiment_dir, trial_index):
+def zfilled_trial_index(trial_index: int, fill_size: int = 6) -> str:
+    """Return trial index left passed with zeros of length ``fill_size``"""
+    return str(trial_index).zfill(fill_size)
+
+
+def get_trial_dir(experiment_dir: os.PathLike, trial_index: int, **kwargs):
     """
     Return a directory for a trial,
     Trial directory is named with the trial index.
 
     Parameters
     ----------
-    experiment_dir : Path
+    experiment_dir : os.PathLike
         Directory for the experiment
     trial_index : int
         Trial index from the Ax client
+    kwargs
+        kwargs passed to ``zfilled_trial_index``
 
     Returns
     -------
     Path
         Directory for the trial
     """
-    trial_dir = experiment_dir / str(trial_index).zfill(6)  # zero-padded trial index
+    trial_dir = Path(experiment_dir) / zfilled_trial_index(trial_index, **kwargs)  # zero-padded trial index
     return trial_dir
 
 
-def make_trial_dir(experiment_dir, trial_index):
+def make_trial_dir(experiment_dir: os.PathLike, trial_index: int, **kwargs):
     """
     Create a directory for a trial, and return the path to the directory.
     Trial directory is created inside the experiment directory, and named with the trial index.
@@ -258,17 +265,19 @@ def make_trial_dir(experiment_dir, trial_index):
 
     Parameters
     ----------
-    experiment_dir : Path
+    experiment_dir : os.PathLike
         Directory for the experiment
     trial_index : int
         Trial index from the Ax client
+    kwargs
+        kwargs passed to ``get_trial_dir``
 
     Returns
     -------
     Path
         Directory for the trial
     """
-    trial_dir = get_trial_dir(experiment_dir, trial_index)
+    trial_dir = get_trial_dir(experiment_dir, trial_index, **kwargs)
     trial_dir.mkdir()
     return trial_dir
 

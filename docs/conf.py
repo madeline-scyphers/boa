@@ -38,6 +38,9 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.autosectionlabel',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.viewcode',
+    'sphinxext.remoteliteralinclude',
     'myst_nb',
 ]
 
@@ -60,7 +63,7 @@ html_js_files = ["https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/requir
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'references']
 
 # -- Autosummary -------------------------------------------------------------
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
@@ -97,3 +100,9 @@ html_theme_options = {
 
 # For to-do extension
 todo_include_todos = True
+
+
+# external project mapping for intersphinx
+intersphinx_mapping = {
+    'fetch3': ('https://fetch3-nhl.readthedocs.io/en/latest', None),
+}

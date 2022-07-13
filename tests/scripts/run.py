@@ -36,9 +36,7 @@ def run_opt(output_dir):
     config_file = Path(__file__).parent / "synth_func_config.yaml"
     start = time.time()
     config = load_yaml(config_file)  # Read experiment config'
-    experiment_dir = make_experiment_dir(
-        output_dir, config["optimization_options"]["experiment_name"]
-    )
+    experiment_dir = make_experiment_dir(output_dir, config["optimization_options"]["experiment"]["name"])
     # setup the paramb bounds based on the synth func bounds and synth func number of params
     function = get_synth_func(config["model_options"]["function"])
     config["parameters"] = [

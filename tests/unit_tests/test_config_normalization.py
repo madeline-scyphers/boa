@@ -39,9 +39,7 @@ def test_boa_params_to_wpr(denormed_param_parse_config):
         ["params2", 1, 0],
     ]
     config = normalize_config(denormed_param_parse_config, parameter_keys)
-    orig_params = boa_params_to_wpr(
-        config["parameters"], config["optimization_options"]["mapping"], from_trial=False
-    )
+    orig_params = boa_params_to_wpr(config["parameters"], config["optimization_options"]["mapping"], from_trial=False)
 
     d = {k: v for k, v in config.items() if k in [keys[0] for keys in parameter_keys]}
     TestCase().assertDictEqual(d, orig_params)

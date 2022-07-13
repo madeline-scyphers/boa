@@ -17,9 +17,7 @@ def _metric_from_jsonlike(data, path_to_data):
             data = data[key]
         except (IndexError, KeyError, TypeError) as e:
             if len(e.args) >= 1:
-                e.args = (
-                    e.args[0] + "\nCan't load data from file because path to data is invalid!",
-                ) + e.args[1:]
+                e.args = (e.args[0] + "\nCan't load data from file because path to data is invalid!",) + e.args[1:]
             raise
     return data
 
@@ -61,9 +59,7 @@ def normalized_root_mean_squared_error(y_true, y_pred, normalizer="iqr", **kwarg
     nrmse : float or ndarray of floats
         A normalized version of RMSE
     """
-    rmse = mean_squared_error(
-        y_true, y_pred, squared=False, **get_dictionary_from_callable(mean_squared_error, kwargs)
-    )
+    rmse = mean_squared_error(y_true, y_pred, squared=False, **get_dictionary_from_callable(mean_squared_error, kwargs))
     if normalizer == "iqr":
         norm = stats.iqr(y_pred)
     elif normalizer == "std":

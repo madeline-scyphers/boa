@@ -10,6 +10,9 @@ dependencies:
 - torchvision
 - torchaudio
 - numpy
+- pytorch
+- torchvision
+- torchaudio
 - pandas
 - xarray
 - dask

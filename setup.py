@@ -8,9 +8,7 @@ from setuptools import find_packages, setup
 
 # Get version
 def read(*names, **kwargs):
-    with io.open(
-        os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")
-    ) as fp:
+    with io.open(os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")) as fp:
         return fp.read()
 
 
@@ -62,8 +60,22 @@ setup(
     python_requires=">=3.7",
     install_requires=install_requires,
     extras_require={
-        "dev": ["black", "black[jupyter]", "isort", "flake8", "flakeheaven", "pytest", "invoke"],
-        "docs": ["sphinx", "myst-nb", "pydata-sphinx-theme"],
+        "dev": [
+            "black<=22.3.0",
+            "black[jupyter]",
+            "isort",
+            "flake8",
+            "flakeheaven",
+            "pytest",
+            "invoke",
+            "setuptools_scm",
+        ],
+        "docs": [
+            "sphinx",
+            "myst-nb",
+            "pydata-sphinx-theme",
+            "sphinxext-remoteliteralinclude @ git+https://github.com/madeline-scyphers/sphinxext-remoteliteralinclude.git@bugfix/pyobject-fix",  # noqa
+        ],
         "examples": ["jupyter", "hvplot"],
     },
 )

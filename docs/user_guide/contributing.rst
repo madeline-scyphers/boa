@@ -1,6 +1,9 @@
+.. _contributions:
 ###################
 Contributing to boa
 ###################
+
+When in question about rst, see references under docs/references in the source code.
 
 Format the code and lint it (check the style)
 ---------------------------------------------
