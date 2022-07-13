@@ -37,6 +37,7 @@ setup(
     name="boa",
     use_scm_version={"write_to": "boa/_version.py"},
     setup_requires=["setuptools_scm"],
+    include_package_data=True,
     description="An implementation of Gaussian Processes in Pytorch",
     long_description=readme,
     long_description_content_type="text/markdown",

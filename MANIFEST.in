@@ -1,0 +1,2 @@
+include boa/test_scripts/*.yaml
+include boa/test_scripts/*.yml
