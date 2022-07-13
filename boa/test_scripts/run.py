@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 from pprint import pformat
 
+import click
 from ax.service.utils.report_utils import exp_to_df
 
 try:
@@ -24,7 +25,11 @@ from boa import (
 )
 
 
-def main(output_dir: os.PathLike = None):
+@click.command()
+@click.option("-o", "--output_dir", type=click.Path(), default="")
+def main(output_dir):
+    print()
+    print(output_dir)
     if output_dir:
         return run_opt(output_dir)
     with tempfile.TemporaryDirectory() as output_dir:
@@ -32,7 +37,6 @@ def main(output_dir: os.PathLike = None):
 
 
 def run_opt(output_dir):
-    print(os.getcwd())
     config_file = Path(__file__).parent / "synth_func_config.yaml"
     start = time.time()
     config = load_yaml(config_file)  # Read experiment config'
