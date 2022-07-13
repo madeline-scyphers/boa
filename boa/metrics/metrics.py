@@ -80,8 +80,7 @@ def get_synth_func(synthetic_metric: str):
             continue
     # If we don't find the class by the end of the modules, raise attribute error
     raise AttributeError(
-        f"boa synthetic function: {synthetic_metric}"
-        f" not found in modules: {synthetic_funcs_modules}!"
+        f"boa synthetic function: {synthetic_metric}" f" not found in modules: {synthetic_funcs_modules}!"
     )
 
 
@@ -90,9 +89,7 @@ def setup_synthetic_metric(synthetic_metric, instantiate=True, **kw):
 
     if isclass(metric) and issubclass(metric, ax.utils.measurement.synthetic_functions):
         metric = metric()  # if they pass a ax synthetic metric class, not instance
-    elif isclass(metric) and issubclass(
-        metric, botorch.test_functions.synthetic.SyntheticTestFunction
-    ):
+    elif isclass(metric) and issubclass(metric, botorch.test_functions.synthetic.SyntheticTestFunction):
         # botorch synthetic functions need to be converted
         metric = from_botorch(botorch_synthetic_function=metric())
 
@@ -118,9 +115,7 @@ def _get_name(obj):
 
 
 class MetricToEval(metaclass=MetricToEvalRegister):
-    def __init__(
-        self, *, func: Callable | str, func_kwargs: Optional[dict] = None, metric_type: str = None
-    ):
+    def __init__(self, *, func: Callable | str, func_kwargs: Optional[dict] = None, metric_type: str = None):
         if isinstance(func, str):
             func = self.func_from_str(func, metric_type)
         self.func = func
@@ -129,9 +124,7 @@ class MetricToEval(metaclass=MetricToEvalRegister):
         self.metric_type = metric_type
 
     def __call__(self, *args, **kwargs):
-        return self.func(
-            *args, **get_dictionary_from_callable(self.func, {**self.func_kwargs, **kwargs})
-        )
+        return self.func(*args, **get_dictionary_from_callable(self.func, {**self.func_kwargs, **kwargs}))
 
     def to_dict(self):
         return {
@@ -222,9 +215,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             kwargs["param_names"] = []
         # param_names = param_names if param_names is not None else []
         self.metric_func_kwargs = metric_func_kwargs or {}
-        self.metric_to_eval = MetricToEval(
-            func=metric_to_eval, func_kwargs=metric_func_kwargs, metric_type=metric_type
-        )
+        self.metric_to_eval = MetricToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs, metric_type=metric_type)
         self.wrapper = wrapper or BaseWrapper()
         super().__init__(
             noise_sd=noise_sd,
@@ -258,9 +249,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             if isinstance(self.metric_to_eval.func, Metric):
                 trial_data = self.metric_to_eval.func.fetch_trial_data(
                     trial=trial,
-                    **get_dictionary_from_callable(
-                        self.metric_to_eval.func.fetch_trial_data, safe_kwargs
-                    ),
+                    **get_dictionary_from_callable(self.metric_to_eval.func.fetch_trial_data, safe_kwargs),
                 )
             else:
                 trial_data = super().fetch_trial_data(trial=trial, **safe_kwargs)
@@ -295,9 +284,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             index_of_metric = None
         p_b4_metric = parents[:index_of_metric]
 
-        wrapper_state = serialize_init_args(
-            self, parents=p_b4_metric, match_private=True, exclude_fields=["wrapper"]
-        )
+        wrapper_state = serialize_init_args(self, parents=p_b4_metric, match_private=True, exclude_fields=["wrapper"])
 
         # wrapper_state = convert_type(wrapper_state, {Path: str})
         return {"__type": self.__class__.__name__, **wrapper_state}
@@ -335,7 +322,7 @@ class METRICS:
     RootMeanSquaredError = RMSE
     root_mean_squared_error = RMSE
 
-    R2 = setup_sklearn_metric("r2_score", instantiate=False)
+    R2 = setup_sklearn_metric("r2_score", instantiate=False, lower_is_better=False)
     R2.__doc__ = """
     :math:`R^2` (coefficient of determination) regression score function.
 
@@ -346,11 +333,11 @@ class METRICS:
     """
     RSquared = R2
 
-    Mean = generic_closure(
-        close_around=ModularMetric, metric_to_eval=np.mean, lower_is_better=True, instantiate=False
-    )
+    Mean = generic_closure(close_around=ModularMetric, metric_to_eval=np.mean, lower_is_better=True, instantiate=False)
     Mean.__doc__ = """
-    Arithmetic mean along the specified axis for your metric
+    Arithmetic mean along the specified axis for your metric,
+    Defaults to minimizization, if you want to maximize,
+    specify lower_is_better: False or minimize: False in your configuration
     """
     NRMSE = generic_closure(
         close_around=ModularMetric,

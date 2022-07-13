@@ -5,7 +5,7 @@ py_version = 39
 skip_glob = ["*env*/*"]
 
 [tool.black]
-line-length = 100
+line-length = 120
 # These are regular expressions (hence the \. is escaping the ., and not a literal \.)
 exclude = '''
 (
@@ -26,7 +26,7 @@ exclude = '''
 
 [tool.flakeheaven]
 # 80 chars aren't enough in 21 century
-max_line_length = 110  # 110 for wiggle room for doc strings
+max_line_length = 120  # 110 for wiggle room for doc strings
 # show line of source code in output
 show_source = true
 

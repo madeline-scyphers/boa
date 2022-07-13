@@ -8,9 +8,7 @@ from setuptools import find_packages, setup
 
 # Get version
 def read(*names, **kwargs):
-    with io.open(
-        os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")
-    ) as fp:
+    with io.open(os.path.join(os.path.dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")) as fp:
         return fp.read()
 
 
@@ -72,7 +70,12 @@ setup(
             "invoke",
             "setuptools_scm",
         ],
-        "docs": ["sphinx", "myst-nb", "pydata-sphinx-theme", "sphinxext-remoteliteralinclude"],
+        "docs": [
+            "sphinx",
+            "myst-nb",
+            "pydata-sphinx-theme",
+            "sphinxext-remoteliteralinclude @ git+https://github.com/madeline-scyphers/sphinxext-remoteliteralinclude.git@bugfix/pyobject-fix",  # noqa
+        ],
         "examples": ["jupyter", "hvplot"],
     },
 )

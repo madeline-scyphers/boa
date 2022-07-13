@@ -64,9 +64,7 @@ class WrappedJobRunner(Runner, metaclass=RunnerRegister):
 
         parents = self.__class__.mro()[1:]  # index 0 is the class itself
 
-        properties = serialize_init_args(
-            self, parents=parents, match_private=True, exclude_fields=["wrapper"]
-        )
+        properties = serialize_init_args(self, parents=parents, match_private=True, exclude_fields=["wrapper"])
 
         properties["__type"] = self.__class__.__name__
         return properties

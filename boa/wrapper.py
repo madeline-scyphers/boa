@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
 from ax.core.base_trial import BaseTrial
 
 from boa.metaclasses import WrapperRegister
-from boa.utils import convert_type, serialize_init_args
 
 
 class BaseWrapper(metaclass=WrapperRegister):
@@ -26,14 +24,13 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     def write_configs(self, trial: BaseTrial) -> None:
         """
+        This function is usually used to write out the configurations files used
+        in an individual optimization trial run, or to dynamically write a run
+        script to start an optimization trial run.
 
         Parameters
         ----------
-        trial :
-
-        Returns
-        -------
-
+        trial : BaseTrial
         """
 
     def run_model(self, trial: BaseTrial) -> None:
@@ -76,9 +73,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         # TODO add sphinx link to ax trial status
         """
 
-    def fetch_trial_data(
-        self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs
-    ) -> dict:
+    def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
         """
         Retrieves the trial data and prepares it for the metric(s) used in the objective
         function.
