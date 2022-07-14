@@ -96,3 +96,18 @@ of the metric function used in the objective function.
 
 .. rli:: https://raw.githubusercontent.com/madeline-scyphers/palm_wrapper/main/palm_wrapper/optimize/wrapper.py
    :pyobject: Wrapper.fetch_trial_data
+
+
+Full Examples
+==============
+
+.. rli:: https://raw.githubusercontent.com/jemissik/fetch3_nhl/develop/fetch3/optimize/fetch_wrapper.py
+   :pyobject: Fetch3Wrapper
+
+link to source: https://github.com/jemissik/fetch3_nhl/blob/develop/fetch3/optimize/fetch_wrapper.py
+
+
+.. rli:: https://raw.githubusercontent.com/madeline-scyphers/palm_wrapper/main/palm_wrapper/optimize/wrapper.py
+   :pyobject: Wrapper
+
+link to source: https://github.com/madeline-scyphers/palm_wrapper/blob/main/palm_wrapper/optimize/wrapper.py

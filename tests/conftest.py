@@ -1,9 +1,9 @@
 from pathlib import Path
 
 import pytest
-from boa.test_scripts.run_branin import main
 
 from boa import cd_and_cd_back, load_yaml
+from boa.test_scripts.run_branin import main
 
 
 @pytest.fixture

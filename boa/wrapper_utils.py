@@ -13,15 +13,18 @@ These functions provide the interface between the optimization tool and FETCH3
 from __future__ import annotations
 
 import datetime as dt
+import json
 import logging
 import os
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
 from pathlib import Path
+from typing import Union
 
 import yaml
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
+from ax.utils.common.docutils import copy_doc
 
 logger = logging.getLogger(__file__)
 
@@ -56,9 +59,9 @@ def cd_and_cd_back_dec(path=None):
     return _cd_and_cd_back_dec
 
 
-def load_yaml(config_file: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
+def load_jsonlike(file_path: os.PathLike, normalize: bool = True, *args, **kwargs):
     """
-    Read experiment configuration yml file for setting up the optimization.
+    Read experiment configuration file for setting up the optimization.
     yml file contains the list of parameters, and whether each parameter is a fixed
     parameter or a range parameter. Fixed parameters have a value specified, and range
     parameters have a range specified.
@@ -70,22 +73,80 @@ def load_yaml(config_file: os.PathLike, normalize: bool = True, *args, **kwargs)
     normalize : bool
         Whether to run boa.wrapper_utils.normalize_config after loading config
         to run certain predictable configuration normalization. (default true)
+    parameter_keys : str | list[Union[str, list[str], list[Union[str, int]]]]
+        Alternative keys or paths to keys to parse  as parameters to optimize,
+        for more information, see :func:`~boa.wrapper_utils.wpr_params_to_boa`
+
+
+    Examples
+    --------
+    If you have a parameters in your configration like this
+
+    >>> from boa import normalize_config
+    >>> config = {
+    ...     "params": {
+    ...         "a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
+    ...         "b": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
+    ...     },
+    ...     "params2": [
+    ...         {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
+    ...         {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
+    ...     ],
+    ...     "params_a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
+    ... }
+    >>> parameter_keys = [
+    ...     ["params", "a"],
+    ...     ["params", "b"],
+    ...     ["params_a"],
+    ...     ["params2", 0, 0],
+     ...    ["params2", 1, 0],
+    ... ]
+    >>> config = normalize_config(config, parameter_keys)
+    >>> pprint(config["parameters"])
+    [{'bounds': [0, 1], 'name': 'params_a_x1', 'type': 'range'},
+     {'name': 'params_a_x2', 'type': 'fixed', 'value': 0.5},
+     {'bounds': [0, 1], 'name': 'params_b_x1', 'type': 'range'},
+     {'name': 'params_b_x2', 'type': 'fixed', 'value': 0.5},
+     {'bounds': [0, 1], 'name': 'params_a_x1_0', 'type': 'range'},
+     {'name': 'params_a_x2_0', 'type': 'fixed', 'value': 0.5},
+     {'bounds': [0, 1], 'name': 'params2_0_0_x1', 'type': 'range'},
+     {'name': 'params2_0_0_x2', 'type': 'fixed', 'value': 0.5},
+     {'bounds': [0, 1], 'name': 'params2_1_0_x1', 'type': 'range'},
+     {'name': 'params2_1_0_x2', 'type': 'fixed', 'value': 0.5}]
 
     Returns
     -------
     loaded_configs: dict
     """
-
-    # Load the experiment config yml file
-    with open(config_file, "r") as yml_config:
-        config = yaml.safe_load(yml_config)
+    file_path = Path(file_path).expanduser()
+    with open(file_path, "r") as f:
+        if file_path.suffix.lstrip(".").lower() in {"yaml", "yml"}:
+            config = yaml.safe_load(f)
+        elif file_path.suffix.lstrip(".").lower() == "json":
+            config = json.load(f)
+        else:
+            raise ValueError(
+                f"Invalid config file format for config file {file_path}" "\nAccepted file formats are YAML and JSON."
+            )
 
     if normalize:
         return normalize_config(config, *args, **kwargs)
     return config
 
 
-def normalize_config(config: dict, parameter_keys=None) -> dict:
+@copy_doc(load_jsonlike)
+def load_json(*args, **kwargs) -> dict:
+    return load_jsonlike(*args, **kwargs)
+
+
+@copy_doc(load_jsonlike)
+def load_yaml(*args, **kwargs) -> dict:
+    return load_jsonlike(*args, **kwargs)
+
+
+def normalize_config(
+    config: dict, parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None
+) -> dict:
     config["optimization_options"] = config.get("optimization_options", {})
     for key in ["experiment", "generation_strategy", "scheduler"]:
         config["optimization_options"][key] = config["optimization_options"].get(key, {})
@@ -118,7 +179,21 @@ def normalize_config(config: dict, parameter_keys=None) -> dict:
     return config
 
 
-def wpr_params_to_boa(params: dict, parameter_keys: str | list[str | list[str] | tuple[str]]) -> dict:
+def wpr_params_to_boa(params: dict, parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]]) -> dict:
+    """
+
+    Parameters
+    ----------
+    params : dict
+        dictionary containing parameters
+    parameter_keys :  str | list[Union[str, list[str], list[Union[str, int]]]]
+        str of key to parameters, or list of json paths to key(s) of parameters.
+
+
+    Returns
+    -------
+
+    """
     # if only one key is passed in as a str, wrap it in a list
     if isinstance(parameter_keys, str):
         parameter_keys = [parameter_keys]
@@ -309,3 +384,16 @@ def write_configs(trial_dir, parameters, model_options):
         config_dict = {"model_options": model_options, "parameters": parameters}
         yaml.dump(config_dict, f)
         return f.name
+
+
+config = {
+    "params": {
+        "a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
+        "b": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
+    },
+    "params2": [
+        {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
+        {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
+    ],
+    "params_a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
+}
