@@ -51,9 +51,9 @@ To use install it with pip, run::
 Test run
 ********
 
-Once everything is installed, try to run the test suite::
+Once everything is installed, run the test script to ensure everything is install properly::
 
-    invoke test
+    python -m boa.test_scripts.run
 
 If this test case runs successfully, you can move on to the next steps.
 

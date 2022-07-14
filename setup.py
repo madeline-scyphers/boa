@@ -17,6 +17,8 @@ readme = open("README.md").read()
 # set the install requirements
 install_requires = [
     "torch>=1.9",
+    "torch>=1.9,<1.12.0;(platform_machine!='arm64' and sys_platform=='darwin')",
+    "mkl<2022;(platform_machine!='arm64' and sys_platform=='darwin')",
     "torchvision",
     "torchaudio",
     "gpytorch>=1.5",
