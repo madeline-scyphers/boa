@@ -1,10 +1,12 @@
 name: ci
 
 on:
+  push:
   pull_request:
     branches:
       - 'develop'
       - 'main'
+
 
 env:
   CACHE_NUMBER: 0  # increase to reset cache manually
