@@ -12,9 +12,10 @@ optimization_options:
               num_trials: -1
     scheduler:
         total_trials: 15
-    model_dir: tests/scripts
-    experiment_name: synthetic_func_exp
+    experiment:
+        name: "test_experiment"
 
 model_options:
-    input_size: 10
+    input_size: 15
     function: branin
+    model_dir: .

@@ -30,15 +30,16 @@ Key features
 Contents
 --------
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   overview
-   user_guide/index
-   notebooks/index
-   troubleshooting
-   changelog
-   Code reference <code_reference>
-   gallery
+    overview
+    user_guide/index
+    notebooks/index
+    troubleshooting
+    changelog
+    Code reference <code_reference>
+    gallery
+    contributing
 
 
 Indices and tables

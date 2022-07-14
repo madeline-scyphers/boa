@@ -3,9 +3,7 @@ User guide
 ##########
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     getting_started
-    wrapper
-    configuration
-    contributing
+    package_overview

@@ -45,9 +45,7 @@ def save_experiment(experiment: Experiment, filepath: os.PathLike, pickle=True, 
         logger.warning("Failed to serialize experiment to JSON, attempting to pickle")
         with open(Path(str(filepath) + ".pickle"), "wb") as f:
             pickle.dump(experiment, f)
-        logger.warning(
-            "Pickling succeeded. Experiment Pickled to %s" % Path(str(filepath) + ".pickle")
-        )
+        logger.warning("Pickling succeeded. Experiment Pickled to %s" % Path(str(filepath) + ".pickle"))
 
 
 def load_experiment(filepath: os.PathLike, *args, **kwargs) -> Experiment:
@@ -72,9 +70,7 @@ def scheduler_to_json_file(scheduler, filepath: os.PathLike = "scheduler_snapsho
         logger.info(f"Saved JSON-serialized state of optimization to `{filepath}`.")
 
 
-def scheduler_from_json_file(
-    filepath: os.PathLike = "scheduler_snapshot.json", wrapper=None, **kwargs
-) -> Scheduler:
+def scheduler_from_json_file(filepath: os.PathLike = "scheduler_snapshot.json", wrapper=None, **kwargs) -> Scheduler:
     """Restore an `AxClient` and its state from a JSON-serialized snapshot,
     residing in a .json file by the given path.
     """
@@ -160,8 +156,6 @@ def scheduler_from_json_snapshot(
         generation_strategy_json=serialized_generation_strategy, experiment=experiment
     )
 
-    ax_client = Scheduler(
-        generation_strategy=generation_strategy, experiment=experiment, options=options, **kwargs
-    )
+    ax_client = Scheduler(generation_strategy=generation_strategy, experiment=experiment, options=options, **kwargs)
     ax_client._experiment = experiment
     return ax_client

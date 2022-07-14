@@ -12,7 +12,7 @@ from boa import (
     get_trial_dir,
     make_trial_dir,
 )
-from boa.definitions import ROOT
+from boa.definitions import TEST_SCRIPTS_DIR
 
 
 class TestWrapper(BaseWrapper):
@@ -23,11 +23,11 @@ class TestWrapper(BaseWrapper):
         self.experiment_dir = experiment_dir
         self.model_settings = model_settings
 
-    @cd_and_cd_back_dec(path=ROOT)
+    @cd_and_cd_back_dec(path=TEST_SCRIPTS_DIR)
     def run_model(self, trial: Trial):
         trial_dir = make_trial_dir(self.experiment_dir, trial.index).resolve()
 
-        model_dir = self.ex_settings["model_dir"]
+        model_dir = self.model_settings["model_dir"]
 
         os.chdir(model_dir)
 

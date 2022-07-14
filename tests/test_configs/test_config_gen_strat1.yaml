@@ -11,7 +11,8 @@ optimization_options:
               num_trials: -1
     scheduler:
         total_trials: 10
-    experiment_name: "test_experiment"
+    experiment:
+        name: "test_experiment"
 
 model_options:
     model_specific_options:

@@ -22,9 +22,7 @@ def instantiate_search_space_from_json(
 
 
 def get_generation_strategy(config: dict, experiment: Experiment = None):
-    if config.get(
-        "steps"
-    ):  # if they are explicitly defining the steps, use those to make gen strat
+    if config.get("steps"):  # if they are explicitly defining the steps, use those to make gen strat
         return generation_strategy_from_config(config=config, experiment=experiment)
     # else auto generate the gen strat
     return choose_generation_strategy_from_experiment(experiment=experiment, config=config)
@@ -45,9 +43,7 @@ def generation_strategy_from_config(config: dict, experiment: Experiment = None)
     return gs
 
 
-def choose_generation_strategy_from_experiment(
-    experiment: Experiment, config: dict
-) -> GenerationStrategy:
+def choose_generation_strategy_from_experiment(experiment: Experiment, config: dict) -> GenerationStrategy:
     return choose_generation_strategy(
         search_space=experiment.search_space,
         **get_dictionary_from_callable(choose_generation_strategy, config),
@@ -60,17 +56,15 @@ def get_scheduler(
     scheduler_options: SchedulerOptions = None,
     config: dict = None,
 ):
-    scheduler_options = scheduler_options or SchedulerOptions(
-        **config["optimization_options"]["scheduler"]
-    )
+    scheduler_options = scheduler_options or SchedulerOptions(**config["optimization_options"]["scheduler"])
     if generation_strategy is None:
         if (
             "total_trials" in config["optimization_options"]["scheduler"]
             and "num_trials" not in config["optimization_options"]["generation_strategy"]
         ):
-            config["optimization_options"]["generation_strategy"]["num_trials"] = config[
-                "optimization_options"
-            ]["scheduler"]["total_trials"]
+            config["optimization_options"]["generation_strategy"]["num_trials"] = config["optimization_options"][
+                "scheduler"
+            ]["total_trials"]
         generation_strategy = get_generation_strategy(
             config=config["optimization_options"]["generation_strategy"], experiment=experiment
         )
@@ -99,14 +93,10 @@ def get_experiment(
 ):
     opt_options = config["optimization_options"]
 
-    search_space = instantiate_search_space_from_json(
-        config.get("parameters"), config.get("parameter_constraints")
-    )
+    search_space = instantiate_search_space_from_json(config.get("parameters"), config.get("parameter_constraints"))
 
     optimization_config = BoaInstantiationBase.make_optimization_config(
-        **get_dictionary_from_callable(
-            BoaInstantiationBase.make_optimization_config, opt_options["objective_options"]
-        ),
+        **get_dictionary_from_callable(BoaInstantiationBase.make_optimization_config, opt_options["objective_options"]),
         wrapper=wrapper,
     )
 

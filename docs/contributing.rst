@@ -1,6 +1,11 @@
+.. _contributions:
 ###################
 Contributing to boa
 ###################
+
+First make sure you have read :ref:`getting_started` to get your development environment set up
+
+When in question about rst, see references under docs/references in the source code.
 
 Format the code and lint it (check the style)
 ---------------------------------------------

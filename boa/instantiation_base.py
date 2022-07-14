@@ -55,7 +55,5 @@ class BoaInstantiationBase(InstantiationBase):
                 kw["minimize"] = minimize
             output_objectives = [ScalarizedObjective(metrics=metrics, **kw)]
         else:
-            output_objectives = [
-                Objective(metric=metric, minimize=metric.lower_is_better) for metric in metrics
-            ]
+            output_objectives = [Objective(metric=metric, minimize=metric.lower_is_better) for metric in metrics]
         return output_objectives

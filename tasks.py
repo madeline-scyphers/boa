@@ -70,7 +70,7 @@ All Style Checks Passed Successfully
 
 
 @task
-def pytest(command, options=""):
+def test(command, options=""):
     """Runs pytest to identify failing tests and doctests"""
 
     print(
@@ -99,7 +99,7 @@ Running Sphinx to test the docs building
     command.run("sphinx-build -b html docs docs/_build", echo=True, pty=POSIX)
 
 
-@task(pre=[black, isort, lint, pytest, docs])
+@task(pre=[black, isort, lint, test, docs])
 def all(
     command,
 ):

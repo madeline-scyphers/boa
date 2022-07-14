@@ -1,0 +1,29 @@
+name: boa
+channels:
+- pytorch
+- conda-forge
+- anaconda
+- defaults
+dependencies:
+- python=3.9
+- pytorch
+- torchvision
+- torchaudio
+- numpy
+- pytorch
+- torchvision
+- torchaudio
+- pandas
+- xarray
+- dask
+- netCDF4
+- bottleneck
+- scipy
+- scikit-learn
+- click
+- sqlalchemy
+- pip
+- pip:
+  - ax-platform
+  - PyYAML
+  - -e .

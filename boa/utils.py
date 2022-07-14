@@ -21,9 +21,7 @@ def get_dictionary_matching_signature(
     params = signature.parameters
     if accept_all_kwargs:
         for param in params.values():
-            if (
-                param.kind == param.VAR_KEYWORD
-            ):  # this accepts **kwargs, therefore let everything through
+            if param.kind == param.VAR_KEYWORD:  # this accepts **kwargs, therefore let everything through
                 for key, value in d.items():
                     if match_private and (key.startswith("_") or key.startswith("__")):
                         key = key.lstrip("_")
@@ -52,9 +50,7 @@ def serialize_init_args(instance, *, parents, match_private: bool = False, **kwa
     parents_init = [parent.__init__ for parent in parents]
     callable_ls = [instance.__class__.__init__, *parents_init]
     for callable in callable_ls:
-        kw.update(
-            get_dictionary_from_callable(callable, args, match_private=match_private, **kwargs)
-        )
+        kw.update(get_dictionary_from_callable(callable, args, match_private=match_private, **kwargs))
     return kw
 
 

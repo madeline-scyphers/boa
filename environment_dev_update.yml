@@ -1,0 +1,10 @@
+name: boa
+channels:
+- pytorch
+- conda-forge
+- anaconda
+- defaults
+dependencies:
+  - pip
+  - pip:
+    - -e .[dev,docs,examples]

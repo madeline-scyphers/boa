@@ -1,9 +1,9 @@
 from pathlib import Path
 
 import pytest
-from scripts.run import main
 
 from boa import cd_and_cd_back, load_yaml
+from boa.test_scripts.run_branin import main
 
 
 @pytest.fixture
@@ -70,4 +70,5 @@ def cd_to_root_and_back_session():
 @pytest.fixture(scope="session")
 def script_main_run(tmp_path_factory, cd_to_root_and_back_session):
     output_dir = tmp_path_factory.mktemp("output")
-    yield main(output_dir)
+    # yield main.callback(["--output_dir", output_dir], standalone_mode=False)
+    yield main.callback(output_dir)

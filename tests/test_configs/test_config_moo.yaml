@@ -1,52 +1,47 @@
 # MultiObjective Optimization config
 optimization_options:
-    objective_options:  # can also use the key moo
+    objective_options:
         objectives:
+            # List all of your metrics here,
+            # only list multiple objectives for a multi objective optimization
             - name: rmse
               boa_metric: RootMeanSquaredError
             - name: r2
               boa_metric: R2
-        outcome_constraints: null
-        objective_thresholds: null
-    generation_strategy:
-        steps:
-            - model: SOBOL
-              num_trials: 5
-            - model: GPEI
-              num_trials: -1
-#    scheduler:
-    n_trials: 10
-    experiment_name: "test_experiment"
+        outcome_constraints: []
+        objective_thresholds: []
+    experiment:
+        name: "test_experiment"
+    scheduler:
+        total_trials: 10
+
+parameters:
+    x1:
+        type: range
+        bounds: [0, 1]
+
+    x2:
+        type: range
+        bounds: [0, 1]
+
+    x3:
+        type: range
+        bounds: [0, 1]
+
+    x4:
+        type: range
+        bounds: [0, 1]
+
+    x5:
+        type: fixed
+        values: .5
+
+parameter_constraints:
+    - x2 + x1 => >.1
+    - x2 + x1 + .6*x1 <= .6
 
 model_options:
     model_specific_options:
         - 1
         - 2
         - 3
-
-parameters:
-    x1:  # Ratio of urban area that is house (not ground, not trees)
-        type: range
-        bounds: [0, 1]
-
-    x2:  # Ratio of urban area that is ground (not house, not trees)
-        type: range
-        bounds: [0, 1]
-
-    x3:  # Size of a plot of land (area of a house and its ground it sits on)
-        type: range
-        bounds: [0, 1]
-
-    x4:  # The mean LAI of the canopy. There will be random perturbations to this
-        type: range
-        bounds: [0, 1]
-        value: .5  # dummy value for testing
-
-    x5: # dummy value for testing
-        type: fixed
-        bounds: [ 0, 1 ]
-        values: .5  # dummy value for testing
-
-parameter_constraints:
-    - x2 + x1 => >.1
-    - x2 + x1 + .6*x1 <= .6
