@@ -59,7 +59,7 @@ def cd_and_cd_back_dec(path=None):
     return _cd_and_cd_back_dec
 
 
-def load_jsonlike(file_path: os.PathLike, normalize: bool = True, *args, **kwargs):
+def load_json(file_path: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
     """
     Read experiment configuration file for setting up the optimization.
     yml file contains the list of parameters, and whether each parameter is a fixed
@@ -120,28 +120,35 @@ def load_jsonlike(file_path: os.PathLike, normalize: bool = True, *args, **kwarg
     """
     file_path = Path(file_path).expanduser()
     with open(file_path, "r") as f:
-        if file_path.suffix.lstrip(".").lower() in {"yaml", "yml"}:
-            config = yaml.safe_load(f)
-        elif file_path.suffix.lstrip(".").lower() == "json":
-            config = json.load(f)
-        else:
-            raise ValueError(
-                f"Invalid config file format for config file {file_path}" "\nAccepted file formats are YAML and JSON."
-            )
+        config = json.load(f)
 
     if normalize:
         return normalize_config(config, *args, **kwargs)
     return config
 
 
-@copy_doc(load_jsonlike)
-def load_json(*args, **kwargs) -> dict:
-    return load_jsonlike(*args, **kwargs)
+@copy_doc(load_json)
+def load_yaml(file_path: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
+    file_path = Path(file_path).expanduser()
+    with open(file_path, "r") as f:
+        config = yaml.safe_load(f)
+
+    if normalize:
+        return normalize_config(config, *args, **kwargs)
+    return config
 
 
-@copy_doc(load_jsonlike)
-def load_yaml(*args, **kwargs) -> dict:
-    return load_jsonlike(*args, **kwargs)
+@copy_doc(load_json)
+def load_jsonlike(file_path: os.PathLike, *args, **kwargs):
+    file_path = Path(file_path)
+    if file_path.suffix.lstrip(".").lower() in {"yaml", "yml"}:
+        return load_yaml(file_path, *args, **kwargs)
+    elif file_path.suffix.lstrip(".").lower() == "json":
+        return load_json(file_path, *args, **kwargs)
+    else:
+        raise ValueError(
+            f"Invalid config file format for config file {file_path}" "\nAccepted file formats are YAML and JSON."
+        )
 
 
 def normalize_config(
@@ -150,7 +157,8 @@ def normalize_config(
     config["optimization_options"] = config.get("optimization_options", {})
     for key in ["experiment", "generation_strategy", "scheduler"]:
         config["optimization_options"][key] = config["optimization_options"].get(key, {})
-    config["optimization_options"]["experiment"]["name"] = config["optimization_options"]["experiment"].get("name", "")
+    config["optimization_options"]["experiment"]["name"] = config[
+        "optimization_options"]["experiment"].get("name", get_dt_now_as_str())
 
     if parameter_keys:
         parameters, mapping = wpr_params_to_boa(config, parameter_keys)
@@ -205,7 +213,6 @@ def wpr_params_to_boa(params: dict, parameter_keys: str | list[Union[str, list[s
         if isinstance(maybe_key, str):
             key = maybe_key
             d = params[key]
-            # mapping[new_key] = dict(path=maybe_key, original_key=parameter_name)
         elif isinstance(maybe_key, (list, tuple)):
             d = params[maybe_key[0]]
             if len(maybe_key) > 1:
@@ -280,7 +287,7 @@ def get_dt_now_as_str(fmt: str = "%Y%m%dT%H%M%S"):
     return dt.datetime.now().strftime(fmt)
 
 
-def make_experiment_dir(working_dir: str, experiment_name: str = ""):
+def make_experiment_dir(working_dir: os.PathLike, experiment_name: str = "", append_timestamp: bool = True):
     """
     Creates directory for the experiment and returns the path.
     The directory is named with the experiment name and the current datetime.
@@ -291,6 +298,9 @@ def make_experiment_dir(working_dir: str, experiment_name: str = ""):
         Working directory, the parent directory where the experiment directory will be written
     experiment_name: str
         Name of the experiment
+    append_timestamp : bool
+        Whether to append a timestamp to the end of the experiment directory
+        to ensure uniqueness
 
     Returns
     -------
@@ -299,7 +309,8 @@ def make_experiment_dir(working_dir: str, experiment_name: str = ""):
     """
     # Directory named with experiment name and datetime
     experiment_name = experiment_name + "_" if experiment_name else experiment_name
-    ex_dir = Path(working_dir) / f"{experiment_name}{get_dt_now_as_str()}"
+    ts = get_dt_now_as_str() if append_timestamp else ""
+    ex_dir = Path(working_dir).expanduser() / f"{experiment_name}{ts}"
     ex_dir.mkdir()
     return ex_dir
 
@@ -384,16 +395,3 @@ def write_configs(trial_dir, parameters, model_options):
         config_dict = {"model_options": model_options, "parameters": parameters}
         yaml.dump(config_dict, f)
         return f.name
-
-
-config = {
-    "params": {
-        "a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
-        "b": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
-    },
-    "params2": [
-        {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
-        {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
-    ],
-    "params_a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
-}

@@ -1,26 +1,71 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 from ax.core.base_trial import BaseTrial
 
 from boa.metaclasses import WrapperRegister
+from boa.wrapper_utils import load_jsonlike, normalize_config, make_experiment_dir
 
 
 class BaseWrapper(metaclass=WrapperRegister):
-    def load_config(self, config_file: os.PathLike):
+    def __init__(self):
+        self.config = None
+        self.model_settings = None
+        self.ex_settings = None
+        self.experiment_dir = None
+
+    def load_config(self, config_path: os.PathLike, append_timestamp: bool = True, **kwargs):
         """
         Load config file and return a dictionary # TODO finish this
 
         Parameters
         ----------
-        config_file : os.PathLike
+        config_path : os.PathLike
             File path for the experiment configuration file
+        append_timestamp : bool
+            Whether to append a timestamp to the end of the experiment directory
+            to ensure uniqueness
 
         Returns
         -------
         loaded_config: dict
         """
+        try:
+            config = load_jsonlike(config_path, normalize=False)
+        except ValueError:
+            return {}
+        parameter_keys = config.get("optimization_options", {}).get("parameter_keys", None)
+        config = normalize_config(config=config, parameter_keys=parameter_keys)
+
+        self.config = config
+        self.ex_settings = self.config["optimization_options"]
+        self.model_settings = self.config.get("model_options", {})
+
+        experiment_dir = {**self.ex_settings, **kwargs}.get("experiment_dir")
+        if experiment_dir:  # TODO use append_timestamp
+            self.ex_settings["experiment_dir"] = experiment_dir
+            self.experiment_dir = Path(experiment_dir)
+            self.experiment_dir.mkdir()
+            return self.config
+
+        working_dir = {**self.ex_settings, **kwargs}.get("working_dir")
+        if not working_dir:
+            working_dir = Path.cwd()
+
+        experiment_name = self.ex_settings["experiment"]["name"]
+        experiment_dir = make_experiment_dir(
+            working_dir=working_dir,
+            experiment_name=experiment_name,
+            append_timestamp=append_timestamp)
+
+        self.ex_settings["working_dir"] = working_dir
+        self.ex_settings["experiment_dir"] = experiment_dir
+        self.experiment_dir = experiment_dir
+
+        return self.config
+
 
     def write_configs(self, trial: BaseTrial) -> None:
         """
