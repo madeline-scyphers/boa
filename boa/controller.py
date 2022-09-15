@@ -1,13 +1,11 @@
-import logging
-from pathlib import Path
-import time
 import datetime as dt
+import logging
+import time
+from pathlib import Path
 
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.runner import WrappedJobRunner
-from boa.wrapper_utils import load_jsonlike, make_experiment_dir
 from boa.utils import get_dictionary_from_callable
-
 
 
 class Controller:
@@ -22,7 +20,8 @@ class Controller:
 
         wrapper = self.wrapper()
         load_config_kwargs = get_dictionary_from_callable(
-            wrapper.load_config, dict(config_path=self.config_path, append_timestamp=append_timestamp))
+            wrapper.load_config, dict(config_path=self.config_path, append_timestamp=append_timestamp)
+        )
         config = wrapper.load_config(**load_config_kwargs)
 
         log_format = "%(levelname)s %(asctime)s - %(message)s"

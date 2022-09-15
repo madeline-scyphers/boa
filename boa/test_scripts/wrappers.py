@@ -17,6 +17,7 @@ from boa.definitions import TEST_SCRIPTS_DIR
 
 class Wrapper(BaseWrapper):
     _processes = []
+
     @cd_and_cd_back_dec(path=TEST_SCRIPTS_DIR)
     def run_model(self, trial: Trial):
         trial_dir = make_trial_dir(self.experiment_dir, trial.index).resolve()

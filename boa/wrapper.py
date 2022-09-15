@@ -6,7 +6,7 @@ from pathlib import Path
 from ax.core.base_trial import BaseTrial
 
 from boa.metaclasses import WrapperRegister
-from boa.wrapper_utils import load_jsonlike, normalize_config, make_experiment_dir
+from boa.wrapper_utils import load_jsonlike, make_experiment_dir, normalize_config
 
 
 class BaseWrapper(metaclass=WrapperRegister):
@@ -56,16 +56,14 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         experiment_name = self.ex_settings["experiment"]["name"]
         experiment_dir = make_experiment_dir(
-            working_dir=working_dir,
-            experiment_name=experiment_name,
-            append_timestamp=append_timestamp)
+            working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
+        )
 
         self.ex_settings["working_dir"] = working_dir
         self.ex_settings["experiment_dir"] = experiment_dir
         self.experiment_dir = experiment_dir
 
         return self.config
-
 
     def write_configs(self, trial: BaseTrial) -> None:
         """

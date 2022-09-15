@@ -1,4 +1,7 @@
 # ScalarizedObjective Optimization config
+
+# WARNING if you use scalarized and you maximize the whole objective, but minimize any single metric, it currently breaks
+
 optimization_options:
   objective_options:  # can also use the key soo
     objectives:

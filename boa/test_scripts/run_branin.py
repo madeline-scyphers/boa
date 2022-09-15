@@ -14,13 +14,7 @@ try:
 except ImportError:
     from .wrappers import Wrapper
 
-from boa import (
-    WrappedJobRunner,
-    get_experiment,
-    get_scheduler,
-    load_yaml,
-    make_experiment_dir,
-)
+from boa import WrappedJobRunner, get_experiment, get_scheduler
 
 
 @click.command()

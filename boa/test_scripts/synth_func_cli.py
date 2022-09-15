@@ -28,7 +28,6 @@ from boa import get_synth_func
     default=0.1,
     help="standard deviation of generated data",
 )
-
 @click.argument("xs", nargs=-1, type=click.FLOAT)
 def main(output_dir: Path, input_size, standard_dev, xs):
     synthetic_func = get_synth_func("branin")
