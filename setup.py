@@ -77,7 +77,7 @@ setup(
             "sphinx",
             "myst-nb",
             "pydata-sphinx-theme",
-            "sphinxext-remoteliteralinclude @ git+https://github.com/madeline-scyphers/sphinxext-remoteliteralinclude.git@bugfix/pyobject-fix",  # noqa
+            "sphinxext-remoteliteralinclude",
         ],
         "examples": ["jupyter", "hvplot"],
     },
