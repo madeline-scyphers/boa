@@ -16,7 +16,14 @@ class BaseWrapper(metaclass=WrapperRegister):
         self.ex_settings = None
         self.experiment_dir = None
 
-    def load_config(self, config_path: os.PathLike, append_timestamp: bool = True, **kwargs):
+    def load_config(
+        self,
+        config_path: os.PathLike,
+        append_timestamp: bool = True,
+        experiment_dir: os.PathLike = None,
+        working_dir: os.PathLike = None,
+        **kwargs,
+    ):
         """
         Load config file and return a dictionary # TODO finish this
 
@@ -26,7 +33,17 @@ class BaseWrapper(metaclass=WrapperRegister):
             File path for the experiment configuration file
         append_timestamp : bool
             Whether to append a timestamp to the end of the experiment directory
-            to ensure uniqueness
+            to ensure uniqueness (defaults to True)
+        experiment_dir: os.PathLike
+            Path to the directory for the output of the experiment
+            You may specify this or working_dir in your configuration file instead.
+            (Defaults to None and using your configuration file instead)
+        working_dir: os.PathLike
+            Working directory of project, experiment_dir will be placed inside
+            working dir based on experiment name.
+            Because of this only either experiment_dir or working_dir may be specified.
+            You may specify this or experiment_dir in your configuration file instead.
+            (Defaults to None and using your configuration file instead)
 
         Returns
         -------
@@ -43,14 +60,17 @@ class BaseWrapper(metaclass=WrapperRegister):
         self.ex_settings = self.config["optimization_options"]
         self.model_settings = self.config.get("model_options", {})
 
-        experiment_dir = {**self.ex_settings, **kwargs}.get("experiment_dir")
+        if not experiment_dir:
+            experiment_dir = self.ex_settings.get("experiment_dir")
         if experiment_dir:  # TODO use append_timestamp
-            self.ex_settings["experiment_dir"] = experiment_dir
+            # We use str() just in case a Path object was passed in
+            self.ex_settings["experiment_dir"] = str(experiment_dir)
             self.experiment_dir = Path(experiment_dir)
             self.experiment_dir.mkdir()
             return self.config
 
-        working_dir = {**self.ex_settings, **kwargs}.get("working_dir")
+        if not working_dir:
+            working_dir = self.ex_settings.get("working_dir")
         if not working_dir:
             working_dir = Path.cwd()
 

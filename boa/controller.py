@@ -5,6 +5,7 @@ from pathlib import Path
 
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.runner import WrappedJobRunner
+from boa.storage import scheduler_to_json_file
 from boa.utils import get_dictionary_from_callable
 
 
@@ -15,13 +16,18 @@ class Controller:
 
         self.config = None
 
-    def run(self, append_timestamp):
+    def run(self, append_timestamp, experiment_dir, **kwargs):
         start = time.time()
 
         wrapper = self.wrapper()
-        load_config_kwargs = get_dictionary_from_callable(
-            wrapper.load_config, dict(config_path=self.config_path, append_timestamp=append_timestamp)
-        )
+
+        kwargs["config_path"] = self.config_path
+        if experiment_dir:
+            kwargs["experiment_dir"] = experiment_dir
+        if append_timestamp is not None:
+            kwargs["append_timestamp"] = append_timestamp
+
+        load_config_kwargs = get_dictionary_from_callable(wrapper.load_config, kwargs)
         config = wrapper.load_config(**load_config_kwargs)
 
         log_format = "%(levelname)s %(asctime)s - %(message)s"
@@ -42,4 +48,9 @@ class Controller:
             scheduler.run_all_trials()
         finally:
             logging.info("\nTrials completed! Total run time: %d", time.time() - start)
+        try:
+            experiment_dir = wrapper.experiment_dir
+            scheduler_to_json_file(scheduler, experiment_dir / "scheduler.json")
+        except Exception as e:
+            logging.exception("failed to save scheduler to json! Reason: %s" % repr(e))
         return scheduler
