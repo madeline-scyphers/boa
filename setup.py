@@ -68,7 +68,7 @@ setup(
             "black[jupyter]",
             "isort",
             "flake8",
-            "flakeheaven",
+            "flakeheaven>=3.0.0",
             "pytest",
             "invoke",
             "setuptools_scm",

@@ -79,12 +79,6 @@ def script_main_run(tmp_path_factory, cd_to_root_and_back_session):
 
 
 @pytest.fixture(scope="session")
-def script_main_run(tmp_path_factory, cd_to_root_and_back_session):
-    output_dir = tmp_path_factory.mktemp("output")
-    yield run_branin.main.callback(output_dir)
-
-
-@pytest.fixture(scope="session")
 def stand_alone_opt_package_run(tmp_path_factory, cd_to_root_and_back_session):
     experiment_dir = tmp_path_factory.mktemp("experiment") / "temp"
 
