@@ -13,7 +13,9 @@ dependencies:
 - pytorch
 - torchvision
 - torchaudio
-- pandas
+  # 2022/09/25 Pinning because pandas 1.4.3 broke something with ax
+  # ax is working on a fix
+- pandas<=1.4.0
 - xarray
 - dask
 - netCDF4
