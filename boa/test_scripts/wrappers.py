@@ -15,8 +15,13 @@ from boa import (
 from boa.definitions import TEST_SCRIPTS_DIR
 
 
-class Wrapper(BaseWrapper):
+class TestWrapper(BaseWrapper):
     _processes = []
+
+    def __init__(self, ex_settings, experiment_dir, model_settings):
+        self.ex_settings = ex_settings
+        self.experiment_dir = experiment_dir
+        self.model_settings = model_settings
 
     @cd_and_cd_back_dec(path=TEST_SCRIPTS_DIR)
     def run_model(self, trial: Trial):
@@ -30,6 +35,7 @@ class Wrapper(BaseWrapper):
             f"python synth_func_cli.py --output_dir {trial_dir}"
             f" --standard_dev {self.ex_settings['objective_options']['objectives'][0]['noise_sd']}"
             f" --input_size {self.model_settings['input_size']}"
+            f" --function {self.model_settings['function']}"
             f" -- {' '.join(str(val) for val in trial.arm.parameters.values())}"
         )
 
@@ -56,12 +62,12 @@ class Wrapper(BaseWrapper):
         return dict(
             y_true=np.full(
                 self.model_settings["input_size"],
-                get_synth_func("branin").fmin,
+                get_synth_func(self.model_settings["function"]).fmin,
             ),
             y_pred=data["output"],
         )
 
 
 def exit_handler():
-    for process in Wrapper._processes:
+    for process in TestWrapper._processes:
         process.kill()

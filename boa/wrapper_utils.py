@@ -157,9 +157,8 @@ def normalize_config(
     config["optimization_options"] = config.get("optimization_options", {})
     for key in ["experiment", "generation_strategy", "scheduler"]:
         config["optimization_options"][key] = config["optimization_options"].get(key, {})
-    config["optimization_options"]["experiment"]["name"] = config["optimization_options"]["experiment"].get(
-        "name", get_dt_now_as_str()
-    )
+    config["optimization_options"]["experiment"]["name"] = config[
+        "optimization_options"]["experiment"].get("name", get_dt_now_as_str())
 
     if parameter_keys:
         parameters, mapping = wpr_params_to_boa(config, parameter_keys)

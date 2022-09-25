@@ -30,7 +30,6 @@ class BoaInstantiationBase(InstantiationBase):
     @classmethod
     def get_metric_from_obj_config(cls, metric_opts, **kwargs):
         if metric_opts.get("minimize"):
-            # TODO if you do scalarized and need to maximize one, this breaks
             kwargs["lower_is_better"] = metric_opts["minimize"]
         metric = get_metric_from_config(metric_opts, **kwargs)
         return metric

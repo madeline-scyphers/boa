@@ -2,13 +2,8 @@ from pathlib import Path
 
 import pytest
 
-import boa.__main__ as dunder_main
-import boa.test_scripts.run_branin as run_branin
 from boa import cd_and_cd_back, load_yaml
-
-ROOT = Path(__file__).parent.parent
-TEST_DIR = ROOT / "tests"
-TEST_CONFIG_DIR = TEST_DIR / "test_configs"
+from boa.test_scripts.run_branin import main
 
 
 @pytest.fixture
@@ -75,22 +70,5 @@ def cd_to_root_and_back_session():
 @pytest.fixture(scope="session")
 def script_main_run(tmp_path_factory, cd_to_root_and_back_session):
     output_dir = tmp_path_factory.mktemp("output")
-    yield run_branin.main.callback(output_dir)
-
-
-@pytest.fixture(scope="session")
-def stand_alone_opt_package_run(tmp_path_factory, cd_to_root_and_back_session):
-    experiment_dir = tmp_path_factory.mktemp("experiment") / "temp"
-
-    config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.json"
-    wrapper_path = TEST_DIR / "scripts/stand_alone_opt_package/wrapper.py"
-    working_dir = TEST_DIR / "scripts/stand_alone_opt_package"
-
-    args = (
-        f" --config_path {config_path}"
-        f" --wrapper_path {wrapper_path}"
-        " --wrapper_name Wrapper"
-        f" --working_dir {working_dir}"
-        f" --experiment_dir {experiment_dir}"
-    )
-    yield dunder_main.main(args.split(), standalone_mode=False)
+    # yield main.callback(["--output_dir", output_dir], standalone_mode=False)
+    yield main.callback(output_dir)
