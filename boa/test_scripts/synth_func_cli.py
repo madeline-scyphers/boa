@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import click
-from numpy.random import default_rng
+import numpy as np
 
 from boa import get_synth_func
 
@@ -30,8 +30,9 @@ from boa import get_synth_func
 )
 @click.argument("xs", nargs=-1, type=click.FLOAT)
 def main(output_dir: Path, input_size, standard_dev, xs):
+    # sets rng seed and gets rng Generator class, numpy recommended way to do random numbers
+    rng = np.random.default_rng()
     synthetic_func = get_synth_func("branin")
-    rng = default_rng()
     X = rng.normal(loc=xs, scale=standard_dev, size=(input_size, len(xs)))
     results = dict(input=X.tolist(), output=synthetic_func(X).tolist(), metric_name="branin")
     with open(output_dir / "output.json", "w") as outfile:

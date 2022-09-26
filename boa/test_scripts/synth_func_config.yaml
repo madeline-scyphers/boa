@@ -27,5 +27,4 @@ parameters:
 
 model_options:
     input_size: 15
-    function: branin
     model_dir: .

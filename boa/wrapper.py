@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 
@@ -7,6 +8,8 @@ from ax.core.base_trial import BaseTrial
 
 from boa.metaclasses import WrapperRegister
 from boa.wrapper_utils import load_jsonlike, make_experiment_dir, normalize_config
+
+logger = logging.getLogger(__name__)
 
 
 class BaseWrapper(metaclass=WrapperRegister):
@@ -34,8 +37,10 @@ class BaseWrapper(metaclass=WrapperRegister):
         """
         try:
             config = load_jsonlike(config_path, normalize=False)
-        except ValueError:
+        except ValueError as e:  # return empty config if not json or yaml file
+            logger.warning(repr(e))
             return {}
+        # TODO add documentation about parameter_keys section
         parameter_keys = config.get("optimization_options", {}).get("parameter_keys", None)
         config = normalize_config(config=config, parameter_keys=parameter_keys)
 
@@ -43,6 +48,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         self.ex_settings = self.config["optimization_options"]
         self.model_settings = self.config.get("model_options", {})
 
+        # grab exp dir from config file or if passed in
         experiment_dir = {**self.ex_settings, **kwargs}.get("experiment_dir")
         if experiment_dir:  # TODO use append_timestamp
             self.ex_settings["experiment_dir"] = experiment_dir
@@ -50,11 +56,14 @@ class BaseWrapper(metaclass=WrapperRegister):
             self.experiment_dir.mkdir()
             return self.config
 
+        # if no exp dir, instead grab working dir from config or passed in
         working_dir = {**self.ex_settings, **kwargs}.get("working_dir")
         if not working_dir:
+            # if no working dir (or exp dir) set to cwd
             working_dir = Path.cwd()
 
-        experiment_name = self.ex_settings["experiment"]["name"]
+        # grab exp name, defaults to "boa" if no exp name passed in
+        experiment_name = self.ex_settings.get("experiment", {}).get("name", "boa")
         experiment_dir = make_experiment_dir(
             working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
         )

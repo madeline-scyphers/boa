@@ -17,6 +17,7 @@ from boa.definitions import TEST_SCRIPTS_DIR
 
 class Wrapper(BaseWrapper):
     _processes = []
+    # Use default BaseWrapper methods for everything but methods below
 
     @cd_and_cd_back_dec(path=TEST_SCRIPTS_DIR)
     def run_model(self, trial: Trial):
@@ -38,9 +39,6 @@ class Wrapper(BaseWrapper):
         self._processes.append(popen)
 
     def set_trial_status(self, trial: Trial) -> None:
-        """ "Get status of the job by a given ID. For simplicity of the example,
-        return an Ax `TrialStatus`.
-        """
         output_file = get_trial_dir(self.experiment_dir, trial.index) / "output.json"
 
         if output_file.exists():
@@ -51,8 +49,6 @@ class Wrapper(BaseWrapper):
         with open(output_file, "r") as f:
             data = json.load(f)
 
-        # return dict(a=data["output"])
-        # return dict(y_true=[hartmann6.fmin], y_pred=[np.mean(data["output"])])
         return dict(
             y_true=np.full(
                 self.model_settings["input_size"],
