@@ -13,13 +13,16 @@ logger = logging.getLogger(__name__)
 
 
 class BaseWrapper(metaclass=WrapperRegister):
-    def __init__(self):
-        self.config = None
+    def __init__(self, config_path: os.PathLike = None, *args, **kwargs):
         self.model_settings = None
         self.ex_settings = None
         self.experiment_dir = None
 
-    def load_config(self, config_path: os.PathLike, append_timestamp: bool = True, **kwargs):
+        if config_path:
+            self.config = self.load_config(config_path, *args, **kwargs)
+            self.mk_experiment_dir(*args, **kwargs)
+
+    def load_config(self, config_path: os.PathLike, *args, **kwargs):
         """
         Load config file and return a dictionary # TODO finish this
 
@@ -27,9 +30,6 @@ class BaseWrapper(metaclass=WrapperRegister):
         ----------
         config_path : os.PathLike
             File path for the experiment configuration file
-        append_timestamp : bool
-            Whether to append a timestamp to the end of the experiment directory
-            to ensure uniqueness
 
         Returns
         -------
@@ -47,32 +47,59 @@ class BaseWrapper(metaclass=WrapperRegister):
         self.config = config
         self.ex_settings = self.config["optimization_options"]
         self.model_settings = self.config.get("model_options", {})
-
-        # grab exp dir from config file or if passed in
-        experiment_dir = {**self.ex_settings, **kwargs}.get("experiment_dir")
-        if experiment_dir:  # TODO use append_timestamp
-            self.ex_settings["experiment_dir"] = experiment_dir
-            self.experiment_dir = Path(experiment_dir)
-            self.experiment_dir.mkdir()
-            return self.config
-
-        # if no exp dir, instead grab working dir from config or passed in
-        working_dir = {**self.ex_settings, **kwargs}.get("working_dir")
-        if not working_dir:
-            # if no working dir (or exp dir) set to cwd
-            working_dir = Path.cwd()
-
-        # grab exp name, defaults to "boa" if no exp name passed in
-        experiment_name = self.ex_settings.get("experiment", {}).get("name", "boa")
-        experiment_dir = make_experiment_dir(
-            working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
-        )
-
-        self.ex_settings["working_dir"] = working_dir
-        self.ex_settings["experiment_dir"] = experiment_dir
-        self.experiment_dir = experiment_dir
-
         return self.config
+
+    def mk_experiment_dir(
+        self,
+        experiment_dir: os.PathLike = None,
+        working_dir: os.PathLike = None,
+        experiment_name: str = None,
+        append_timestamp: bool = True,
+        **kwargs,
+    ):
+        """
+        Make the experiment directory that boa will write all of its trials and logs too.
+
+        Parameters
+        ----------
+        experiment_dir: os.PathLike
+            Path to the directory for the output of the experiment
+            You may specify this or working_dir in your configuration file instead.
+            (Defaults to None and using your configuration file instead)
+        working_dir: os.PathLike
+            Working directory of project, experiment_dir will be placed inside
+            working dir based on experiment name.
+            Because of this only either experiment_dir or working_dir may be specified.
+            You may specify this or experiment_dir in your configuration file instead.
+            (Defaults to None and using your configuration file instead)
+        experiment_name: str
+            Name of experiment, used for creating path to experiment dir with the working dir
+            (Defaults to None and using your configuration file instead)
+        append_timestamp : bool
+            Whether to append a timestamp to the end of the experiment directory
+            to ensure uniqueness
+        """
+        # grab exp dir from config file or if passed in
+        experiment_dir = experiment_dir or self.ex_settings.get("experiment_dir")
+        working_dir = working_dir or self.ex_settings.get("working_dir")
+        experiment_name = experiment_name or self.ex_settings.get("experiment", {}).get("name", "boa_runs")
+        if experiment_dir:
+            mk_exp_dir_kw = dict(experiment_dir=experiment_dir, append_timestamp=append_timestamp)
+        else:  # if no exp dir, instead grab working dir from config or passed in
+            if not working_dir:
+                # if no working dir (or exp dir) set to cwd
+                working_dir = Path.cwd()
+
+            mk_exp_dir_kw = dict(
+                working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
+            )
+
+            # We use str() because make_experiment_dir returns a Path object (json serialization)
+            self.ex_settings["working_dir"] = str(working_dir)
+
+        experiment_dir = make_experiment_dir(**mk_exp_dir_kw)
+        self.ex_settings["experiment_dir"] = str(experiment_dir)
+        self.experiment_dir = experiment_dir
 
     def write_configs(self, trial: BaseTrial) -> None:
         """

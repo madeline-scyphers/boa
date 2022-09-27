@@ -29,8 +29,8 @@ def main(output_dir):
 def run_opt(output_dir):
     config_file = Path(__file__).parent / "synth_func_config.yaml"
     start = time.time()
-    wrapper = Wrapper()
-    config = wrapper.load_config(config_path=config_file, working_dir=output_dir)
+    wrapper = Wrapper(config_path=config_file, working_dir=output_dir)
+    config = wrapper.config
     experiment_dir = wrapper.experiment_dir
     # Copy the experiment config to the experiment directory
     shutil.copyfile(config_file, experiment_dir / Path(config_file).name)

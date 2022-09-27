@@ -288,15 +288,24 @@ def get_dt_now_as_str(fmt: str = "%Y%m%dT%H%M%S"):
     return dt.datetime.now().strftime(fmt)
 
 
-def make_experiment_dir(working_dir: os.PathLike, experiment_name: str = "", append_timestamp: bool = True):
+def make_experiment_dir(
+    working_dir: os.PathLike = None,
+    experiment_dir: os.PathLike = None,
+    experiment_name: str = "",
+    append_timestamp: bool = True,
+):
     """
     Creates directory for the experiment and returns the path.
     The directory is named with the experiment name and the current datetime.
 
     Parameters
     ----------
-    working_dir : str
-        Working directory, the parent directory where the experiment directory will be written
+    working_dir : os.Pathlike
+        Working directory, the parent directory where the experiment directory will be written.
+        Specify either a working directory and an experiment name or an experiment_dir
+    experiment_dir : os.Pathlike
+        The exact dir the experiment directory boa will use to write the runs to.
+        Specify either a working directory and an experiment name or an experiment_dir
     experiment_name: str
         Name of the experiment
     append_timestamp : bool
@@ -308,12 +317,33 @@ def make_experiment_dir(working_dir: os.PathLike, experiment_name: str = "", app
     Path
         Path to the directory for the experiment
     """
-    # Directory named with experiment name and datetime
-    experiment_name = experiment_name + "_" if experiment_name else experiment_name
+    if (working_dir and experiment_dir) or (not working_dir and not experiment_dir):
+        raise ValueError(
+            "`make_experiment_dir` must take either a `working_dir` and `experiment_name` "
+            "or an `experiment_dir`, not both and not neither."
+        )
+    if experiment_dir:
+        return exp_dir_from_exp_dir(exp_dir=experiment_dir, append_timestamp=append_timestamp)
+    return exp_dir_from_working_dir(
+        working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
+    )
+
+
+def exp_dir_from_working_dir(working_dir: os.PathLike, experiment_name: str = "", append_timestamp: bool = True):
     ts = get_dt_now_as_str() if append_timestamp else ""
-    ex_dir = Path(working_dir).expanduser() / f"{experiment_name}{ts}"
+    exp_name = "_".join(name for name in [experiment_name, ts] if name)
+    ex_dir = Path(working_dir).expanduser() / exp_name
     ex_dir.mkdir()
     return ex_dir
+
+
+def exp_dir_from_exp_dir(exp_dir: os.PathLike, append_timestamp: bool = True):
+    exp_dir = Path(exp_dir)
+    working_dir = exp_dir.parent
+    experiment_name = exp_dir.name
+    return exp_dir_from_working_dir(
+        working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
+    )
 
 
 def zfilled_trial_index(trial_index: int, fill_size: int = 6) -> str:

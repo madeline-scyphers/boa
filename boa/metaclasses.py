@@ -29,6 +29,8 @@ class WrapperRegister(ABCMeta):
     def __init__(cls, *args, **kwargs):
         # CORE_ENCODER_REGISTRY[cls] = cls.wrapper_to_dict
         # CORE_DECODER_REGISTRY[cls.__name__] = cls
+        cls.load_config = write_exception_to_log(cd_and_cd_back_dec()(cls.load_config))
+        cls.mk_experiment_dir = write_exception_to_log(cd_and_cd_back_dec()(cls.mk_experiment_dir))
         cls.write_configs = write_exception_to_log(cd_and_cd_back_dec()(cls.write_configs))
         cls.run_model = write_exception_to_log(cd_and_cd_back_dec()(cls.run_model))
         cls.set_trial_status = write_exception_to_log(cd_and_cd_back_dec()(cls.set_trial_status))
