@@ -26,7 +26,9 @@ install_requires = [
     "ax-platform>=0.2.0",
     "scikit-learn",
     "scipy",
-    "pandas",
+    # 2022/09/25 Pinning because pandas 1.4.3 broke something with ax
+    # ax is working on a fix
+    "pandas<=1.4.0",
     "numpy",
     "click",
     "xarray",

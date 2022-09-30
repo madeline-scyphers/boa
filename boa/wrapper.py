@@ -40,7 +40,6 @@ class BaseWrapper(metaclass=WrapperRegister):
         except ValueError as e:  # return empty config if not json or yaml file
             logger.warning(repr(e))
             return {}
-        # TODO add documentation about parameter_keys section
         parameter_keys = config.get("optimization_options", {}).get("parameter_keys", None)
         config = normalize_config(config=config, parameter_keys=parameter_keys)
 
@@ -58,7 +57,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         **kwargs,
     ):
         """
-        Make the experiment directory that boa will write all of its trials and logs too.
+        Make the experiment directory that boa will write all of its trials and logs to.
 
         Parameters
         ----------

@@ -4,13 +4,7 @@ from boa import boa_params_to_wpr, normalize_config
 
 
 def test_wpr_params_to_boa(denormed_param_parse_config):
-    parameter_keys = [
-        ["params", "a"],
-        ["params", "b"],
-        ["params_a"],
-        ["params2", 0, 0],
-        ["params2", 1, 0],
-    ]
+    parameter_keys = denormed_param_parse_config["optimization_options"]["parameter_keys"]
     config = normalize_config(denormed_param_parse_config, parameter_keys)
     # How the parameter names should
     names = {
@@ -31,13 +25,7 @@ def test_wpr_params_to_boa(denormed_param_parse_config):
 
 
 def test_boa_params_to_wpr(denormed_param_parse_config):
-    parameter_keys = [
-        ["params", "a"],
-        ["params", "b"],
-        ["params_a"],
-        ["params2", 0, 0],
-        ["params2", 1, 0],
-    ]
+    parameter_keys = denormed_param_parse_config["optimization_options"]["parameter_keys"]
     config = normalize_config(denormed_param_parse_config, parameter_keys)
     orig_params = boa_params_to_wpr(config["parameters"], config["optimization_options"]["mapping"], from_trial=False)
 

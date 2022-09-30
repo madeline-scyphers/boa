@@ -62,7 +62,7 @@ def cd_and_cd_back_dec(path=None):
 def load_json(file_path: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
     """
     Read experiment configuration file for setting up the optimization.
-    yml file contains the list of parameters, and whether each parameter is a fixed
+    The configuration file contains the list of parameters, and whether each parameter is a fixed
     parameter or a range parameter. Fixed parameters have a value specified, and range
     parameters have a range specified.
 
@@ -157,8 +157,9 @@ def normalize_config(
     config["optimization_options"] = config.get("optimization_options", {})
     for key in ["experiment", "generation_strategy", "scheduler"]:
         config["optimization_options"][key] = config["optimization_options"].get(key, {})
+    # Experiment name will default to the "boa_runs" if no name is provided
     config["optimization_options"]["experiment"]["name"] = config["optimization_options"]["experiment"].get(
-        "name", get_dt_now_as_str()
+        "name", "boa_runs"
     )
 
     if parameter_keys:
