@@ -19,16 +19,15 @@ class Controller:
     def run(self, append_timestamp, experiment_dir, **kwargs):
         start = time.time()
 
-        wrapper = self.wrapper()
-
         kwargs["config_path"] = self.config_path
         if experiment_dir:
             kwargs["experiment_dir"] = experiment_dir
         if append_timestamp is not None:
             kwargs["append_timestamp"] = append_timestamp
 
-        load_config_kwargs = get_dictionary_from_callable(wrapper.load_config, kwargs)
-        config = wrapper.load_config(**load_config_kwargs)
+        load_config_kwargs = get_dictionary_from_callable(self.wrapper.load_config, kwargs)
+        wrapper = self.wrapper(**load_config_kwargs)
+        config = wrapper.config
 
         log_format = "%(levelname)s %(asctime)s - %(message)s"
         logging.basicConfig(

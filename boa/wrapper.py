@@ -19,7 +19,13 @@ class BaseWrapper(metaclass=WrapperRegister):
         self.experiment_dir = None
 
         if config_path:
-            self.config = self.load_config(config_path, *args, **kwargs)
+            self.config = None
+            config = self.load_config(config_path, *args, **kwargs)
+            # if load_config returns something, set to self.config
+            # if users overwrite load_config and don't return anything, we don't
+            # want to set it to self.config if they set it in load_config
+            if config is not None:
+                self.config = config
             self.mk_experiment_dir(*args, **kwargs)
 
     def load_config(self, config_path: os.PathLike, *args, **kwargs):
