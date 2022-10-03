@@ -26,7 +26,9 @@ install_requires = [
     "ax-platform>=0.2.0",
     "scikit-learn",
     "scipy",
-    "pandas",
+    # 2022/09/25 Pinning because pandas 1.4.3 broke something with ax
+    # ax is working on a fix
+    "pandas<=1.4.0",
     "numpy",
     "click",
     "xarray",
@@ -68,7 +70,7 @@ setup(
             "black[jupyter]",
             "isort",
             "flake8",
-            "flakeheaven",
+            "flakeheaven>=3.0.0",
             "pytest",
             "invoke",
             "setuptools_scm",
@@ -77,7 +79,7 @@ setup(
             "sphinx",
             "myst-nb",
             "pydata-sphinx-theme",
-            "sphinxext-remoteliteralinclude @ git+https://github.com/madeline-scyphers/sphinxext-remoteliteralinclude.git@bugfix/pyobject-fix",  # noqa
+            "sphinxext-remoteliteralinclude",
         ],
         "examples": ["jupyter", "hvplot"],
     },

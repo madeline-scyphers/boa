@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import click
-from numpy.random import default_rng
+import numpy as np
 
 from boa import get_synth_func
 
@@ -28,19 +28,13 @@ from boa import get_synth_func
     default=0.1,
     help="standard deviation of generated data",
 )
-@click.option(
-    "-fn",
-    "--function",
-    type=str,
-    default="hartmann6",
-    help="name of synthetic function",
-)
 @click.argument("xs", nargs=-1, type=click.FLOAT)
-def main(output_dir: Path, input_size, standard_dev, function, xs):
-    synthetic_func = get_synth_func(function)
-    rng = default_rng()
+def main(output_dir: Path, input_size, standard_dev, xs):
+    # sets rng seed and gets rng Generator class, numpy recommended way to do random numbers
+    rng = np.random.default_rng()
+    synthetic_func = get_synth_func("branin")
     X = rng.normal(loc=xs, scale=standard_dev, size=(input_size, len(xs)))
-    results = dict(input=X.tolist(), output=synthetic_func(X).tolist(), metric_name=function)
+    results = dict(input=X.tolist(), output=synthetic_func(X).tolist(), metric_name="branin")
     with open(output_dir / "output.json", "w") as outfile:
         json.dump(results, outfile, indent=4)
     print(f"saved results: {results} to {output_dir / 'output.json'}")

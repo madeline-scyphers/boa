@@ -32,6 +32,12 @@ optimization_options:
     # Here we specify a total of 10 trials will be ran.
     scheduler:
         total_trials: 10
+    # Instead of putting all of your parameters under the parameters key,
+    # You can put them under different keys, and then
+    # pass a list of lists where each list is the json/yaml pathing to the
+    # additional parameters key section.
+    # See below for an example.
+    parameter_keys: []
 
 # optimization parameters
 parameters:

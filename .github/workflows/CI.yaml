@@ -104,34 +104,34 @@ jobs:
         shell: bash -l {0}
         run: pytest -s
 
-  win:
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            label: win-64
-            prefix: C:\Miniconda3\envs\boa
-
-    name: ${{ matrix.label }}
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v2
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          # windows has a problem where sometimes if conda installs a version of a package
-          # but pip needs a higher version of that package (because of dependencies)
-          # an OSError can happen because of access issues.
-          # If that happens in the future, you can move that conda package to pip,
-          # Or pin it to a higher version
-          python-version: 3.9
-          activate-environment: boa
-          environment-file: environment.yml
-
-      - name: Update env with env req
-        shell: pwsh
-        run: conda env update -n boa -f environment_dev_update.yml
-
-      - name: Run tests
-        shell: pwsh
-        run: pytest -s
+#  win:
+#    strategy:
+#      matrix:
+#        include:
+#          - os: windows-latest
+#            label: win-64
+#            prefix: C:\Miniconda3\envs\boa
+#
+#    name: ${{ matrix.label }}
+#    runs-on: ${{ matrix.os }}
+#
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: conda-incubator/setup-miniconda@v2
+#        with:
+#          # windows has a problem where sometimes if conda installs a version of a package
+#          # but pip needs a higher version of that package (because of dependencies)
+#          # an OSError can happen because of access issues.
+#          # If that happens in the future, you can move that conda package to pip,
+#          # Or pin it to a higher version
+#          python-version: 3.9
+#          activate-environment: boa
+#          environment-file: environment.yml
+#
+#      - name: Update env with env req
+#        shell: pwsh
+#        run: conda env update -n boa -f environment_dev_update.yml
+#
+#      - name: Run tests
+#        shell: pwsh
+#        run: pytest -s

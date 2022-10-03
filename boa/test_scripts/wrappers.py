@@ -15,13 +15,9 @@ from boa import (
 from boa.definitions import TEST_SCRIPTS_DIR
 
 
-class TestWrapper(BaseWrapper):
+class Wrapper(BaseWrapper):
     _processes = []
-
-    def __init__(self, ex_settings, experiment_dir, model_settings):
-        self.ex_settings = ex_settings
-        self.experiment_dir = experiment_dir
-        self.model_settings = model_settings
+    # Use default BaseWrapper methods for everything but methods below
 
     @cd_and_cd_back_dec(path=TEST_SCRIPTS_DIR)
     def run_model(self, trial: Trial):
@@ -35,7 +31,6 @@ class TestWrapper(BaseWrapper):
             f"python synth_func_cli.py --output_dir {trial_dir}"
             f" --standard_dev {self.ex_settings['objective_options']['objectives'][0]['noise_sd']}"
             f" --input_size {self.model_settings['input_size']}"
-            f" --function {self.model_settings['function']}"
             f" -- {' '.join(str(val) for val in trial.arm.parameters.values())}"
         )
 
@@ -44,9 +39,6 @@ class TestWrapper(BaseWrapper):
         self._processes.append(popen)
 
     def set_trial_status(self, trial: Trial) -> None:
-        """ "Get status of the job by a given ID. For simplicity of the example,
-        return an Ax `TrialStatus`.
-        """
         output_file = get_trial_dir(self.experiment_dir, trial.index) / "output.json"
 
         if output_file.exists():
@@ -57,17 +49,15 @@ class TestWrapper(BaseWrapper):
         with open(output_file, "r") as f:
             data = json.load(f)
 
-        # return dict(a=data["output"])
-        # return dict(y_true=[hartmann6.fmin], y_pred=[np.mean(data["output"])])
         return dict(
             y_true=np.full(
                 self.model_settings["input_size"],
-                get_synth_func(self.model_settings["function"]).fmin,
+                get_synth_func("branin").fmin,
             ),
             y_pred=data["output"],
         )
 
 
 def exit_handler():
-    for process in TestWrapper._processes:
+    for process in Wrapper._processes:
         process.kill()
