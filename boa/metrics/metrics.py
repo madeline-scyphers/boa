@@ -339,6 +339,7 @@ class METRICS:
     Defaults to minimizization, if you want to maximize,
     specify lower_is_better: False or minimize: False in your configuration
     """
+    mean = Mean
     NRMSE = generic_closure(
         close_around=ModularMetric,
         metric_to_eval=normalized_root_mean_squared_error_,
