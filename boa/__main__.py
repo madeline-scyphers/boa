@@ -1,6 +1,7 @@
 import importlib.util
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 import click
@@ -13,14 +14,13 @@ from boa.wrapper_utils import cd_and_cd_back
 @click.option(
     "-c",
     "--config_path",
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    type=click.Path(dir_okay=False, path_type=Path),
     help="Path to configuration YAML file.",
 )
 @click.option(
     "-w",
     "--wrapper_path",
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    default=Path(__file__).resolve().parent / "opt_config.yaml",
+    type=click.Path(dir_okay=False, path_type=Path),
     help="Path to file with boa wrapper class",
 )
 @click.option(
@@ -34,7 +34,6 @@ from boa.wrapper_utils import cd_and_cd_back
     "-d",
     "--working_dir",
     type=click.Path(file_okay=False, path_type=Path),
-    default=None,
     help="Path to working dir to to cd to. "
     "Can be necessary for certain languages and projects that need to be in a certain directory for imports.",
 )
@@ -50,7 +49,6 @@ from boa.wrapper_utils import cd_and_cd_back
     "-o",
     "--experiment_dir",
     type=click.Path(file_okay=False, path_type=Path),
-    default=None,
     help="Modify/add to the config file the passed in experiment_dir for use downstream."
     " This requires your Wrapper to have the ability to take experiment_dir as an argument"
     " to ``load_config``. The default ``load_config`` does support this."
@@ -77,23 +75,28 @@ def main(config_path, wrapper_path, wrapper_name, working_dir, append_timestamp,
 
 
 def _main(config_path, wrapper_path, wrapper_name, working_dir, append_timestamp, experiment_dir):
+    s = time.time()
     if working_dir:
         sys.path.append(str(working_dir))
     with cd_and_cd_back(working_dir):
-        # create a module spec from a file location so we can then load that module
-        module_name = "user_wrapper"
-        spec = importlib.util.spec_from_file_location(module_name, wrapper_path)
-        # create that module from that spec from above
-        user_wrapper = importlib.util.module_from_spec(spec)
-        sys.modules[module_name] = user_wrapper
-        # execute the loading and importing of the module
-        spec.loader.exec_module(user_wrapper)
+        if wrapper_path:
+            # create a module spec from a file location so we can then load that module
+            module_name = "user_wrapper"
+            spec = importlib.util.spec_from_file_location(module_name, wrapper_path)
+            # create that module from that spec from above
+            user_wrapper = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = user_wrapper
+            # execute the loading and importing of the module
+            spec.loader.exec_module(user_wrapper)
 
-        # since we just loaded the module where the wrapper class is, we can now load it
-        wrapper_cls = getattr(user_wrapper, wrapper_name)
+            # since we just loaded the module where the wrapper class is, we can now load it
+            WrapperCls = getattr(user_wrapper, wrapper_name)
+        else:
+            from boa.wrapper import BaseWrapper as WrapperCls
 
-        controller = Controller(config_path=config_path, wrapper=wrapper_cls)
+        controller = Controller(config_path=config_path, wrapper=WrapperCls)
         scheduler = controller.run(append_timestamp=append_timestamp, experiment_dir=experiment_dir)
+        print(f"total time = {time.time() - s}")
         return scheduler
 
 

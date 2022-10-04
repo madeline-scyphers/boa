@@ -12,7 +12,12 @@ except ImportError:
 from boa.ax_instantiation_utils import *  # noqa
 from boa.instantiation_base import *  # noqa
 from boa.metrics.metrics import *  # noqa
+from boa.registry import _add_common_encodes_and_decodes
 from boa.runner import *  # noqa
 from boa.storage import *  # noqa
 from boa.wrapper import *  # noqa
 from boa.wrapper_utils import *  # noqa
+
+_add_common_encodes_and_decodes()
+
+del _add_common_encodes_and_decodes

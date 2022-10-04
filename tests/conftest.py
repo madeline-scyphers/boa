@@ -4,7 +4,7 @@ import pytest
 
 import boa.__main__ as dunder_main
 import boa.test_scripts.run_branin as run_branin
-from boa import cd_and_cd_back, load_yaml
+from boa import cd_and_cd_back, load_yaml, split_shell_command
 
 ROOT = Path(__file__).parent.parent
 TEST_DIR = ROOT / "tests"
@@ -93,4 +93,15 @@ def stand_alone_opt_package_run(tmp_path_factory, cd_to_root_and_back_session):
         f" --working_dir {working_dir}"
         f" --experiment_dir {experiment_dir}"
     )
-    yield dunder_main.main(args.split(), standalone_mode=False)
+    yield dunder_main.main(split_shell_command(args), standalone_mode=False)
+
+
+@pytest.fixture(scope="session")
+def r_scripts_run(tmp_path_factory, cd_to_root_and_back_session):
+    experiment_dir = tmp_path_factory.mktemp("experiment") / "temp"
+
+    config_path = TEST_DIR / "scripts/r_package/config.yaml"
+    working_dir = TEST_DIR / "scripts/r_package"
+
+    args = f" --working_dir {working_dir}" f" --config_path {config_path}" f" --experiment_dir {experiment_dir}"
+    yield dunder_main.main(split_shell_command(args), standalone_mode=False)

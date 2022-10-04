@@ -7,6 +7,7 @@ from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_R
 from ax.storage.metric_registry import CORE_METRIC_REGISTRY
 from ax.storage.runner_registry import CORE_RUNNER_REGISTRY
 
+from boa.registry import _add_common_encodes_and_decodes
 from boa.wrapper_utils import cd_and_cd_back_dec
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ class WrapperRegister(ABCMeta):
     def __init__(cls, *args, **kwargs):
         # CORE_ENCODER_REGISTRY[cls] = cls.wrapper_to_dict
         # CORE_DECODER_REGISTRY[cls.__name__] = cls
+        _add_common_encodes_and_decodes()
         cls.load_config = write_exception_to_log(cd_and_cd_back_dec()(cls.load_config))
         cls.mk_experiment_dir = write_exception_to_log(cd_and_cd_back_dec()(cls.mk_experiment_dir))
         cls.write_configs = write_exception_to_log(cd_and_cd_back_dec()(cls.write_configs))
@@ -41,6 +43,7 @@ class WrapperRegister(ABCMeta):
 
 class RunnerRegister(ABCMeta):
     def __init__(cls, *args, **kwargs):
+        _add_common_encodes_and_decodes()
         CORE_ENCODER_REGISTRY[cls] = cls.to_dict
         CORE_DECODER_REGISTRY[cls.__name__] = cls
         next_pk = max(CORE_RUNNER_REGISTRY.values()) + 1
@@ -49,6 +52,7 @@ class RunnerRegister(ABCMeta):
 
 class MetricRegister(ABCMeta):
     def __init__(cls, *args, **kwargs):
+        _add_common_encodes_and_decodes()
         CORE_ENCODER_REGISTRY[cls] = cls.to_dict
         CORE_DECODER_REGISTRY[cls.__name__] = cls
         next_pk = max(CORE_METRIC_REGISTRY.values()) + 1
@@ -57,5 +61,6 @@ class MetricRegister(ABCMeta):
 
 class MetricToEvalRegister(type):
     def __init__(cls, *args, **kwargs):
+        _add_common_encodes_and_decodes()
         CORE_ENCODER_REGISTRY[cls] = cls.to_dict
         CORE_DECODER_REGISTRY[cls.__name__] = cls

@@ -9,13 +9,16 @@ from stand_alone_model_func import run_branin_from_trial
 
 
 class Wrapper:
-    def __init__(self):
+    def __init__(self, config_path: os.PathLike = None, *args, **kwargs):
         self.config = None
         self.model_settings = None
         self.ex_settings = None
         self.experiment_dir = None
 
         self.data = {}
+
+        if config_path:
+            self.config = self.load_config(config_path, *args, **kwargs)
 
     def load_config(
         self, config_path: os.PathLike, append_timestamp: bool = True, experiment_dir: os.PathLike = None, **kwargs

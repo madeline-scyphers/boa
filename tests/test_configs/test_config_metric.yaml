@@ -5,7 +5,7 @@ optimization_options:
             # List all of your metrics here,
             # only list 1 metric for a single objective optimization
             - name: rmse
-              boa_metric: RootMeanSquaredError
+              metric: RootMeanSquaredError
         # List all outcome constraints here
         outcome_constraints: []
     # Here we explicitly define a generation strategy

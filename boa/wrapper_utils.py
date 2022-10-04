@@ -16,6 +16,7 @@ import datetime as dt
 import json
 import logging
 import os
+import shlex
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
@@ -25,6 +26,8 @@ from typing import Union
 import yaml
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
 from ax.utils.common.docutils import copy_doc
+
+from boa.definitions import IS_WINDOWS
 
 logger = logging.getLogger(__file__)
 
@@ -57,6 +60,17 @@ def cd_and_cd_back_dec(path=None):
         return wrapper
 
     return _cd_and_cd_back_dec
+
+
+def split_shell_command(cmd: str):
+    """
+    split shell command for passing to python subproccess.
+    This should correctly split commands like "echo 'Hello, World!'"
+    to ['echo', 'Hello, World!'] (2 items) and not ['echo', "'Hello,", "World!'"] (3 items)
+
+    It also works for posix and windows systems appropriately
+    """
+    return shlex.split(cmd, posix=not IS_WINDOWS)
 
 
 def load_json(file_path: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
@@ -324,13 +338,13 @@ def make_experiment_dir(
             "or an `experiment_dir`, not both and not neither."
         )
     if experiment_dir:
-        return exp_dir_from_exp_dir(exp_dir=experiment_dir, append_timestamp=append_timestamp)
-    return exp_dir_from_working_dir(
+        return mk_exp_dir_from_exp_dir(exp_dir=experiment_dir, append_timestamp=append_timestamp)
+    return mk_exp_dir_from_working_dir(
         working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
     )
 
 
-def exp_dir_from_working_dir(working_dir: os.PathLike, experiment_name: str = "", append_timestamp: bool = True):
+def mk_exp_dir_from_working_dir(working_dir: os.PathLike, experiment_name: str = "", append_timestamp: bool = True):
     ts = get_dt_now_as_str() if append_timestamp else ""
     exp_name = "_".join(name for name in [experiment_name, ts] if name)
     ex_dir = Path(working_dir).expanduser() / exp_name
@@ -338,11 +352,11 @@ def exp_dir_from_working_dir(working_dir: os.PathLike, experiment_name: str = ""
     return ex_dir
 
 
-def exp_dir_from_exp_dir(exp_dir: os.PathLike, append_timestamp: bool = True):
+def mk_exp_dir_from_exp_dir(exp_dir: os.PathLike, append_timestamp: bool = True):
     exp_dir = Path(exp_dir)
     working_dir = exp_dir.parent
     experiment_name = exp_dir.name
-    return exp_dir_from_working_dir(
+    return mk_exp_dir_from_working_dir(
         working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
     )
 

@@ -5,9 +5,9 @@ optimization_options:
             # List all of your metrics here,
             # only list multiple objectives for a multi objective optimization
             - name: rmse
-              boa_metric: RootMeanSquaredError
+              metric: RootMeanSquaredError
             - name: r2
-              boa_metric: R2
+              metric: R2
         outcome_constraints: []
         objective_thresholds: []
     experiment:

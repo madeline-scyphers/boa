@@ -25,12 +25,14 @@ from boa.wrapper import BaseWrapper
 
 logger = logging.getLogger(__name__)
 
+success = []
+
 
 def get_metric_from_config(config, instantiate=True, **kwargs):
-    if config.get("metric"):
+    if config.get("metric") and isinstance(config["metric"], dict):  # backwards compatibility format
         config = config["metric"]
-    if config.get("boa_metric"):
-        kwargs["metric_name"] = config["boa_metric"]
+    if config.get("boa_metric") or config.get("metric"):
+        kwargs["metric_name"] = config.get("boa_metric") or config.get("metric")
         metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
     elif config.get("sklearn_metric"):
         kwargs["metric_name"] = config["sklearn_metric"]
@@ -253,6 +255,12 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
                 )
             else:
                 trial_data = super().fetch_trial_data(trial=trial, **safe_kwargs)
+                success.append(trial.index)
+        except Exception as e:
+            logger.error(
+                f"error running {self.metric_to_eval} on trial: {trial.index}" f"\nsuccessfully ran trials {success}"
+            )
+            raise e
         finally:
             # We remove the extra parameters from the arms for json serialization
             [arm._parameters.pop("kwargs") for arm in trial.arms_by_name.values()]
@@ -260,7 +268,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def _evaluate(self, params: TParameterization, **kwargs) -> float:
         kwargs.update(params.pop("kwargs"))
-        return self.f(**get_dictionary_from_callable(self.metric_to_eval, kwargs))
+        return self.f(**get_dictionary_from_callable(self.metric_to_eval.func, kwargs))
 
     def f(self, *args, **kwargs):
         return self.metric_to_eval(*args, **kwargs)
@@ -354,5 +362,10 @@ class METRICS:
     normalized_root_mean_squared_error = NRMSE
 
 
-def get_boa_metric(name):
+def get_boa_metric(name: str):
     return getattr(METRICS, name)
+
+
+def _get_boa_metric_any_case(name: str):
+    metric_name = [metric for metric in dir(METRICS) if metric.lower() == name.lower()][0]
+    return getattr(METRICS, metric_name)
