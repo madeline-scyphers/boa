@@ -47,7 +47,9 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Update environment with development env
-        run: mamba env update -n boa -f environment_dev_update.yml
+        run: |
+          mamba env update -n boa -f environment_dev_update.yml
+          mamba env update -n boa -f environment_language_updates.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Lint
@@ -97,7 +99,9 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Update environment with development env
-        run: mamba env update -n boa -f environment_dev_update.yml
+        run: |
+          mamba env update -n boa -f environment_dev_update.yml
+          mamba env update -n boa -f environment_language_updates.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Run tests
@@ -130,8 +134,9 @@ jobs:
 #
 #      - name: Update env with env req
 #        shell: pwsh
-#        run: conda env update -n boa -f environment_dev_update.yml
-#
+#        run: |
+#          conda env update -n boa -f environment_dev_update.yml
+#          conda env update -n boa -f environment_language_updates.yml
 #      - name: Run tests
 #        shell: pwsh
 #        run: pytest -s
