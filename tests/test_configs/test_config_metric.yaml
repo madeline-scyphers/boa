@@ -63,7 +63,7 @@ parameters:
 
 # optimization parameter constraints
 parameter_constraints:
-    - x2 + x1 => >.1
+    - x2 + x1 => .1
     - x2 + x1 + .6*x1 <= .6
 
 # non optimization model options

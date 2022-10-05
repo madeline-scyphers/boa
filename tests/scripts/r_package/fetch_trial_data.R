@@ -12,9 +12,8 @@ model_data <- read_json(path=file.path(trial_dir, "run_model_from_wrapper.json")
 res <- model_data$output
 
 out_data <- list(
-    rmse=list(
-        y_true=BRANIN_TRUE_MIN,
-        y_pred=res
+    mean=list(
+        a=res
     )
 )
 

@@ -21,7 +21,7 @@ from boa.wrapper_utils import cd_and_cd_back
     "-w",
     "--wrapper_path",
     type=click.Path(dir_okay=False, path_type=Path),
-    help="Path to file with boa wrapper class",
+    help="Path to file with python boa wrapper class",
 )
 @click.option(
     "-wn",
