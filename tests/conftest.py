@@ -75,26 +75,18 @@ def cd_to_root_and_back_session():
 @pytest.fixture(scope="session")
 def script_main_run(tmp_path_factory, cd_to_root_and_back_session):
     output_dir = tmp_path_factory.mktemp("output")
-    yield run_branin.main.callback(output_dir)
+    yield run_branin.main(split_shell_command(f"--output_dir {output_dir}"), standalone_mode=False)
 
 
 @pytest.fixture(scope="session")
 def stand_alone_opt_package_run(tmp_path_factory, cd_to_root_and_back_session):
     config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.json"
 
-    args = (
-        f" --config_path {config_path}"
-        f" -td"
-    )
-    yield dunder_main.main(split_shell_command(args), standalone_mode=False)
+    yield dunder_main.main(split_shell_command(f"--config_path {config_path} -td"), standalone_mode=False)
 
 
 @pytest.fixture(scope="session")
 def r_scripts_run(tmp_path_factory, cd_to_root_and_back_session):
-    experiment_dir = tmp_path_factory.mktemp("experiment") / "temp"
-
     config_path = TEST_DIR / "scripts/r_package/config.yaml"
-    working_dir = TEST_DIR / "scripts/r_package"
 
-    args = f" --working_dir {working_dir}" f" --config_path {config_path}" f" --experiment_dir {experiment_dir}"
-    yield dunder_main.main(split_shell_command(args), standalone_mode=False)
+    yield dunder_main.main(split_shell_command(f"--config_path {config_path} -td"), standalone_mode=False)
