@@ -82,8 +82,5 @@ def script_main_run(tmp_path_factory, cd_to_root_and_back_session):
 def stand_alone_opt_package_run(tmp_path_factory, cd_to_root_and_back_session):
     config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.json"
 
-    args = (
-        f" --config_path {config_path}"
-        f" -td"
-    )
+    args = f" --config_path {config_path}" f" -td"
     yield dunder_main.main(args.split(), standalone_mode=False)
