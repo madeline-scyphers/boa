@@ -25,8 +25,7 @@ from boa.wrapper_utils import cd_and_cd_back, load_jsonlike
     help="Modify/add to the config file a temporary directory as the experiment_dir that will get deleted after running"
     " (useful for testing)."
     " This requires your Wrapper to have the ability to take experiment_dir as an argument"
-    " to ``load_config``. The default ``load_config`` does support this."
-    " --experiment_dir and --temp_dir can't both be used.",
+    " to ``load_config``. The default ``load_config`` does support this.",
 )
 @click.option(
     "-rel",

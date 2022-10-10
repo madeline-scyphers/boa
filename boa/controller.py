@@ -1,4 +1,3 @@
-import datetime as dt
 import logging
 import time
 from pathlib import Path
@@ -7,7 +6,7 @@ from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.runner import WrappedJobRunner
 from boa.storage import scheduler_to_json_file
 from boa.utils import get_dictionary_from_callable
-
+from boa.wrapper_utils import get_dt_now_as_str
 
 class Controller:
     def __init__(self, config_path, wrapper):
@@ -38,7 +37,7 @@ class Controller:
         )
         logging.getLogger().addHandler(logging.StreamHandler())
         logger = logging.getLogger(__file__)
-        logger.info("Start time: %s", dt.datetime.now().strftime("%Y%m%dT%H%M%S"))
+        logger.info("Start time: %s", get_dt_now_as_str())
 
         experiment = get_experiment(config, WrappedJobRunner(wrapper=wrapper), wrapper)
         scheduler = get_scheduler(experiment, config=config)
