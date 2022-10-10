@@ -18,8 +18,9 @@ def write_exception_to_log(func):
         try:
             return func(*args, **kwargs)
         except Exception:
-            logger.warning("Exception encountered in %s. Traceback: %s", func.__name__, traceback.format_exc())
-
+            logger.warning(
+                "Boa Wrapper Exception encountered in %s. Traceback: %s", func.__name__, traceback.format_exc()
+            )
             raise
 
     return wrapper

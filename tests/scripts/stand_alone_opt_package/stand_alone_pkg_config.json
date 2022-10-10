@@ -1,0 +1,69 @@
+{
+  "optimization_options": {
+    "experiment": {
+      "name": "test_experiment"
+    },
+    "generation_strategy": {
+      "steps": [
+        {
+          "model": "SOBOL",
+          "num_trials": 2
+        },
+        {
+          "model": "GPEI",
+          "num_trials": -1
+        }
+      ]
+    },
+    "objective_options": {
+      "objectives": [
+        {
+          "boa_metric": "mean",
+          "name": "mean"
+        }
+      ]
+    },
+    "scheduler": {
+      "total_trials": 5
+    }
+  },
+  "parameter_constraints_orig": [],
+  "parameters": [
+    {
+      "bounds": [
+        -5,
+        10
+      ],
+      "name": "x0",
+      "type": "range",
+      "value_type": "float"
+    },
+    {
+      "bounds": [
+        0,
+        15
+      ],
+      "name": "x1",
+      "type": "range",
+      "value_type": "float"
+    }
+  ],
+  "parameters_orig": {
+    "x0": {
+      "bounds": [
+        -5,
+        10
+      ],
+      "type": "range",
+      "value_type": "float"
+    },
+    "x1": {
+      "bounds": [
+        0,
+        15
+      ],
+      "type": "range",
+      "value_type": "float"
+    }
+  }
+}
