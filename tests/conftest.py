@@ -1,6 +1,7 @@
 import json
 import sys
 from pathlib import Path
+import logging
 
 import pytest
 
@@ -8,6 +9,8 @@ import boa.__main__ as dunder_main
 import boa.test_scripts.run_branin as run_branin
 from boa import cd_and_cd_back, load_yaml
 from boa.definitions import ROOT
+
+logger = logging.getLogger(__file__)
 
 TEST_DIR = ROOT / "tests"
 TEST_CONFIG_DIR = TEST_DIR / "test_configs"
@@ -107,6 +110,4 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
         config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.json"
 
     args = f"--config_path {config_path} -td"
-    # remove stand_alone_opt_package from sys.path to test that __main__ re adds it
-    sys.path.remove(str(TEST_DIR / "scripts/stand_alone_opt_package/"))
     yield dunder_main.main(args.split(), standalone_mode=False)
