@@ -37,7 +37,7 @@ from boa.wrapper_utils import cd_and_cd_back, load_jsonlike
     " instead of relative to the config file location (the default)"
     " ex:"
     " given working_dir=path/to/dir"
-    " if you don't pass --rel_to_her then path/to/dir is defined in terms of where your config file is"
+    " if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is"
     " if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from",
 )
 def main(config_path, temporary_dir, rel_to_here):
