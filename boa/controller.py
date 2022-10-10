@@ -8,6 +8,7 @@ from boa.storage import scheduler_to_json_file
 from boa.utils import get_dictionary_from_callable
 from boa.wrapper_utils import get_dt_now_as_str
 
+
 class Controller:
     def __init__(self, config_path, wrapper):
         self.config_path = config_path
