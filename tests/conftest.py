@@ -1,3 +1,5 @@
+import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -79,8 +81,32 @@ def script_main_run(tmp_path_factory, cd_to_root_and_back_session):
 
 
 @pytest.fixture(scope="session")
-def stand_alone_opt_package_run(tmp_path_factory, cd_to_root_and_back_session):
-    config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.json"
+def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_session):
+    # parametrize the test to pass in script options in config as relative and absolute paths
+    if request.param == "absolute":
+        wrapper_path = (TEST_DIR / "scripts/stand_alone_opt_package/wrapper.py").resolve()
+        config = {
+            "optimization_options": {
+                "generation_strategy": {
+                    "steps": [{"model": "SOBOL", "num_trials": 2}, {"model": "GPEI", "num_trials": -1}]
+                },
+                "objective_options": {"objectives": [{"boa_metric": "mean", "name": "mean"}]},
+                "scheduler": {"total_trials": 5},
+            },
+            "parameters": [
+                {"bounds": [-5.0, 10.0], "name": "x0", "type": "range"},
+                {"bounds": [0.0, 15.0], "name": "x1", "type": "range"},
+            ],
+            "script_options": {"wrapper_path": str(wrapper_path)},
+        }
+        temp_dir = tmp_path_factory.mktemp("temp_dir")
+        config_path = temp_dir / "config.yaml"
+        with open(Path(config_path), "w") as file:
+            json.dump(config, file)
+    else:
+        config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.json"
 
-    args = f" --config_path {config_path}" f" -td"
+    args = f"--config_path {config_path} -td"
+    # remove stand_alone_opt_package from sys.path to test that __main__ re adds it
+    sys.path.remove(str(TEST_DIR / "scripts/stand_alone_opt_package/"))
     yield dunder_main.main(args.split(), standalone_mode=False)
