@@ -4,7 +4,6 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
-from pprint import pformat
 
 import click
 from ax.service.utils.report_utils import exp_to_df
@@ -50,10 +49,7 @@ def run_opt(output_dir):
     scheduler.run_all_trials()
 
     # We output a bunch of stuff to the log for easier debugging
-    logger.info(pformat(scheduler.get_best_trial()))
     logger.info(scheduler.experiment.fetch_data().df)
-    logging.info(pformat(scheduler.get_best_trial()))
-    logging.info(scheduler.experiment.fetch_data().df)
     logging.info(exp_to_df(scheduler.experiment))
 
     logger.info("\nTrials completed! Total run time: %d", time.time() - start)

@@ -1,16 +1,22 @@
 from __future__ import annotations
 
 import copy
+import logging
 import time
 
 from ax import Experiment, Runner, SearchSpace
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
-from ax.service.scheduler import Scheduler, SchedulerOptions
+from ax.modelbridge.torch import TorchModelBridge
+from ax.models.torch.botorch_moo import MultiObjectiveBotorchModel
+from ax.service.scheduler import SchedulerOptions
 
 from boa.instantiation_base import BoaInstantiationBase
+from boa.scheduler import Scheduler
 from boa.utils import get_dictionary_from_callable
+
+logger = logging.getLogger(__file__)
 
 
 def instantiate_search_space_from_json(
@@ -46,6 +52,8 @@ def generation_strategy_from_config(config: dict, experiment: Experiment = None)
 def choose_generation_strategy_from_experiment(experiment: Experiment, config: dict) -> GenerationStrategy:
     return choose_generation_strategy(
         search_space=experiment.search_space,
+        experiment=experiment,
+        optimization_config=experiment.optimization_config,
         **get_dictionary_from_callable(choose_generation_strategy, config),
     )
 
@@ -68,6 +76,8 @@ def get_scheduler(
         generation_strategy = get_generation_strategy(
             config=config["optimization_options"]["generation_strategy"], experiment=experiment
         )
+
+        _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy)
     # db_settings = DBSettings(
     #     url="sqlite:///foo.db",
     #     decoder=Decoder(config=SQAConfig()),
@@ -112,3 +122,18 @@ def get_experiment(
         runner=runner,
         **get_dictionary_from_callable(Experiment.__init__, opt_options["experiment"]),
     )
+
+
+def _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy):
+    if experiment.is_moo_problem:
+        for step in generation_strategy._steps:
+            model_bridge = step.model.model_bridge_class
+            is_moo_modelbridge = (
+                model_bridge and issubclass(model_bridge, TorchModelBridge) and experiment.is_moo_problem
+            )
+            if is_moo_modelbridge and not isinstance(model_bridge, MultiObjectiveBotorchModel):
+                logger.warning(
+                    "Multi Objective Optimization was specified,"
+                    f"\nbut generation steps used step: {step}, which is not"
+                    f" a MOO generation step."
+                )

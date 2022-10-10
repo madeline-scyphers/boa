@@ -4,6 +4,9 @@ optimization_options:
             - name: rmse
               boa_metric: RMSE
               noise_sd: .1
+            - name: mse
+              boa_metric: MSE
+              noise_sd: .1
     generation_strategy:
         steps:
             - model: SOBOL

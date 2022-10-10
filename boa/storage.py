@@ -61,7 +61,7 @@ def load_experiment(filepath: os.PathLike, *args, **kwargs) -> Experiment:
         return ax_load_experiment(filepath, *args, **kwargs)
 
 
-def scheduler_to_json_file(scheduler, filepath: os.PathLike = "scheduler_snapshot.json") -> None:
+def scheduler_to_json_file(scheduler, filepath: os.PathLike = "scheduler.json") -> None:
     """Save a JSON-serialized snapshot of this `AxClient`'s settings and state
     to a .json file by the given path.
     """
@@ -70,7 +70,7 @@ def scheduler_to_json_file(scheduler, filepath: os.PathLike = "scheduler_snapsho
         logger.info(f"Saved JSON-serialized state of optimization to `{filepath}`.")
 
 
-def scheduler_from_json_file(filepath: os.PathLike = "scheduler_snapshot.json", wrapper=None, **kwargs) -> Scheduler:
+def scheduler_from_json_file(filepath: os.PathLike = "scheduler.json", wrapper=None, **kwargs) -> Scheduler:
     """Restore an `AxClient` and its state from a JSON-serialized snapshot,
     residing in a .json file by the given path.
     """

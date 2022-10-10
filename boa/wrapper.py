@@ -83,12 +83,13 @@ class BaseWrapper(metaclass=WrapperRegister):
         working_dir = working_dir or self.ex_settings.get("working_dir")
         experiment_name = experiment_name or self.ex_settings.get("experiment", {}).get("name", "boa_runs")
         if experiment_dir:
+            experiment_dir = Path(experiment_dir).resolve()
             mk_exp_dir_kw = dict(experiment_dir=experiment_dir, append_timestamp=append_timestamp)
         else:  # if no exp dir, instead grab working dir from config or passed in
             if not working_dir:
                 # if no working dir (or exp dir) set to cwd
                 working_dir = Path.cwd()
-
+            working_dir = Path(working_dir).resolve()
             mk_exp_dir_kw = dict(
                 working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
             )
