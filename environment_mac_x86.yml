@@ -7,19 +7,21 @@ channels:
 dependencies:
 - python=3.9
 - mkl<2022
-- pytorch<1.12.0
-- torchvision
-- torchaudio
+- pytorch::pytorch<1.12.0
+- pytorch::torchvision
+- pytorch::torchaudio
 - numpy
-  # 2022/09/25 Pinning because pandas 1.4.3 broke something with ax
-  # ax is working on a fix
-- pandas<=1.4.0
+- pandas
+- xarray
+- dask
+- netCDF4
+- bottleneck
 - scipy
 - scikit-learn
 - click
 - sqlalchemy
 - pip
 - pip:
-  - ax-platform
+  - ax-platform>=0.2.8
   - PyYAML
   - -e .

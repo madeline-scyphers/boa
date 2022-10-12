@@ -7,7 +7,7 @@
       "steps": [
         {
           "model": "SOBOL",
-          "num_trials": 5
+          "num_trials": 2
         },
         {
           "model": "GPEI",
@@ -24,7 +24,7 @@
       ]
     },
     "scheduler": {
-      "total_trials": 15
+      "total_trials": 5
     }
   },
   "parameter_constraints_orig": [],

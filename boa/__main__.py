@@ -26,8 +26,7 @@ from boa.wrapper_utils import cd_and_cd_back, load_jsonlike
     help="Modify/add to the config file a temporary directory as the experiment_dir that will get deleted after running"
     " (useful for testing)."
     " This requires your Wrapper to have the ability to take experiment_dir as an argument"
-    " to ``load_config``. The default ``load_config`` does support this."
-    " --experiment_dir and --temp_dir can't both be used.",
+    " to ``load_config``. The default ``load_config`` does support this.",
 )
 @click.option(
     "-rel",
@@ -39,7 +38,7 @@ from boa.wrapper_utils import cd_and_cd_back, load_jsonlike
     " instead of relative to the config file location (the default)"
     " ex:"
     " given working_dir=path/to/dir"
-    " if you don't pass --rel_to_her then path/to/dir is defined in terms of where your config file is"
+    " if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is"
     " if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from",
 )
 def main(config_path, temporary_dir, rel_to_here):
@@ -60,7 +59,10 @@ def _main(config_path, rel_to_here, experiment_dir=None):
     config = load_jsonlike(config_path, normalize=False)
 
     script_options = config.get("script_options", {})
+    wrapper_path = script_options.get("wrapper_path", "wrapper.py")
     wrapper_name = script_options.get("wrapper_name", "Wrapper")
+    working_dir = script_options.get("working_dir")
+    experiment_dir = experiment_dir or script_options.get("experiment_dir")
     append_timestamp = script_options.get("append_timestamp", True)
 
     wrapper_path = script_options.get("wrapper_path", "wrapper.py")
@@ -74,6 +76,7 @@ def _main(config_path, rel_to_here, experiment_dir=None):
 
     if working_dir:
         sys.path.append(str(working_dir))
+    sys.path.append(str(rel_path))
     with cd_and_cd_back(working_dir):
         if wrapper_path.exists():
             # create a module spec from a file location so we can then load that module

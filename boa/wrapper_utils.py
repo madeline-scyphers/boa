@@ -185,20 +185,23 @@ def normalize_config(
     config["parameters_orig"] = deepcopy(config.get("parameters", {}))
     config["parameter_constraints_orig"] = deepcopy(config.get("parameter_constraints", []))
 
-    search_space_parameters = []
-    for param in config.get("parameters", {}).keys():
-        d = deepcopy(config["parameters"][param])
-        d["name"] = param  # Add "name" attribute for each parameter
-        # remove bounds on fixed params
-        if d.get("type", "") == "fixed" and "bounds" in d:
-            del d["bounds"]
-        # Remove value on range params
-        if d.get("type", "") == "range" and "value" in d:
-            del d["value"]
+    parameters = config.get("parameters", {})
+    # parameters in the form of name: options, normalize to a list form: [{name: x, bounds: (1, 2), etc}]
+    if isinstance(parameters, dict):
+        search_space_parameters = []
+        for param in config.get("parameters", {}).keys():
+            d = deepcopy(config["parameters"][param])
+            d["name"] = param  # Add "name" attribute for each parameter
+            # remove bounds on fixed params
+            if d.get("type", "") == "fixed" and "bounds" in d:
+                del d["bounds"]
+            # Remove value on range params
+            if d.get("type", "") == "range" and "value" in d:
+                del d["value"]
 
-        search_space_parameters.append(d)
+            search_space_parameters.append(d)
 
-    config["parameters"] = search_space_parameters
+        config["parameters"] = search_space_parameters
 
     return config
 

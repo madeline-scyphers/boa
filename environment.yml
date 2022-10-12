@@ -6,19 +6,21 @@ channels:
 - defaults
 dependencies:
 - python=3.9
-- pytorch
-- torchvision
-- torchaudio
+- pytorch::pytorch
+- pytorch::torchvision
+- pytorch::torchaudio
 - numpy
-  # 2022/09/25 Pinning because pandas 1.4.3 broke something with ax
-  # ax is working on a fix
-- pandas<=1.4.0
+- pandas
+- xarray
+- dask
+- netCDF4
+- bottleneck
 - scipy
 - scikit-learn
 - click
 - sqlalchemy
 - pip
 - pip:
-  - ax-platform
+  - ax-platform>=0.2.8
   - PyYAML
   - -e .
