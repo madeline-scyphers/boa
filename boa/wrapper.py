@@ -129,7 +129,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         trial : BaseTrial
         """
         # write_configs_path = self.config.get("script_options", {}).get("write_configs_path")
-        self._run_subprocess_script_cmd(trial, "write_configs")
+        self._run_subprocess_script_cmd_if_exists(trial, "write_configs")
 
     def run_model(self, trial: BaseTrial) -> None:
         """
@@ -139,7 +139,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         ----------
         trial : BaseTrial
         """
-        self._run_subprocess_script_cmd(trial, "run_model", block=False)
+        self._run_subprocess_script_cmd_if_exists(trial, "run_model", block=False)
 
     def set_trial_status(self, trial: BaseTrial) -> None:
         """
@@ -185,10 +185,10 @@ class BaseWrapper(metaclass=WrapperRegister):
         --------
         # TODO add sphinx link to ax trial status
         """
-
-        script_was_ran = self._run_subprocess_script_cmd(trial, "set_trial_status")
-        if script_was_ran:
-            data = self._read_subprocess_script_output(trial, "set_trial_status")
+        func_name = "set_trial_status"
+        self._run_subprocess_script_cmd_if_exists(trial, func_name)
+        data = self._read_subprocess_script_output(trial, func_name)
+        if data:
             trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus"]
             if trial_status_keys:
                 trial_status_key = trial_status_keys[0]
@@ -234,18 +234,17 @@ class BaseWrapper(metaclass=WrapperRegister):
             A dictionary with the keys matching the keys of the metric function
                 used in the objective
         """
-
-        script_was_ran = self._run_subprocess_script_cmd(trial, "fetch_trial_data")
-        if script_was_ran:
-            data = self._read_subprocess_script_output(trial, "fetch_trial_data")
-
+        func_name = "fetch_trial_data"
+        self._run_subprocess_script_cmd_if_exists(trial, func_name)
+        data = self._read_subprocess_script_output(trial, func_name)
+        if data:
             for key, values in data.items():
                 if key.lower() == metric_name.lower():
                     metric_closure = boa.metrics.metrics._get_boa_metric_any_case(metric_name)
                     metric = metric_closure()
                     return get_dictionary_from_callable(metric.metric_to_eval.func, values)
 
-    def _run_subprocess_script_cmd(self, trial: BaseTrial, func_name: str, block: bool = True, **kwargs):
+    def _run_subprocess_script_cmd_if_exists(self, trial: BaseTrial, func_name: str, block: bool = True, **kwargs):
         """
         Run a script command from their config file in a subproccess.
         Dump the trial data into a json file for them to collect if need be
@@ -310,15 +309,13 @@ class BaseWrapper(metaclass=WrapperRegister):
         return False
 
     def _read_subprocess_script_output(self, trial: BaseTrial, func_name: str):
-        run_cmd = self.config.get("script_options", {}).get(f"{func_name}_run_cmd")
-        if run_cmd:
-            trial_dir = get_trial_dir(self.experiment_dir, trial.index)
-            output_files = trial_dir.glob(f"{func_name}_from_wrapper.*")
-            json_output_files = [file for file in output_files if file.suffix.lower() in {".json", ".yml", ".yaml"}]
-            if len(json_output_files) > 1:
-                raise ValueError(f"{func_name} can only output one json or yaml output file")
-            elif len(json_output_files) == 1:
-                output_file = json_output_files[0]
-                if output_file.exists():
-                    return load_jsonlike(output_file, normalize=False)
-            return {}
+        trial_dir = get_trial_dir(self.experiment_dir, trial.index)
+        output_files = trial_dir.glob(f"{func_name}_from_wrapper.*")
+        json_output_files = [file for file in output_files if file.suffix.lower() in {".json", ".yml", ".yaml"}]
+        if len(json_output_files) > 1:
+            raise ValueError(f"{func_name} can only output one json or yaml output file")
+        elif len(json_output_files) == 1:
+            output_file = json_output_files[0]
+            if output_file.exists():
+                return load_jsonlike(output_file, normalize=False)
+        return {}

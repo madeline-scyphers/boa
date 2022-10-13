@@ -112,7 +112,8 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
 
 
 @pytest.fixture(scope="session")
-def r_scripts_run(tmp_path_factory, cd_to_root_and_back_session):
-    config_path = TEST_DIR / "scripts/r_package/config.yaml"
+def r_scripts_run(request, tmp_path_factory, cd_to_root_and_back_session):
+    full_or_light = request.param
+    config_path = TEST_DIR / f"scripts/other_langs/r_package_{full_or_light}/config.yaml"
 
     yield dunder_main.main(split_shell_command(f"--config_path {config_path} -td"), standalone_mode=False)
