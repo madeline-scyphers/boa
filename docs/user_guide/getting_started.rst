@@ -28,21 +28,22 @@ installed. There are two options for this:
 Install boa
 ===========
 
-If you need to create a new environment:
+Create a new environment for boa and activate it::
 
      conda create -n boa
      conda activate boa
 
-If you don't need to create a new environment, activate that environment
-Then install dependencies
+Then install dependencies::
 
     conda install botorch -c pytorch -c gpytorch -c conda-forge
     pip install ax-platform
 
-Install BOA
+Install boa::
+
     pip install git+https://github.com/madeline-scyphers/boa.git
 
-Install the develop version of BOA
+If you want to install the latest (bleeding-edge) develop version of boa::
+
     pip install git+https://github.com/madeline-scyphers/boa.git@develop
 
 ********************************
