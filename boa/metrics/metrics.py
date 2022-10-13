@@ -21,7 +21,7 @@ from boa.metrics.metric_funcs import (
     normalized_root_mean_squared_error as normalized_root_mean_squared_error_,
 )
 from boa.utils import get_dictionary_from_callable, serialize_init_args
-from boa.wrapper import BaseWrapper
+from boa.wrappers.base_wrapper import BaseWrapper
 
 logger = logging.getLogger(__name__)
 

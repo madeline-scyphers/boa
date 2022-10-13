@@ -3,7 +3,7 @@ from __future__ import annotations
 from ax import Trial
 from stand_alone_model_func import run_branin_from_trial
 
-from boa.wrapper import BaseWrapper
+from boa.wrappers.base_wrapper import BaseWrapper
 
 
 class Wrapper(BaseWrapper):

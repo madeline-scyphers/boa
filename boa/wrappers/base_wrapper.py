@@ -25,10 +25,19 @@ logger = logging.getLogger(__name__)
 
 
 class BaseWrapper(metaclass=WrapperRegister):
+    """
+
+    Parameters
+    ----------
+    config_path
+    args
+    kwargs
+    """
     def __init__(self, config_path: os.PathLike = None, *args, **kwargs):
         self.model_settings = None
         self.ex_settings = None
         self.experiment_dir = None
+        self.script_options = None
 
         if config_path:
             self.config = None
@@ -42,7 +51,16 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     def load_config(self, config_path: os.PathLike, *args, **kwargs):
         """
-        Load config file and return a dictionary # TODO finish this
+        Load config takes a configuration path of either a JSON file or a YAML file and returns
+        your configuration dictionary.
+
+        Load_config will (unless overwritten in a subclass), do some basic "normalizations"
+        to your configuration for convenience. See :func:`~boa.wrapper_utils.normalize_config`
+        for more information about how the normalization works and what config options you
+        can control.
+
+        This implementation offers a default implementation that should work for most JSON or YAML
+        files, but can be overwritten in subclasses if need be.
 
         Parameters
         ----------
@@ -64,6 +82,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         self.config = config
         self.ex_settings = self.config["optimization_options"]
         self.model_settings = self.config.get("model_options", {})
+        self.script_options = self.config.get("script_options", {})
         return self.config
 
     def mk_experiment_dir(
@@ -77,29 +96,38 @@ class BaseWrapper(metaclass=WrapperRegister):
         """
         Make the experiment directory that boa will write all of its trials and logs to.
 
+        All parameters can be set in your configuration file as well.
+        experiment_dir -> optimization_options -> experiment_dir
+        experiment_name -> optimization_options -> experiment -> name
+        append_timestamp -> script_options -> append_timestamp
+
         Parameters
         ----------
         experiment_dir: os.PathLike
             Path to the directory for the output of the experiment
             You may specify this or working_dir in your configuration file instead.
-            (Defaults to None and using your configuration file instead)
+            (Defaults to your configuration file and then None)
         working_dir: os.PathLike
             Working directory of project, experiment_dir will be placed inside
             working dir based on experiment name.
             Because of this only either experiment_dir or working_dir may be specified.
             You may specify this or experiment_dir in your configuration file instead.
-            (Defaults to None and using your configuration file instead)
+            (Defaults to your configuration file and then None, if neither
+                experiment_dir nor working_dir are specified, working_dir defaults
+                to whatever pwd returns (and equivalent on windows))
         experiment_name: str
             Name of experiment, used for creating path to experiment dir with the working dir
-            (Defaults to None and using your configuration file instead)
+            (Defaults to your configuration file and then boa_runs)
         append_timestamp : bool
             Whether to append a timestamp to the end of the experiment directory
             to ensure uniqueness
+            (Defaults to your configuration file and then True)
         """
         # grab exp dir from config file or if passed in
         experiment_dir = experiment_dir or self.ex_settings.get("experiment_dir")
         working_dir = working_dir or self.ex_settings.get("working_dir")
         experiment_name = experiment_name or self.ex_settings.get("experiment", {}).get("name", "boa_runs")
+        append_timestamp = append_timestamp or self.script_options.get("append_timestamp")
         if experiment_dir:
             mk_exp_dir_kw = dict(experiment_dir=experiment_dir, append_timestamp=append_timestamp)
         else:  # if no exp dir, instead grab working dir from config or passed in
@@ -128,8 +156,6 @@ class BaseWrapper(metaclass=WrapperRegister):
         ----------
         trial : BaseTrial
         """
-        # write_configs_path = self.config.get("script_options", {}).get("write_configs_path")
-        self._run_subprocess_script_cmd_if_exists(trial, "write_configs")
 
     def run_model(self, trial: BaseTrial) -> None:
         """
@@ -139,7 +165,6 @@ class BaseWrapper(metaclass=WrapperRegister):
         ----------
         trial : BaseTrial
         """
-        self._run_subprocess_script_cmd_if_exists(trial, "run_model", block=False)
 
     def set_trial_status(self, trial: BaseTrial) -> None:
         """
@@ -185,29 +210,6 @@ class BaseWrapper(metaclass=WrapperRegister):
         --------
         # TODO add sphinx link to ax trial status
         """
-        func_name = "set_trial_status"
-        self._run_subprocess_script_cmd_if_exists(trial, func_name)
-        data = self._read_subprocess_script_output(trial, func_name)
-        if data:
-            trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus"]
-            if trial_status_keys:
-                trial_status_key = trial_status_keys[0]
-                trial_status = data[trial_status_key]
-                # some languages jsonify dicts as 1 element lists sometimes
-                if isinstance(trial_status, list):
-                    trial_status = trial_status[0]
-                try:
-                    # convert trial_status to an enum for trial.mark_as
-                    try:  # if it is an int or a str of an int this will work
-                        trial_status = TrialStatus(int(trial_status))
-                    # if it is a string of a trial status name ("completed" etc.), then get the TrialStatus enum version
-                    except ValueError:
-                        trial_status = TrialStatus[trial_status.upper()]
-                    # you can't set a running trial to running, so we leave, which is equivalent
-                    if trial_status != TrialStatus.RUNNING:
-                        trial.mark_as(trial_status)
-                except ValueError as e:
-                    raise ValueError(f"Invalid trial status - {trial_status} - passed to `set_trial_status`") from e
 
     def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
         """
@@ -234,88 +236,3 @@ class BaseWrapper(metaclass=WrapperRegister):
             A dictionary with the keys matching the keys of the metric function
                 used in the objective
         """
-        func_name = "fetch_trial_data"
-        self._run_subprocess_script_cmd_if_exists(trial, func_name)
-        data = self._read_subprocess_script_output(trial, func_name)
-        if data:
-            for key, values in data.items():
-                if key.lower() == metric_name.lower():
-                    metric_closure = boa.metrics.metrics._get_boa_metric_any_case(metric_name)
-                    metric = metric_closure()
-                    return get_dictionary_from_callable(metric.metric_to_eval.func, values)
-
-    def _run_subprocess_script_cmd_if_exists(self, trial: BaseTrial, func_name: str, block: bool = True, **kwargs):
-        """
-        Run a script command from their config file in a subproccess.
-        Dump the trial data into a json file for them to collect if need be
-        and pass to the script command as a command line argument.
-
-        Parameters
-        ----------
-        trial : BaseTrial
-            Current trial that will be dumped to json
-        func_name : str
-            Name of function that is calling this func.
-            Used as a predictable basis to name outgoing data files
-        block : bool
-            Whether to block until subprocess completes (defaults to False)
-
-        Returns
-        -------
-        bool
-            True if a script was run, False otherwise
-        """
-        run_cmd = self.config.get("script_options", {}).get(f"{func_name}_run_cmd")
-        if run_cmd:
-            # TODO BaseTrial doesn't have arm property, just arms.
-            # With issue #22, fix this to fully support Batched Trials
-            trial_dir = get_trial_dir(self.experiment_dir, trial.index)
-            trial_dir.mkdir(parents=True, exist_ok=True)
-            kw = {}
-            for key, value in kwargs.items():
-                try:
-                    kw[key] = object_to_json(value)
-                except (AxError, ValueError) as e:
-                    kw[key] = str(value)
-                    logger.warning(e)
-            data = {
-                "parameters": object_to_json(trial.arm.parameters),
-                "trial": object_to_json(trial),
-                "trial_index": trial.index,
-                "trial_dir": str(trial_dir),
-                **kw,
-            }
-            output_file = trial_dir / f"{func_name}_to_wrapper.json"
-            with open(output_file, "w+") as file:  # pragma: no cover
-                file.write(json.dumps(data))
-
-            args = split_shell_command(f"{run_cmd} {output_file}")
-            p = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
-            if block:
-                p.communicate()
-            # TODO move polling and print to another thread so it doesn't block but still writes to log?
-            # Grab stdout line by line as it becomes available.
-            # This will loop until p terminates.
-            # while p.poll() is None:
-            #     l = p.stdout.readline()  # This blocks until it receives a newline.
-            #     if l:
-            #         logger.info(l)
-            # # When the subprocess terminates there might be unconsumed output
-            # # that still needs to be processed.
-            # l = p.stdout.read()
-            # if l:
-            #     logger.info(l)
-            return True
-        return False
-
-    def _read_subprocess_script_output(self, trial: BaseTrial, func_name: str):
-        trial_dir = get_trial_dir(self.experiment_dir, trial.index)
-        output_files = trial_dir.glob(f"{func_name}_from_wrapper.*")
-        json_output_files = [file for file in output_files if file.suffix.lower() in {".json", ".yml", ".yaml"}]
-        if len(json_output_files) > 1:
-            raise ValueError(f"{func_name} can only output one json or yaml output file")
-        elif len(json_output_files) == 1:
-            output_file = json_output_files[0]
-            if output_file.exists():
-                return load_jsonlike(output_file, normalize=False)
-        return {}

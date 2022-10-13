@@ -91,7 +91,7 @@ def _main(config_path, rel_to_here, experiment_dir=None):
             # since we just loaded the module where the wrapper class is, we can now load it
             WrapperCls = getattr(UsrModule, wrapper_name)
         else:
-            from boa.wrapper import BaseWrapper as WrapperCls
+            from boa.wrappers.script_wrapper import ScriptWrapper as WrapperCls
 
         controller = Controller(config_path=config_path, wrapper=WrapperCls)
         scheduler = controller.run(append_timestamp=append_timestamp, experiment_dir=experiment_dir)

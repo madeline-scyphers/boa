@@ -7,7 +7,7 @@ from ax.core.trial import Trial
 
 from boa.metaclasses import RunnerRegister
 from boa.utils import serialize_init_args
-from boa.wrapper import BaseWrapper
+from boa.wrappers.base_wrapper import BaseWrapper
 
 
 class WrappedJobRunner(Runner, metaclass=RunnerRegister):
