@@ -6,13 +6,13 @@ data <- read_json(path=data_path)
 
 trial_dir <- data$trial_dir
 
-is_completed <- file.exists(file.path(trial_dir, "run_model_from_wrapper.json"))
+is_completed <- file.exists(file.path(trial_dir, "model_data.json"))
 
 if (is_completed) {
     trial_status <- "COMPLETED"
     out_data <- list(
-        TrialStatus=unbox(trial_status)
+        trial_status=unbox(trial_status)
     )
     json_data <- toJSON(out_data, pretty = TRUE)
-    write(json_data, file.path(trial_dir, "set_trial_status_from_wrapper.json"))
+    write(json_data, file.path(trial_dir, "trial_status.json"))
 }

@@ -186,8 +186,8 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         ``metric_to_eval``.
 
         You can further customize the behavior of your metric by passing a
-        :class:`Wrapper<boa.wrapper.BaseWrapper>`, which has will run methods
-        such as  :meth:`~boa.wrapper.BaseWrapper.fetch_trial_data` before
+        :class:`Wrapper<boa.wrappers.base_wrapper.BaseWrapper>`, which has will run methods
+        such as  :meth:`~boa.wrappers.base_wrapper.BaseWrapper.fetch_trial_data` before
         calling the specified metric to evaluate, which can allow you
         to preprocess/prepare model output data for your metric calculation.
 

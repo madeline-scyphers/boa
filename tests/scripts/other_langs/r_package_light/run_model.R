@@ -1,29 +1,5 @@
 library(jsonlite)
 
-# Maybe can use branin later?
-branin <- function(x1, x2) {
-    out <- tryCatch(
-        {
-            a <- 1
-            b <- 5.1/(4*pi^2)
-            c <- 5/pi
-            r <- 6
-            s <- 10
-            t <- 1/(8*pi)
-
-            term1 <- a * (x2 - b*x1^2 + c*x1 - r)^2
-            term2 <- s*(1-t)*cos(x1)
-
-            y <- term1 + term2 + s
-            return(y)
-        },
-      error=function(cond) {
-            return(NA)
-        }
-    )
-    return(out)
-}
-
 hartman6 <- function(X) {
      out <- tryCatch(
      {
@@ -68,14 +44,14 @@ x5 <- data$parameters$x5
 X <- c(x0, x1, x2, x3, x4, x5)
 print(X)
 res <- hartman6(X)
-# res <- branin(x1, x2)
+
 if (!is.na(res)) {
     trial_status <- "COMPLETED"
     out_data <- list(
         TrialStatus=unbox(trial_status)
     )
     json_data <- toJSON(out_data, pretty = TRUE)
-    write(json_data, file.path(trial_dir, "set_trial_status_from_wrapper.json"))
+    write(json_data, file.path(trial_dir, "TrialStatus.json"))
 
 
     out_data <- list(
@@ -85,12 +61,12 @@ if (!is.na(res)) {
     )
 
     json_data <- toJSON(out_data, pretty = TRUE)
-    write(json_data, file.path(trial_dir, "fetch_trial_data_from_wrapper.json"))
+    write(json_data, file.path(trial_dir, "output.json"))
 } else {
     trial_status <- "FAILED"
     out_data <- list(
         TrialStatus=unbox(trial_status)
     )
     json_data <- toJSON(out_data, pretty = TRUE)
-    write(json_data, file.path(trial_dir, "set_trial_status_from_wrapper.json"))
+    write(json_data, file.path(trial_dir, "TrialStatus.json"))
 }

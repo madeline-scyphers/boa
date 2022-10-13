@@ -10,12 +10,8 @@ from ax.storage.json_store.encoder import object_to_json
 
 import boa.metrics.metrics
 from boa.utils import get_dictionary_from_callable
+from boa.wrapper_utils import get_trial_dir, load_jsonlike, split_shell_command
 from boa.wrappers.base_wrapper import BaseWrapper
-from boa.wrapper_utils import (
-    get_trial_dir,
-    load_jsonlike,
-    split_shell_command,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -23,21 +19,41 @@ logger = logging.getLogger(__name__)
 class ScriptWrapper(BaseWrapper):
     def write_configs(self, trial: BaseTrial) -> None:
         """
-        This function is usually used to write out the configurations files used
-        in an individual optimization trial run, or to dynamically write a run
-        script to start an optimization trial run.
+        It can be convenient to separate our your writing out model configuration files
+        from your run_model script. If this is the case, then if you include a script option
+        in your configuration file to run this command, you can output whatever configuration
+        files your model might need. Maybe your model needs certain configuration files
+        in certain places, or your parameters create some files like NetCDF. Whatever it is,
+        if you want to separate out your logic for creating the configuration for your model
+        and running your model, write a script to do it, and put in your script_options
+        section the command to run said command before the run_model command.
 
-        If you are writing a script
+        BOA will write out some data files for you to process the data.
 
         Parameters
         ----------
         trial : BaseTrial
         """
-        self._run_subprocess_script_cmd_if_exists(trial, "write_configs")
+        self._run_subprocess_script_cmd_if_exists(trial, "write_configs", block=True)
 
     def run_model(self, trial: BaseTrial) -> None:
         """
-        Runs a model by deploying a given trial.
+        This Script is the one that runs your model. If your model is in the same language
+        as your wrapper, you might just directly run it in your wrapper, if it is in
+        another language, you might call system commands or start a shell script in
+        your wrapper of your language of choice to start your model, or maybe your
+        start a batch job to a HPC to be collected later.
+
+        Certain models and wrapper combos have easy access to information about if the model
+        succeeded or failed,
+        For example, if you are running the model directly in your language
+        and not as a batch job, you can do error handling to know if it failed or not.
+        If you are running its own process, but also not as a batch job, it often will return
+        an exit code to your model and if so, you can use that (0 for success, non 0 for various types
+        of errors).
+        If this is the case, It might be advised to directly right out your trial_status.json
+        file, instead of in a different set_trial_status script. See
+        :meth:`~boa.wrappers.script_wrapper.ScriptWrapper.set_trial_status` for formatting and options
 
         Parameters
         ----------
@@ -49,33 +65,35 @@ class ScriptWrapper(BaseWrapper):
         """
         Marks the status of a trial to reflect the status of the model run for the trial.
 
-        Each trial will be polled periodically to determine its status (completed, failed, still running,
-        etc). This function defines the criteria for determining the status of the model run for a trial (e.g., whether
-        the model run is completed/still running, failed, etc). The trial status is updated accordingly when the trial
-        is polled.
+        To mark the trial status, write out a JSON file of a key being TrialStatus
+        and the value being on of the below trial statuses. See below for the proper format.
 
-        The approach for determining the trial status will depend on the structure of the particular model and its
-        outputs. One example is checking the log files of the model.
+        Each script is passed a path to the current trial directory as a command line arg,
+        that is also the directory you write the json file out to, calling it trial_status.json
 
-        .. todo::
-            Add examples/links of different approaches
+        Each trial will be polled periodically to determine its status (completed, failed,
+        still running, etc). This function defines the criteria for determining the status
+        of the model run for a trial (e.g., whether the model run is completed/still running,
+        failed, etc). The trial status is updated accordingly when the trial is polled.
 
-        Parameters
-        ----------
-        trial : BaseTrial
+        The approach for determining the trial status will depend on the structure of the
+        particular model and its outputs.
+        If your model is being ran directly in the same language or as a direct system call and not
+        a submission to a batch job system, it might be able to set it easily in
+        :meth:`~boa.wrappers.script_wrapper.ScriptWrapper.run_model`
+        Other methods can be checking the log files of your model for things like "run complete" and
+        "run crashed"
+        You can also check for output files, though if your model crashes, it can leave you just waiting
+        as it never writes the files. So this is a less ideal option and should be paired with timeouts
+        in BOA or your scripts
 
-        Examples
-        --------
-        trial.mark_completed()
-        trial.mark_failed()
-        trial.mark_abandoned()
-        trial.mark_early_stopped()
+        Format
+        ------
+        .. code-block:: json
 
-        # You can also do
-        from ax.core.base_trial import TrialStatus
-        trial.mark_as(TrialStatus.COMPLETED)
-        # or
-        trial.mark_as(3)  # TrialStatus is an ENUM with COMPLETED being equivalent to 3
+            {
+                "trial_status": "COMPLETED"
+            }
 
         Relevant ENUM list
         ------------------
@@ -85,15 +103,18 @@ class ScriptWrapper(BaseWrapper):
         # ABANDONED = 5
         # EARLY_STOPPED = 7
 
+        Parameters
+        ----------
+        trial : BaseTrial
         See Also
         --------
+        :meth:`~boa.wrappers.script_wrapper.ScriptWrapper.run_model`
         # TODO add sphinx link to ax trial status
         """
-        func_name = "set_trial_status"
-        self._run_subprocess_script_cmd_if_exists(trial, func_name)
-        data = self._read_subprocess_script_output(trial, func_name)
+        self._run_subprocess_script_cmd_if_exists(trial, "set_trial_status", block=True)
+        data = self._read_subprocess_script_output(trial, file_names=["trial_status", "TrialStatus"])
         if data:
-            trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus"]
+            trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus" or k.lower() == "trial_status"]
             if trial_status_keys:
                 trial_status_key = trial_status_keys[0]
                 trial_status = data[trial_status_key]
@@ -124,13 +145,46 @@ class ScriptWrapper(BaseWrapper):
 
         The return value of this function is a dictionary, with keys that match the keys
         of the metric used in the objective function.
-        # TODO work on this description
+
+        Format
+        ------
+        .. code-block:: json
+
+            {
+                "mean": {
+                    "a": [-0.3691, 4.6544, 1.2675, -0.4327]
+                }
+            }
+
+        We use "mean" as the key in the above example, because we assumed
+        the metric that was specified in the config under objectives was mean.
+        mean is a wrapper around numpy mean, which takes as an argument an
+        array called a.
+        # TODO add link to numpy mean
+        # TODO add args to metrics in metric section
+
+        Multiple metrics can be specified for a Multi Objective Optimization,
+
+        .. code-block:: json
+
+            {
+                "mean": {
+                    "a": [-0.3691, 4.6544, 1.2675, -0.4327]
+                },
+                "MSE": {
+                    "y_true": [1.12, 1.25, 2.54, 4.52]
+                    "y_pred": [1.51, 1.01, 2.21, 4.50]
+                }
+            }
 
         Parameters
         ----------
         trial : BaseTrial
         metric_properties: dict
+            metric_properties specified in configuration file associated with metric
+            calling this fetch trial data
         metric_name: str
+            the name of the calling metric
 
         Returns
         -------
@@ -138,9 +192,10 @@ class ScriptWrapper(BaseWrapper):
             A dictionary with the keys matching the keys of the metric function
                 used in the objective
         """
-        func_name = "fetch_trial_data"
-        self._run_subprocess_script_cmd_if_exists(trial, func_name)
-        data = self._read_subprocess_script_output(trial, func_name)
+        self._run_subprocess_script_cmd_if_exists(trial, "fetch_trial_data", block=True)
+        data = self._read_subprocess_script_output(
+            trial, file_names=["output", "outputs", "result", "results", "metric", "metrics"]
+        )
         if data:
             for key, values in data.items():
                 if key.lower() == metric_name.lower():
@@ -148,7 +203,7 @@ class ScriptWrapper(BaseWrapper):
                     metric = metric_closure()
                     return get_dictionary_from_callable(metric.metric_to_eval.func, values)
 
-    def _run_subprocess_script_cmd_if_exists(self, trial: BaseTrial, func_name: str, block: bool = True, **kwargs):
+    def _run_subprocess_script_cmd_if_exists(self, trial: BaseTrial, func_name: str, block: bool = False, **kwargs):
         """
         Run a script command from their config file in a subproccess.
         Dump the trial data into a json file for them to collect if need be
@@ -212,14 +267,17 @@ class ScriptWrapper(BaseWrapper):
             return True
         return False
 
-    def _read_subprocess_script_output(self, trial: BaseTrial, func_name: str):
+    def _read_subprocess_script_output(self, trial: BaseTrial, file_names: list[str] | str):
         trial_dir = get_trial_dir(self.experiment_dir, trial.index)
-        output_files = trial_dir.glob(f"{func_name}_from_wrapper.*")
-        json_output_files = [file for file in output_files if file.suffix.lower() in {".json", ".yml", ".yaml"}]
-        if len(json_output_files) > 1:
-            raise ValueError(f"{func_name} can only output one json or yaml output file")
-        elif len(json_output_files) == 1:
-            output_file = json_output_files[0]
-            if output_file.exists():
-                return load_jsonlike(output_file, normalize=False)
+        if isinstance(file_names, str):
+            file_names = [file_names]
+        for file_name in file_names:
+            output_files = trial_dir.glob(f"{file_name}.*")
+            json_output_files = [file for file in output_files if file.suffix.lower() in {".json", ".yml", ".yaml"}]
+            if len(json_output_files) > 1:
+                raise ValueError(f"{file_name} can only output one json or yaml output file")
+            elif len(json_output_files) == 1:
+                output_file = json_output_files[0]
+                if output_file.exists():
+                    return load_jsonlike(output_file, normalize=False)
         return {}

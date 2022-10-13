@@ -8,7 +8,7 @@ data_path <- args[1]
 data <- read_json(path=data_path)
 trial_dir <- data$trial_dir
 
-model_data <- read_json(path=file.path(trial_dir, "run_model_from_wrapper.json"))
+model_data <- read_json(path=file.path(trial_dir, "model_data.json"))
 res <- model_data$output
 
 out_data <- list(
@@ -18,4 +18,4 @@ out_data <- list(
 )
 
 json_data <- toJSON(out_data, pretty = TRUE)
-write(json_data, file.path(trial_dir, "fetch_trial_data_from_wrapper.json"))
+write(json_data, file.path(trial_dir, "output.json"))

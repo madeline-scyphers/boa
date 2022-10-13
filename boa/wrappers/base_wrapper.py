@@ -1,25 +1,13 @@
 from __future__ import annotations
 
-import json
 import logging
 import os
-import subprocess
 from pathlib import Path
 
-from ax.core.base_trial import BaseTrial, TrialStatus
-from ax.exceptions.core import AxError
-from ax.storage.json_store.encoder import object_to_json
+from ax.core.base_trial import BaseTrial
 
-import boa.metrics.metrics
 from boa.metaclasses import WrapperRegister
-from boa.utils import get_dictionary_from_callable
-from boa.wrapper_utils import (
-    get_trial_dir,
-    load_jsonlike,
-    make_experiment_dir,
-    normalize_config,
-    split_shell_command,
-)
+from boa.wrapper_utils import load_jsonlike, make_experiment_dir, normalize_config
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +21,7 @@ class BaseWrapper(metaclass=WrapperRegister):
     args
     kwargs
     """
+
     def __init__(self, config_path: os.PathLike = None, *args, **kwargs):
         self.model_settings = None
         self.ex_settings = None

@@ -54,4 +54,4 @@ out_data <- list(
 )
 json_data <- toJSON(out_data, pretty = TRUE)
 print(json_data)
-write(json_data, file.path(trial_dir, "run_model_from_wrapper.json"))
+write(json_data, file.path(trial_dir, "model_data.json"))
