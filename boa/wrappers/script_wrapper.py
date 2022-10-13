@@ -17,6 +17,22 @@ logger = logging.getLogger(__name__)
 
 
 class ScriptWrapper(BaseWrapper):
+    """This is the Wrapper that will control calling your scripts you specify in your configuration
+    file.
+
+    On every script it calls, it will add an addition command line argument at the end that
+    is the path to the trial directory for the trial that is being run (you can't rely on the
+    newest directory created since the trials are run in parallel). It will place a number of data
+    json files in this directory for you to access that should include any and all information you
+    need to run your scripts. ``parameters.json`` includes all of the parameters for that trial.
+    ``trial.json`` includes the complete json serialization of the current trial (including the
+    parameters, this is usually more than you need, but has lots of information, such as the trial index
+    (You also know that by the trial dir path you are passed), metric_properties.json which include
+    the metric_properties you custom configure for any individual metric in your configuration.
+    That last one is only available in the final stages when fetch_trial_status is being called.
+
+    """
+
     def write_configs(self, trial: BaseTrial) -> None:
         """
         It can be convenient to separate our your writing out model configuration files
@@ -237,18 +253,30 @@ class ScriptWrapper(BaseWrapper):
                 except (AxError, ValueError) as e:
                     kw[key] = str(value)
                     logger.warning(e)
+            parameters_jsn = object_to_json(trial.arm.parameters)
+            trial_jsn = object_to_json(trial)
             data = {
-                "parameters": object_to_json(trial.arm.parameters),
-                "trial": object_to_json(trial),
+                "parameters": parameters_jsn,
+                "trial": trial_jsn,
                 "trial_index": trial.index,
                 "trial_dir": str(trial_dir),
                 **kw,
             }
-            output_file = trial_dir / f"{func_name}_to_wrapper.json"
-            with open(output_file, "w+") as file:  # pragma: no cover
-                file.write(json.dumps(data))
+            for name, jsn in zip(["parameters", "trial", "data"], [parameters_jsn, trial_jsn, data]):
+                file_path = trial_dir / f"{name}.json"
+                if not file_path.exists():
+                    with open(file_path, "w+") as file:  # pragma: no cover
+                        file.write(json.dumps(jsn))
+            # for name, jsn in kw.items():
+            #     file_path = trial_dir / f"{name}.json"
+            #     if not file_path.exists():
+            #         with open(file_path, "w+") as file:  # pragma: no cover
+            #             file.write(json.dumps(jsn))
+            # output_file = trial_dir / f"{func_name}_to_wrapper.json"
+            # with open(output_file, "w+") as file:  # pragma: no cover
+            #     file.write(json.dumps(data))
 
-            args = split_shell_command(f"{run_cmd} {output_file}")
+            args = split_shell_command(f"{run_cmd} {trial_dir}")
             p = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
             if block:
                 p.communicate()

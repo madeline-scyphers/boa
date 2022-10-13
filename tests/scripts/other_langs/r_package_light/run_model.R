@@ -30,17 +30,16 @@ hartman6 <- function(X) {
 
 args <- commandArgs(trailingOnly=TRUE)
 
-data_path <- args[1]
-data <- read_json(path=data_path)
+trial_dir <- args[1]
+param_path <- file.path(trial_dir, "parameters.json")
+data <- read_json(path=param_path)
 
-trial_dir <- data$trial_dir
-
-x0 <- data$parameters$x0
-x1 <- data$parameters$x1
-x2 <- data$parameters$x2
-x3 <- data$parameters$x3
-x4 <- data$parameters$x4
-x5 <- data$parameters$x5
+x0 <- data$x0
+x1 <- data$x1
+x2 <- data$x2
+x3 <- data$x3
+x4 <- data$x4
+x5 <- data$x5
 X <- c(x0, x1, x2, x3, x4, x5)
 print(X)
 res <- hartman6(X)

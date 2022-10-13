@@ -39,10 +39,7 @@ hartman6 <- function(X) {
 
 args <- commandArgs(trailingOnly=TRUE)
 
-data_path <- args[1]
-data <- read_json(path=data_path)
-
-trial_dir <- data$trial_dir
+trial_dir <- args[1]
 
 df <- read.csv(file = file.path(trial_dir, "data.csv"))
 X <- df[[1]]
