@@ -28,6 +28,27 @@ installed. There are two options for this:
 Install boa
 ===========
 
+If you need to create a new environment:
+
+     conda create -n boa
+     conda activate boa
+
+If you don't need to create a new environment, activate that environment
+Then install dependencies
+
+    conda install botorch -c pytorch -c gpytorch -c conda-forge
+    pip install ax-platform
+
+Install BOA
+    pip install git+https://github.com/madeline-scyphers/boa.git
+
+Install the develop version of BOA
+    pip install git+https://github.com/madeline-scyphers/boa.git@develop
+
+********************************
+Installing for Contributing
+********************************
+
 Clone the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
 
 If you are not on an x86 mac (or a mac with python running through rosetta), from the root directory of the cloned repository, run::
@@ -44,17 +65,13 @@ x86 macs (or a mac with python running through rosetta), run::
 
 This will install boa in editable mode.
 
-To use install it with pip, run::
-
-    pip install -e .[dev,docs,examples]
-
 ********
 Test run
 ********
 
 Once everything is installed, run the test script to ensure everything is install properly::
 
-    python -m boa.test_scripts.run
+    python -m boa.test_scripts.run_branin
 
 If this test case runs successfully, you can move on to the next steps.
 
