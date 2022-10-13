@@ -14,6 +14,5 @@ Code reference
     boa.scheduler
     boa.storage
     boa.utils
-    boa.wrappers.base_wrapper
-    boa.wrappers.script_wrapper
+    boa.wrappers
     boa.wrapper_utils
