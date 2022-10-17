@@ -28,14 +28,21 @@ installed. There are two options for this:
 Install boa
 ===========
 
-Create a new environment for boa and activate it::
+If you don't already have a dedicated conda environment for your model::
 
      conda create -n boa
      conda activate boa
 
-Then install dependencies::
+If you don't need to create a new environment, activate that environment
+
+If you are not on an x86 mac (or a mac with python running through rosetta), run these commands to install the dependencies::
 
     conda install botorch -c pytorch -c gpytorch -c conda-forge
+    pip install ax-platform
+
+x86 macs (or a mac with python running through rosetta), run::
+
+    conda install botorch -c pytorch-nightly -c pytorch -c gpytorch -c conda-forge
     pip install ax-platform
 
 Install boa::
