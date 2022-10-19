@@ -33,7 +33,7 @@ If you don't already have a dedicated conda environment for your model::
      conda create -n boa
      conda activate boa
 
-If you don't need to create a new environment, activate that environment
+If you don't need to create a new environment, activate the existing conda environment you will be using.
 
 If you are not on an x86 mac (or a mac with python running through rosetta), run these commands to install the dependencies::
 
