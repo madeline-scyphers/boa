@@ -3,24 +3,25 @@ from __future__ import annotations
 import logging
 from functools import partial
 from inspect import isclass
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import ax.utils.measurement.synthetic_functions
 import botorch.test_functions.synthetic
-import numpy as np
 import sklearn.metrics
 from ax import Metric
 from ax.core.base_trial import BaseTrial
 from ax.core.types import TParameterization
 from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
+from sklearn.metrics import __all__ as sklearn_all
 
 import boa.metrics.synthethic_funcs
-from boa.metaclasses import MetricRegister, MetricToEvalRegister
-from boa.metrics.metric_funcs import (
-    normalized_root_mean_squared_error as normalized_root_mean_squared_error_,
+from boa.metaclasses import MetricRegister
+from boa.utils import (
+    extract_init_args,
+    get_dictionary_from_callable,
+    serialize_init_args,
 )
-from boa.utils import get_dictionary_from_callable, serialize_init_args
 from boa.wrapper import BaseWrapper
 
 logger = logging.getLogger(__name__)
@@ -50,19 +51,27 @@ def get_metric_by_class_name(metric_name, instantiate=True, sklearn_=False, **kw
     return get_boa_metric(metric_name)(**kwargs) if instantiate else get_boa_metric(metric_name)
 
 
+def get_boa_metric(name):
+    import boa.metrics.metrics
+
+    return getattr(boa.metrics.metrics, name)
+
+
 def get_sklearn_func(metric_to_eval):
-    if metric_to_eval in sklearn.metrics.__all__:
+    if metric_to_eval in sklearn_all:
         metric = getattr(sklearn.metrics, metric_to_eval)
+    # we also check the attribute name incase metric_to_eval is actual a class b/c ModularMetric
+    # has been cloned
+    elif getattr(metric_to_eval, "name", None) in sklearn_all:
+        metric = getattr(sklearn.metrics, metric_to_eval.name)
     else:
         raise AttributeError(f"Sklearn metric: {metric_to_eval} not found!")
     return metric
 
 
 def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
-    metric = get_sklearn_func(metric_to_eval)
-
     def modular_sklearn_metric(**kwargs):
-        return ModularMetric(**{**kw, **kwargs, "metric_to_eval": metric})
+        return SklearnMetric(**{**kw, **kwargs, "metric_to_eval": metric_to_eval})
 
     return modular_sklearn_metric(**kw) if instantiate else modular_sklearn_metric
 
@@ -79,9 +88,16 @@ def get_synth_func(synthetic_metric: str):
         except AttributeError:
             continue
     # If we don't find the class by the end of the modules, raise attribute error
-    raise AttributeError(
-        f"boa synthetic function: {synthetic_metric}" f" not found in modules: {synthetic_funcs_modules}!"
-    )
+    raise AttributeError(f"boa synthetic function: {synthetic_metric} not found in modules: {synthetic_funcs_modules}!")
+
+
+def _get_func_by_name(metric: str):
+    for func in [get_sklearn_func, get_synth_func]:
+        try:
+            return func(metric)
+        except AttributeError:
+            continue
+    raise AttributeError(f"No metric with name {metric} found!")
 
 
 def setup_synthetic_metric(synthetic_metric, instantiate=True, **kw):
@@ -100,7 +116,9 @@ def setup_synthetic_metric(synthetic_metric, instantiate=True, **kw):
 
 
 def _get_name(obj):
-    if hasattr(obj, "__name__"):
+    if isinstance(obj, str):
+        return obj
+    elif hasattr(obj, "__name__"):
         return obj.__name__
     elif isinstance(obj, FromBotorch):
         # Using metrics that are FromBotorch(botorch synthetic_funcs) leaves us
@@ -114,44 +132,6 @@ def _get_name(obj):
     return _get_name(obj)
 
 
-class MetricToEval(metaclass=MetricToEvalRegister):
-    def __init__(self, *, func: Callable | str, func_kwargs: Optional[dict] = None, metric_type: str = None):
-        if isinstance(func, str):
-            func = self.func_from_str(func, metric_type)
-        self.func = func
-        self.func_kwargs = func_kwargs or {}
-        self.name = _get_name(func)
-        self.metric_type = metric_type
-
-    def __call__(self, *args, **kwargs):
-        return self.func(*args, **get_dictionary_from_callable(self.func, {**self.func_kwargs, **kwargs}))
-
-    def to_dict(self):
-        return {
-            "__type": self.__class__.__name__,
-            "func": self.name,
-            "func_kwargs": self.func_kwargs,
-            "metric_type": self.metric_type,
-        }
-
-    # TODO make a better way to do a None option
-    @classmethod
-    def func_from_str(cls, name: str, metric_type: str = None):
-        if metric_type == "sklearn_metric":
-            func = get_sklearn_func(name)
-        elif metric_type == "synthetic_metric":
-            func = get_synth_func(name)
-        elif metric_type == "boa_metric" or metric_type is None:
-            func = get_boa_metric(name)
-            if isinstance(func, ModularMetric):
-                func = func.metric_to_eval.func
-            elif isinstance(func, MetricToEval):
-                func = func.func
-        else:
-            raise ValueError(f"{cls.__name__} metric_type: {metric_type} invalid!")
-        return func
-
-
 def generic_closure(close_around, instantiate=True, **kw):
     def modular_metric(**kwargs):
         return close_around(**{**kw, **kwargs})
@@ -162,7 +142,7 @@ def generic_closure(close_around, instantiate=True, **kw):
 class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     def __init__(
         self,
-        metric_to_eval: Callable,
+        metric_to_eval: Callable | dict,
         metric_func_kwargs: Optional[dict] = None,
         # param_names: list[str] = None,
         noise_sd: Optional[float] = 0.0,
@@ -208,14 +188,20 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             serializable
         kwargs
         """
+        if "to_eval_name" in kwargs:
+            self._to_eval_name = kwargs.pop("to_eval_name")
+        else:
+            self._to_eval_name = _get_name(metric_to_eval)
+        self.metric_func_kwargs = metric_func_kwargs or {}
+        if isinstance(metric_to_eval, str):
+            _get_func_by_name(metric_to_eval)
+        self.metric_to_eval = metric_to_eval
 
         if name is None:
-            name = _get_name(metric_to_eval)
+            name = self._to_eval_name
         if "param_names" not in kwargs:
             kwargs["param_names"] = []
         # param_names = param_names if param_names is not None else []
-        self.metric_func_kwargs = metric_func_kwargs or {}
-        self.metric_to_eval = MetricToEval(func=metric_to_eval, func_kwargs=metric_func_kwargs, metric_type=metric_type)
         self.wrapper = wrapper or BaseWrapper()
         super().__init__(
             noise_sd=noise_sd,
@@ -246,10 +232,11 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         for arm in trial.arms_by_name.values():
             arm._parameters["kwargs"] = safe_kwargs
         try:
-            if isinstance(self.metric_to_eval.func, Metric):
-                trial_data = self.metric_to_eval.func.fetch_trial_data(
+            # if isinstance(self.metric_to_eval.func, Metric):
+            if isinstance(self.metric_to_eval, Metric):
+                trial_data = self.metric_to_eval.fetch_trial_data(
                     trial=trial,
-                    **get_dictionary_from_callable(self.metric_to_eval.func.fetch_trial_data, safe_kwargs),
+                    **get_dictionary_from_callable(self.metric_to_eval.fetch_trial_data, safe_kwargs),
                 )
             else:
                 trial_data = super().fetch_trial_data(trial=trial, **safe_kwargs)
@@ -273,85 +260,70 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         )
 
     def to_dict(self) -> dict:
-        """Convert Ax experiment to a dictionary."""
-        parents = self.__class__.mro()[1:]  # index 0 is the class itself
+        """Convert the Metric to a dictionary."""
+
+        init_args = self.serialize_init_args(self)
+        init_args["metric_to_eval"] = self._to_eval_name
+        return {"__type": self.__class__.__name__, **init_args}
+
+    @classmethod
+    def serialize_init_args(cls, obj: Any) -> dict[str, Any]:
+        """Serialize the properties needed to initialize the object.
+        Used for storage.
+        """
+        parents = cls.mro()[1:]  # index 0 is the class itself
 
         # We don't want to match init args for Metric class and back, because
-        # NoisyFunctionMetric changes the init parameters22
+        # NoisyFunctionMetric changes the init parameters and doesn't pass and take
+        # arbitrary *args and **kwargs
         try:
             index_of_metric = parents.index(Metric)
         except ValueError:
             index_of_metric = None
-        p_b4_metric = parents[:index_of_metric]
+        parents_b4_metric = parents[:index_of_metric]
 
-        wrapper_state = serialize_init_args(self, parents=p_b4_metric, match_private=True, exclude_fields=["wrapper"])
+        return serialize_init_args(
+            class_=obj, parents=parents_b4_metric, match_private=True, exclude_fields=["wrapper"]
+        )
 
-        # wrapper_state = convert_type(wrapper_state, {Path: str})
-        return {"__type": self.__class__.__name__, **wrapper_state}
+    @classmethod
+    def deserialize_init_args(cls, args: dict[str, Any]) -> dict[str, Any]:
+        """Given a dictionary, deserialize the properties needed to initialize the
+        object. Used for storage.
+        """
+        parents = cls.mro()[1:]  # index 0 is the class itself
+
+        # We don't want to match init args for Metric class and back, because
+        # NoisyFunctionMetric changes the init parameters and doesn't pass and take
+        # arbitrary *args and **kwargs
+        try:
+            index_of_metric = parents.index(Metric)
+        except ValueError:
+            index_of_metric = None
+        parents_b4_metric = parents[:index_of_metric]
+
+        return extract_init_args(
+            args=args, class_=cls, parents=parents_b4_metric, match_private=True, exclude_fields=["wrapper"]
+        )
 
     def __repr__(self) -> str:
         init_dict = serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True)
         init_dict = {k: v for k, v in init_dict.items() if v}
 
         if isinstance(init_dict["metric_to_eval"], partial):
-            init_dict["metric_to_eval"] = init_dict["metric_to_eval"].func
+            init_dict["metric_to_eval"] = init_dict["metric_to_eval"]
 
         arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
         return f"{self.__class__.__name__}({arg_str})"
 
 
-class METRICS:
-    MSE = setup_sklearn_metric("mean_squared_error", lower_is_better=True, instantiate=False)
-    MSE.__doc__ = """
-    Mean squared error regression loss. Read more from sklearn mean squared error
+class SklearnMetric(ModularMetric):
+    """A subclass of ModularMetric where you can pass in a string name of a metric from
+    sklrean.metrics, and BOA will grab that metric and create a BOA metric class for you.
     """
 
-    MeanSquaredError = MSE
-    mean_squared_error = MSE
-
-    RMSE = setup_sklearn_metric(
-        "mean_squared_error",
-        name="root_mean_squared_error",
-        lower_is_better=True,
-        metric_func_kwargs={"squared": False},
-        instantiate=False,
-    )
-    RMSE.__doc__ = """
-    Root mean squared error regression loss. Read more from sklearn mean squared error with squared=False
-    """
-    RootMeanSquaredError = RMSE
-    root_mean_squared_error = RMSE
-
-    R2 = setup_sklearn_metric("r2_score", instantiate=False, lower_is_better=False)
-    R2.__doc__ = """
-    :math:`R^2` (coefficient of determination) regression score function.
-
-    Best possible score is 1.0 and it can be negative (because the
-    model can be arbitrarily worse). In the general case when the true y is
-    non-constant, a constant model that always predicts the average y
-    disregarding the input features would get a :math:`R^2` score of 0.0.
-    """
-    RSquared = R2
-
-    Mean = generic_closure(close_around=ModularMetric, metric_to_eval=np.mean, lower_is_better=True, instantiate=False)
-    Mean.__doc__ = """
-    Arithmetic mean along the specified axis for your metric,
-    Defaults to minimizization, if you want to maximize,
-    specify lower_is_better: False or minimize: False in your configuration
-    """
-    NRMSE = generic_closure(
-        close_around=ModularMetric,
-        metric_to_eval=normalized_root_mean_squared_error_,
-        lower_is_better=True,
-        instantiate=False,
-    )
-    NRMSE.__doc__ = """
-    Normalized root mean squared error. Like a normalized version of RMSE.
-    Normalization defaults to IQR (inner quartile range).
-    """
-    NormalizedRootMeanSquaredError = NRMSE
-    normalized_root_mean_squared_error = NRMSE
-
-
-def get_boa_metric(name):
-    return getattr(METRICS, name)
+    def __init__(self, metric_to_eval: str, *args, **kwargs):
+        if isinstance(metric_to_eval, str):
+            kwargs["to_eval_name"] = metric_to_eval
+            metric_to_eval = get_sklearn_func(metric_to_eval)
+        super().__init__(metric_to_eval=metric_to_eval, *args, **kwargs)
