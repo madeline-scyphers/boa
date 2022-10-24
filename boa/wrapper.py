@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 class BaseWrapper(metaclass=WrapperRegister):
     def __init__(self, config_path: os.PathLike = None, *args, **kwargs):
-        self.model_settings = None
-        self.ex_settings = None
+        self.model_settings = {}
+        self.ex_settings = {}
         self.experiment_dir = None
 
         if config_path:
@@ -182,14 +182,3 @@ class BaseWrapper(metaclass=WrapperRegister):
             A dictionary with the keys matching the keys of the metric function
                 used in the objective
         """
-
-    # TODO remove this method
-    # def wrapper_to_dict(self) -> dict:
-    #     """Convert Ax experiment to a dictionary.
-    #     """
-    #     parents = self.__class__.mro()[1:]  # index 0 is the class itself
-    #
-    #     wrapper_state = serialize_init_args(self, parents=parents, match_private=True)
-    #
-    #     wrapper_state = convert_type(wrapper_state, {Path: str})
-    #     return {"__type": self.__class__.__name__, **wrapper_state}

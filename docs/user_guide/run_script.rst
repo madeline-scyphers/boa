@@ -5,12 +5,12 @@ Run Script
 #############
 
 ***********************
-Example Run Script
+Example Run Scripts
 ***********************
 
 
-Single Objective Optimization
-==============================
+Single Objective Optimization Run Scripts
+===========================================
 
 .. rli:: https://raw.githubusercontent.com/jemissik/fetch3_nhl/develop/fetch3/optimize/run_optimization.py
     :language: python

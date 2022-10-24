@@ -34,11 +34,11 @@ parameters:
 
     x5:
         type: fixed
-        values: .5
+        value: .5
 
 parameter_constraints:
     - x2 + x1 => >.1
-    - x2 + x1 + .6*x1 <= .6
+    - x2 + 1.6 * x1 <= .6
 
 model_options:
     model_specific_options:

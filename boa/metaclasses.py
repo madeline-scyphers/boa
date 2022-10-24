@@ -53,9 +53,3 @@ class MetricRegister(ABCMeta):
         CORE_DECODER_REGISTRY[cls.__name__] = cls
         next_pk = max(CORE_METRIC_REGISTRY.values()) + 1
         CORE_METRIC_REGISTRY[cls] = next_pk
-
-
-class MetricToEvalRegister(type):
-    def __init__(cls, *args, **kwargs):
-        CORE_ENCODER_REGISTRY[cls] = cls.to_dict
-        CORE_DECODER_REGISTRY[cls.__name__] = cls

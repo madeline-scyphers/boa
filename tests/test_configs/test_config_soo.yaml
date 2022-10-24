@@ -64,7 +64,7 @@ parameters:
   x5: # dummy value for testing
     type: fixed
     bounds: [ 0, 1 ]
-    values: .5  # dummy value for testing
+    value: .5  # dummy value for testing
 
 parameter_constraints:
   - x2 + x1 => >.1

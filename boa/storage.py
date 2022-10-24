@@ -1,64 +1,25 @@
 import json
 import logging
 import os
-import pickle
-from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type
 
-from ax import Experiment
-from ax.exceptions.storage import JSONEncodeError
 from ax.service.scheduler import Scheduler, SchedulerOptions
 from ax.storage.json_store.decoder import (
     generation_strategy_from_json,
     object_from_json,
 )
 from ax.storage.json_store.encoder import object_to_json
-from ax.storage.json_store.load import load_experiment as ax_load_experiment
 from ax.storage.json_store.registry import (
     CORE_CLASS_DECODER_REGISTRY,
     CORE_CLASS_ENCODER_REGISTRY,
     CORE_DECODER_REGISTRY,
     CORE_ENCODER_REGISTRY,
 )
-from ax.storage.json_store.save import save_experiment as ax_save_experiment
 
-from boa.metrics.metrics import ModularMetric
+from boa.metrics.modular_metric import ModularMetric
 from boa.runner import WrappedJobRunner
 
 logger = logging.getLogger(__name__)
-
-
-def pickle_obj(obj, filepath):
-    with open(Path(str(filepath) + ".pickle"), "wb") as f:
-        pickle.dump(obj, f)
-
-
-def unpickle_obj(filepath):
-    with open(filepath, "rb") as f:
-        return pickle.load(f)
-
-
-def save_experiment(experiment: Experiment, filepath: os.PathLike, pickle=True, *args, **kwargs):
-    try:
-        ax_save_experiment(experiment, filepath, *args, **kwargs)
-    except JSONEncodeError:
-        logger.warning("Failed to serialize experiment to JSON, attempting to pickle")
-        with open(Path(str(filepath) + ".pickle"), "wb") as f:
-            pickle.dump(experiment, f)
-        logger.warning("Pickling succeeded. Experiment Pickled to %s" % Path(str(filepath) + ".pickle"))
-
-
-def load_experiment(filepath: os.PathLike, *args, **kwargs) -> Experiment:
-    """Load experiment from file.
-
-    1) Read file.
-    2) Convert dictionary to Ax experiment instance.
-    """
-    try:
-        with open(filepath, "rb") as f:
-            return pickle.load(f)
-    except pickle.UnpicklingError:
-        return ax_load_experiment(filepath, *args, **kwargs)
 
 
 def scheduler_to_json_file(scheduler, filepath: os.PathLike = "scheduler_snapshot.json") -> None:

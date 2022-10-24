@@ -1,7 +1,11 @@
 import logging
+import os
 import time
 from pathlib import Path
 
+from ax.service.scheduler import Scheduler
+
+from boa import BaseWrapper
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.runner import WrappedJobRunner
 from boa.storage import scheduler_to_json_file
@@ -16,9 +20,9 @@ class Controller:
 
         self.config = None
 
-    def run(self, append_timestamp, experiment_dir, **kwargs):
-        start = time.time()
+        self.scheduler = None
 
+    def setup(self, append_timestamp: bool = None, experiment_dir: os.PathLike = None, **kwargs):
         kwargs["config_path"] = self.config_path
         if experiment_dir:
             kwargs["experiment_dir"] = experiment_dir
@@ -26,12 +30,12 @@ class Controller:
             kwargs["append_timestamp"] = append_timestamp
 
         load_config_kwargs = get_dictionary_from_callable(self.wrapper.load_config, kwargs)
-        wrapper = self.wrapper(**load_config_kwargs)
-        config = wrapper.config
+        self.wrapper = self.wrapper(**load_config_kwargs)
+        config = self.wrapper.config
 
         log_format = "%(levelname)s %(asctime)s - %(message)s"
         logging.basicConfig(
-            filename=Path(wrapper.experiment_dir) / "optimization.log",
+            filename=Path(self.wrapper.experiment_dir) / "optimization.log",
             filemode="w",
             format=log_format,
             level=logging.DEBUG,
@@ -40,8 +44,17 @@ class Controller:
         logger = logging.getLogger(__file__)
         logger.info("Start time: %s", get_dt_now_as_str())
 
-        experiment = get_experiment(config, WrappedJobRunner(wrapper=wrapper), wrapper)
-        scheduler = get_scheduler(experiment, config=config)
+        experiment = get_experiment(config, WrappedJobRunner(wrapper=self.wrapper), self.wrapper)
+        self.scheduler = get_scheduler(experiment, config=config)
+        return self.scheduler
+
+    def run(self, scheduler: Scheduler = None, wrapper: BaseWrapper = None):
+        start = time.time()
+
+        scheduler = scheduler or self.scheduler
+        wrapper = wrapper or self.wrapper
+        if not scheduler or not wrapper:
+            raise ValueError("Scheduler and wrapper must be defined, or setup in setup method!")
 
         try:
             scheduler.run_all_trials()

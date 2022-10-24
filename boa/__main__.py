@@ -87,7 +87,9 @@ def _main(config_path, rel_to_here, experiment_dir=None):
             from boa.wrapper import BaseWrapper as WrapperCls
 
         controller = Controller(config_path=config_path, wrapper=WrapperCls)
-        scheduler = controller.run(append_timestamp=append_timestamp, experiment_dir=experiment_dir)
+
+        controller.setup(append_timestamp=append_timestamp, experiment_dir=experiment_dir)
+        scheduler = controller.run()
         return scheduler
 
 

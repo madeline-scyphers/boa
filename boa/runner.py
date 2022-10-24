@@ -60,7 +60,7 @@ class WrappedJobRunner(Runner, metaclass=RunnerRegister):
         return status_dict
 
     def to_dict(self) -> dict:
-        """Convert Ax synthetic runner to a dictionary."""
+        """Convert runner to a dictionary."""
 
         parents = self.__class__.mro()[1:]  # index 0 is the class itself
 

@@ -4,9 +4,10 @@ from torch import Tensor
 
 
 class Hartmann4(Hartmann):
+    dim = 4
+
     def __init__(self, *args, **kwargs):
-        dim = 4
-        super().__init__(dim=dim, *args, **kwargs)
+        super().__init__(dim=self.dim, *args, **kwargs)
         self._optimizers = [(0.1873, 0.1906, 0.5566, 0.2647)]
         self._optimal_value = 2.864526
 

@@ -32,12 +32,11 @@ Contents
 .. toctree::
     :maxdepth: 2
 
-    overview
     user_guide/index
     notebooks/index
     troubleshooting
     changelog
-    Code reference <code_reference>
+    Code reference <code_reference/code_reference>
     gallery
     contributing
 

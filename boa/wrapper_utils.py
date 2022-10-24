@@ -154,6 +154,70 @@ def load_jsonlike(file_path: os.PathLike, *args, **kwargs):
 def normalize_config(
     config: dict, parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None
 ) -> dict:
+    """
+    Normalize config dictionary passed in.
+
+    Perform a series of minor convenience normalizations to your configuration dictionary.
+    These include adding empty sections for certain optional sections you don't include.
+    Defaulting you experiment name to boa_runs if you don't include it.
+    And any pathing you include under the parameter_keys section, will get prepended with its
+    path, and will get added to your parameters section.
+
+    Instead of putting all of your parameters under the parameters key,
+    You can put them under different keys, and then
+    pass a list of lists where each list is the json/yaml pathing to the
+    additional parameters key section.
+
+    Useful for if you have multiple sections of parameters that you
+    want to keep logically separated but you are still optimizing over
+    them all, such as different plant species in a multi-species plant model.
+
+    Examples
+    --------
+        optimization_options:
+            parameter_keys: [
+                ["params", "a"],
+            ]
+
+            # Alternatively, these keys can be expressed in more traditional YAML
+            # syntax, but the above more traditional json like syntax might be easier
+            # to understand. They both mean the same thing, a list of lists
+            #    -
+            #        - "params"
+            #        - "a"
+
+        params:
+            a:
+                x1:
+                    type: range
+                    bounds: [0, 1]
+                x2:
+                    type: fixed
+                    value: 0.5
+
+        # This would get normalized to
+
+        parameters:
+            params_a_x2:
+                type: range
+                bounds: [0, 1]
+            params_a_x1:
+                type: fixed
+                value: 0.5
+
+    Parameters
+    ----------
+    config: dict
+        your configuration dictionary (jsonlike)
+    parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]]
+        This needs to be a json path to a key or keys where parameters or stored. So
+        either a single string (the key) or a list of strings and ints (the keys and list indices),
+        or a list of those lists for multiple paths.
+
+    Returns
+    -------
+
+    """
     config["optimization_options"] = config.get("optimization_options", {})
     for key in ["experiment", "generation_strategy", "scheduler"]:
         config["optimization_options"][key] = config["optimization_options"].get(key, {})
@@ -297,6 +361,7 @@ def make_experiment_dir(
     experiment_dir: os.PathLike = None,
     experiment_name: str = "",
     append_timestamp: bool = True,
+    exist_ok: bool = True,
 ):
     """
     Creates directory for the experiment and returns the path.
@@ -315,6 +380,9 @@ def make_experiment_dir(
     append_timestamp : bool
         Whether to append a timestamp to the end of the experiment directory
         to ensure uniqueness
+    exist_ok : bool
+        Whether it is ok if the directory already exists or not
+        (will throw an error if set to False and it already exists)
 
     Returns
     -------
@@ -327,26 +395,28 @@ def make_experiment_dir(
             "or an `experiment_dir`, not both and not neither."
         )
     if experiment_dir:
-        return exp_dir_from_exp_dir(exp_dir=experiment_dir, append_timestamp=append_timestamp)
-    return exp_dir_from_working_dir(
-        working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
+        return _mk_exp_dir_from_exp_dir(exp_dir=experiment_dir, append_timestamp=append_timestamp, exist_ok=exist_ok)
+    return _mk_exp_dir_from_working_dir(
+        working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, exist_ok=exist_ok
     )
 
 
-def exp_dir_from_working_dir(working_dir: os.PathLike, experiment_name: str = "", append_timestamp: bool = True):
+def _mk_exp_dir_from_working_dir(
+    working_dir: os.PathLike, experiment_name: str = "", append_timestamp: bool = True, exist_ok: bool = True
+):
     ts = get_dt_now_as_str() if append_timestamp else ""
     exp_name = "_".join(name for name in [experiment_name, ts] if name)
     ex_dir = Path(working_dir).expanduser() / exp_name
-    ex_dir.mkdir()
+    ex_dir.mkdir(exist_ok=exist_ok)
     return ex_dir
 
 
-def exp_dir_from_exp_dir(exp_dir: os.PathLike, append_timestamp: bool = True):
+def _mk_exp_dir_from_exp_dir(exp_dir: os.PathLike, append_timestamp: bool = True, exist_ok: bool = True):
     exp_dir = Path(exp_dir)
     working_dir = exp_dir.parent
     experiment_name = exp_dir.name
-    return exp_dir_from_working_dir(
-        working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
+    return _mk_exp_dir_from_working_dir(
+        working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, exist_ok=exist_ok
     )
 
 

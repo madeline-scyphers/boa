@@ -47,7 +47,9 @@ def run_opt(output_dir):
 
     experiment = get_experiment(config, WrappedJobRunner(wrapper=wrapper), wrapper)
     scheduler = get_scheduler(experiment, config=config)
-    scheduler.run_all_trials()
+    total_trials = config["optimization_options"]["scheduler"]["total_trials"]
+    # we leave some trials off for use in unit tests
+    scheduler.run_n_trials(total_trials - 5)
 
     # We output a bunch of stuff to the log for easier debugging
     logger.info(pformat(scheduler.get_best_trial()))

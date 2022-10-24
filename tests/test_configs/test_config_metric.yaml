@@ -59,11 +59,11 @@ parameters:
 
     x5:
         type: fixed
-        values: .5
+        value: .5
 
 # optimization parameter constraints
 parameter_constraints:
-    - x2 + x1 => >.1
+    - x2 + x1 >= .1
     - x2 + x1 + .6*x1 <= .6
 
 # non optimization model options

@@ -11,7 +11,7 @@ optimization_options:
             - model: GPEI
               num_trials: -1
     scheduler:
-        total_trials: 15
+        total_trials: 20
     experiment:
         name: "test_experiment"
 
