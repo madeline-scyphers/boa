@@ -172,8 +172,19 @@ def normalize_config(
     want to keep logically separated but you are still optimizing over
     them all, such as different plant species in a multi-species plant model.
 
+    Parameters
+    ----------
+    config: dict
+        your configuration dictionary (jsonlike)
+    parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]]
+        This needs to be a json path to a key or keys where parameters or stored. So
+        either a single string (the key) or a list of strings and ints (the keys and list indices),
+        or a list of those lists for multiple paths.
+
     Examples
     --------
+    .. code-block:: yaml
+
         optimization_options:
             parameter_keys: [
                 ["params", "a"],
@@ -205,18 +216,9 @@ def normalize_config(
                 type: fixed
                 value: 0.5
 
-    Parameters
-    ----------
-    config: dict
-        your configuration dictionary (jsonlike)
-    parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]]
-        This needs to be a json path to a key or keys where parameters or stored. So
-        either a single string (the key) or a list of strings and ints (the keys and list indices),
-        or a list of those lists for multiple paths.
-
     Returns
     -------
-
+    config : dict
     """
     config["optimization_options"] = config.get("optimization_options", {})
     for key in ["experiment", "generation_strategy", "scheduler"]:

@@ -95,6 +95,7 @@ Running Sphinx to test the docs building
     )
     shutil.rmtree("docs/_build", ignore_errors=True)
     shutil.rmtree("docs/api", ignore_errors=True)
+    shutil.rmtree("docs/code_reference/api", ignore_errors=True)
     shutil.rmtree("docs/jupyter_execute", ignore_errors=True)
     command.run("sphinx-build -b html docs docs/_build", echo=True, pty=POSIX)
 

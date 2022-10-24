@@ -70,8 +70,10 @@ def get_sklearn_func(metric_to_eval):
 
 
 def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
+    import boa.metrics.metrics
+
     def modular_sklearn_metric(**kwargs):
-        return SklearnMetric(**{**kw, **kwargs, "metric_to_eval": metric_to_eval})
+        return boa.metrics.metrics.SklearnMetric(**{**kw, **kwargs, "metric_to_eval": metric_to_eval})
 
     return modular_sklearn_metric(**kw) if instantiate else modular_sklearn_metric
 
@@ -140,6 +142,43 @@ def generic_closure(close_around, instantiate=True, **kw):
 
 
 class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
+    """
+    A wrappable metric defined by a generic deterministic function with the
+    ability to inject a wrapper for higher customizability.
+    The metric function can have some known or unknown noise such that each
+    evaluation may be different, they will be centered around a true value with
+    some ``noise_sd``
+
+    The deterministic metric function to compute is implemented by passing
+    some callable (a function or class with ``__call__``) to argument
+    ``metric_to_eval``.
+
+    You can further customize the behavior of your metric by passing a
+    :class:`Wrapper<boa.wrapper.BaseWrapper>`, which has will run methods
+    such as  :meth:`~boa.wrapper.BaseWrapper.fetch_trial_data` before
+    calling the specified metric to evaluate, which can allow you
+    to preprocess/prepare model output data for your metric calculation.
+
+
+    Parameters
+    ----------
+    metric_to_eval : Callable
+    metric_func_kwargs : Optional[dict]
+        dictionary of keyword arguments to pass to the metric to eval function
+    noise_sd : Optional[float]
+        Scale of normal noise added to the function result. If None, interpret the function as
+        noisy with unknown noise level.
+    name : Optional[str]
+        name: Name of the metric, if not specified, defaults to name of ``metric_to_eval``
+    wrapper : Optional[BaseWrapper]
+        Boa wrapper to handle running the model and getting the data, allows injecting custom
+        function in the middle of ``ModularMetric``
+    properties : Optional[dict[str]]
+        Arbitrary dictionary of properties to store. Properties need to be json
+        serializable
+    kwargs
+    """
+
     def __init__(
         self,
         metric_to_eval: Callable | dict,
@@ -152,42 +191,6 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         metric_type: Optional[str] = None,
         **kwargs,
     ):
-        """
-        A wrappable metric defined by a generic deterministic function with the
-        ability to inject a wrapper for higher customizability.
-        The metric function can have some known or unknown noise such that each
-        evaluation may be different, they will be centered around a true value with
-        some ``noise_sd``
-
-        The deterministic metric function to compute is implemented by passing
-        some callable (a function or class with ``__call__``) to argument
-        ``metric_to_eval``.
-
-        You can further customize the behavior of your metric by passing a
-        :class:`Wrapper<boa.wrapper.BaseWrapper>`, which has will run methods
-        such as  :meth:`~boa.wrapper.BaseWrapper.fetch_trial_data` before
-        calling the specified metric to evaluate, which can allow you
-        to preprocess/prepare model output data for your metric calculation.
-
-
-        Parameters
-        ----------
-        metric_to_eval : Callable
-        metric_func_kwargs : Optional[dict]
-            dictionary of keyword arguments to pass to the metric to eval function
-        noise_sd : Optional[float]
-            Scale of normal noise added to the function result. If None, interpret the function as
-            noisy with unknown noise level.
-        name : Optional[str]
-            name: Name of the metric, if not specified, defaults to name of ``metric_to_eval``
-        wrapper : Optional[BaseWrapper]
-            Boa wrapper to handle running the model and getting the data, allows injecting custom
-            function in the middle of ``ModularMetric``
-        properties : Optional[dict[str]]
-            Arbitrary dictionary of properties to store. Properties need to be json
-            serializable
-        kwargs
-        """
         if "to_eval_name" in kwargs:
             self._to_eval_name = kwargs.pop("to_eval_name")
         else:
@@ -315,15 +318,3 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
         arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
         return f"{self.__class__.__name__}({arg_str})"
-
-
-class SklearnMetric(ModularMetric):
-    """A subclass of ModularMetric where you can pass in a string name of a metric from
-    sklrean.metrics, and BOA will grab that metric and create a BOA metric class for you.
-    """
-
-    def __init__(self, metric_to_eval: str, *args, **kwargs):
-        if isinstance(metric_to_eval, str):
-            kwargs["to_eval_name"] = metric_to_eval
-            metric_to_eval = get_sklearn_func(metric_to_eval)
-        super().__init__(metric_to_eval=metric_to_eval, *args, **kwargs)
