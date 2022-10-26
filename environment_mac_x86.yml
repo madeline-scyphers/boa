@@ -6,10 +6,9 @@ channels:
 - defaults
 dependencies:
 - python=3.9
-- mkl<2022
-- pytorch::pytorch<1.12.0
-- pytorch::torchvision
-- pytorch::torchaudio
+- pytorch-nightly::pytorch
+- pytorch-nightly::torchvision
+- pytorch-nightly::torchaudio
 - numpy
 - pandas
 - xarray
