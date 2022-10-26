@@ -10,7 +10,7 @@ from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.runner import WrappedJobRunner
 from boa.storage import scheduler_to_json_file
 from boa.utils import get_dictionary_from_callable
-from boa.wrapper_utils import get_dt_now_as_str
+from boa.wrappers.wrapper_utils import get_dt_now_as_str
 
 
 class Controller:

@@ -26,7 +26,7 @@ from docutils.statemachine import ViewList
 from sphinx.ext.autodoc import ClassDocumenter
 from sphinx.util.nodes import nested_parse_with_titles
 
-from boa.metrics.synthethic_funcs import Hartmann4
+from boa.metrics.synthetic_funcs import Hartmann4
 
 # -- Project information -----------------------------------------------------
 
@@ -88,6 +88,10 @@ autoclass_content = "both"  # Add __init__ doc (ie. params) to class summaries
 # html_show_sourcelink = False  # Remove 'view source code' from top of page (for html, not python)
 autodoc_inherit_docstrings = True  # If no docstring, inherit from base class
 autodoc_member_order = 'bysource'
+
+autodoc_default_options = {
+    'ignore-module-all': False
+}
 
 # -- Options for HTML output -------------------------------------------------
 

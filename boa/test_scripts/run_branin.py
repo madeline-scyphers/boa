@@ -10,9 +10,9 @@ import click
 from ax.service.utils.report_utils import exp_to_df
 
 try:
-    from wrappers import Wrapper
+    from script_wrappers import Wrapper
 except ImportError:
-    from .wrappers import Wrapper
+    from .script_wrappers import Wrapper
 
 from boa import WrappedJobRunner, get_experiment, get_scheduler
 

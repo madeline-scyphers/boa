@@ -6,8 +6,13 @@ from pathlib import Path
 
 from ax.core.base_trial import BaseTrial
 
+from boa._doc_utils import add_ref_to_rel_init
 from boa.metaclasses import WrapperRegister
-from boa.wrapper_utils import load_jsonlike, make_experiment_dir, normalize_config
+from boa.wrappers.wrapper_utils import (
+    load_jsonlike,
+    make_experiment_dir,
+    normalize_config,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -182,3 +187,12 @@ class BaseWrapper(metaclass=WrapperRegister):
             A dictionary with the keys matching the keys of the metric function
                 used in the objective
         """
+
+
+__doc__ = f"""
+########################
+Base Wrapper
+########################
+
+{add_ref_to_rel_init()}
+"""

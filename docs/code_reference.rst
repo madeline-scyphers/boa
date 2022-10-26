@@ -3,28 +3,33 @@ Code reference
 ##############
 
 
-Wrapping tools
-================
+:mod:`boa.wrappers`: Wrapping tools
+===================================
+
+This is where you will find information about :doc:`BOA's </index>` Wrapper classes for optimization, as well as general wrapping utility functions that might be useful to wrap a model
+
 
 .. autosummary::
     :toctree: api
     :template: custom_module_template_short.rst
 
-    boa.wrapper
-    boa.wrapper_utils
+    boa.wrappers
+    boa.wrappers.wrapper
+    boa.wrappers.wrapper_utils
 
 
-Metrics
-================
+:mod:`boa.metrics`: Metrics
+============================
+
+This is where you will find information about :doc:`BOA's </index>` Metrics.
 
 .. autosummary::
     :toctree: api
     :template: custom_module_template_short.rst
+    :recursive:
 
+    boa.metrics
     boa.metrics.metrics
-    boa.metrics.modular_metric
-    boa.metrics.metric_funcs
-
 
 Saving and Loading your Experiment
 ===================================
@@ -47,4 +52,3 @@ Advanced Usage/Direct Python Access
     boa.runner
     boa.utils
     boa.metaclasses
-

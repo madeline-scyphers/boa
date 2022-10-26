@@ -14,5 +14,5 @@ from boa.instantiation_base import *  # noqa
 from boa.metrics.modular_metric import *  # noqa
 from boa.runner import *  # noqa
 from boa.storage import *  # noqa
-from boa.wrapper import *  # noqa
-from boa.wrapper_utils import *  # noqa
+from boa.wrappers.wrapper import *  # noqa
+from boa.wrappers.wrapper_utils import *  # noqa

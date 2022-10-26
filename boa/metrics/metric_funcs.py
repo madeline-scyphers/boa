@@ -1,39 +1,13 @@
-import json
 import logging
 
 import numpy as np
 import scipy.stats as stats
-import yaml
 from sklearn.metrics import mean_squared_error
 
+from boa._doc_utils import add_ref_to_rel_init
 from boa.utils import get_dictionary_from_callable
 
 logger = logging.getLogger(__name__)
-
-
-def _metric_from_jsonlike(data, path_to_data):
-    for key in path_to_data:
-        try:
-            data = data[key]
-        except (IndexError, KeyError, TypeError) as e:
-            if len(e.args) >= 1:
-                e.args = (e.args[0] + "\nCan't load data from file because path to data is invalid!",) + e.args[1:]
-            raise
-    return data
-
-
-def metric_from_json(filename, path_to_data, **kwargs):
-    with open(filename, "r") as f:
-        data = json.load(f)
-
-    return _metric_from_jsonlike(data, path_to_data)
-
-
-def metric_from_yaml(filename, path_to_data, **kwargs):
-    with open(filename, "r") as f:
-        data = yaml.safe_load(f)
-
-    return _metric_from_jsonlike(data, path_to_data)
 
 
 def normalized_root_mean_squared_error(y_true, y_pred, normalizer="iqr", **kwargs):
@@ -73,3 +47,14 @@ def normalized_root_mean_squared_error(y_true, y_pred, normalizer="iqr", **kwarg
 
     nrmse = rmse / norm
     return nrmse
+
+
+__doc__ = f"""
+########################
+Metric Functions
+########################
+
+Functions used for Metrics
+
+{add_ref_to_rel_init()}
+"""

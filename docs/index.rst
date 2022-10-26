@@ -36,7 +36,7 @@ Contents
     notebooks/index
     troubleshooting
     changelog
-    Code reference <code_reference/code_reference>
+    Code reference <code_reference>
     gallery
     contributing
 

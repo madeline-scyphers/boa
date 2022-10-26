@@ -15,14 +15,15 @@ from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
 from sklearn.metrics import __all__ as sklearn_all
 
-import boa.metrics.synthethic_funcs
+import boa.metrics.synthetic_funcs
+from boa._doc_utils import add_ref_to_rel_init
 from boa.metaclasses import MetricRegister
 from boa.utils import (
     extract_init_args,
     get_dictionary_from_callable,
     serialize_init_args,
 )
-from boa.wrapper import BaseWrapper
+from boa.wrappers.wrapper import BaseWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
 
 def get_synth_func(synthetic_metric: str):
     synthetic_funcs_modules = [
-        boa.metrics.synthethic_funcs,
+        boa.metrics.synthetic_funcs,
         ax.utils.measurement.synthetic_functions,
         botorch.test_functions.synthetic,
     ]
@@ -162,7 +163,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     Parameters
     ----------
-    metric_to_eval : Callable
+    metric_to_eval : Callable | str
     metric_func_kwargs : Optional[dict]
         dictionary of keyword arguments to pass to the metric to eval function
     noise_sd : Optional[float]
@@ -181,7 +182,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def __init__(
         self,
-        metric_to_eval: Callable | dict,
+        metric_to_eval: Callable | str,
         metric_func_kwargs: Optional[dict] = None,
         # param_names: list[str] = None,
         noise_sd: Optional[float] = 0.0,
@@ -191,6 +192,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         metric_type: Optional[str] = None,
         **kwargs,
     ):
+        """"""  # remove init docstring from parent class to stop it showing in sphinx
         if "to_eval_name" in kwargs:
             self._to_eval_name = kwargs.pop("to_eval_name")
         else:
@@ -318,3 +320,12 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
         arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
         return f"{self.__class__.__name__}({arg_str})"
+
+
+__doc__ = f"""
+########################
+Modular Metric
+########################
+
+{add_ref_to_rel_init()}
+"""

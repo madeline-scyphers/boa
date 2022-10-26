@@ -1,27 +1,27 @@
-.. _wrapper-user-guide:
-
+"""
 ########################
-Creating a model wrapper
+Creating model wrappers
 ########################
 
-To create a model wrapper, you will create a child class of boa's :class:`~boa.wrapper.BaseWrapper`
-class. :class:`~boa.wrapper.BaseWrapper` defines the core functions that must be defined in your model
+To create a model wrapper, you will create a child class of boa's :class:`.BaseWrapper`
+class. :class:`.BaseWrapper` defines the core functions that must be defined in your model
 wrapper:
 
-* :meth:`~boa.wrapper.BaseWrapper.load_config`: Defines how to load the configuration file for the experiment. There is
+* :meth:`.BaseWrapper.load_config`: Defines how to load the configuration file for the experiment. There is
   a default version of this function that can be used.
-* :meth:`~boa.wrapper.BaseWrapper.write_configs`: Defines how to write configurations for the model. This is needed so
-  that ``boa`` can pass the parameters it generates in each trial to the model.
-* :meth:`~boa.wrapper.BaseWrapper.run_model`: Defines how to run the model.
-* :meth:`~boa.wrapper.BaseWrapper.set_trial_status`: Defines how to determine the status of a trial (i.e., if the model
+* :meth:`.BaseWrapper.write_configs`: Defines how to write configurations for the model. This is needed so
+  that :doc:`BOA </index>` can pass the parameters it generates in each trial to the model.
+* :meth:`.BaseWrapper.run_model`: Defines how to run the model.
+* :meth:`.BaseWrapper.set_trial_status`: Defines how to determine the status of a trial (i.e., if the model
   run is completed, still running, failed, etc).
-* :meth:`~boa.wrapper.BaseWrapper.fetch_trial_data`: Retrieves the trial data and prepares it for the metric(s) used in
+* :meth:`.BaseWrapper.fetch_trial_data`: Retrieves the trial data and prepares it for the metric(s) used in
   the objective function.
 
 Apart from these core functions, your model wrapper can have additional functions as needed (for example, to help with
 formatting or scaling model outputs,  )
 
-See :doc:`FETCH3 <fetch3:user_guide/optimization>`'s :mod:`Wrapper <fetch3:fetch3.optimize.fetch_wrapper>` for an example.
+See :doc:`FETCH3 <fetch3:user_guide/optimization>`'s
+:mod:`Wrapper <fetch3:fetch3.optimize.fetch_wrapper>` for an example.
 
 
 *************************
@@ -31,7 +31,8 @@ Example wrapper functions
 The ``write_configs`` function
 ==============================
 
-This function is usually used to write out the configurations files used in an individual optimization trial run, or to dynamically write a run script to start an optimization trial run.
+This function is usually used to write out the configurations files used in an individual optimization trial run,
+or to dynamically write a run script to start an optimization trial run.
 
 FETCH3's wrapper provides a simple example of this function for the case where the parameters simply need to be written
 to a yaml file:
@@ -39,7 +40,8 @@ to a yaml file:
 .. rli:: https://raw.githubusercontent.com/jemissik/fetch3_nhl/develop/fetch3/optimize/fetch_wrapper.py
    :pyobject: write_configs
 
-The palm_wrapper used to wrap PALM provides an example where parameters are written to a YAML file, but also a batch job script is written for each optimization trial run.
+The palm_wrapper used to wrap PALM provides an example where parameters are written to a YAML file,
+but also a batch job script is written for each optimization trial run.
 
 .. rli:: https://raw.githubusercontent.com/madeline-scyphers/palm_wrapper/main/palm_wrapper/optimize/wrapper.py
    :pyobject: Wrapper.write_configs
@@ -56,7 +58,8 @@ this function for the case where the model run is started by running a python sc
 .. rli:: https://raw.githubusercontent.com/jemissik/fetch3_nhl/develop/fetch3/optimize/fetch_wrapper.py
    :pyobject: Fetch3Wrapper.run_model
 
-The palm_wrapper used to wrap PALM takes the batch job script written in ``write_configs`` and runs it, starting a job. The job script also utilizes the YAML file written above as well.
+The palm_wrapper used to wrap PALM takes the batch job script written in ``write_configs`` and runs it, starting a job.
+The job script also utilizes the YAML file written above as well.
 
 .. rli:: https://raw.githubusercontent.com/madeline-scyphers/palm_wrapper/main/palm_wrapper/optimize/wrapper.py
    :pyobject: Wrapper.run_model
@@ -111,3 +114,5 @@ link to source: https://github.com/jemissik/fetch3_nhl/blob/develop/fetch3/optim
    :pyobject: Wrapper
 
 link to source: https://github.com/madeline-scyphers/palm_wrapper/blob/main/palm_wrapper/optimize/wrapper.py
+
+"""

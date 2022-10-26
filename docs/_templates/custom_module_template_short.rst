@@ -1,4 +1,4 @@
-{{ fullname | escape | underline}}
+{{ pagename }}
 
 .. automodule:: {{ fullname }}
    :members:
@@ -9,7 +9,7 @@
 {% if modules %}
 .. autosummary::
    :toctree:
-   :template: custom-module-template.rst
+   :template: custom_module_template_short.rst
    :recursive:
 {% for item in modules %}
    {{ item }}

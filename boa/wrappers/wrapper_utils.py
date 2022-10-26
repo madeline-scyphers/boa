@@ -1,15 +1,3 @@
-"""
-Optimization wrapper for FETCH3.
-
-These functions provide the interface between the optimization tool and FETCH3
-- Setting up optimization experiment
-- Creating directories for model outputs of each iteration
-- Writing model configuration files for each iteration
-- Starting model runs for each iteration
-- Reading model outputs and observation data for model evaluation
-- Defines objective function for optimization, and other performance metrics of interest
-- Defines how results of each iteration should be evaluated
-"""
 from __future__ import annotations
 
 import datetime as dt
@@ -26,6 +14,8 @@ import yaml
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
 from ax.utils.common.docutils import copy_doc
 
+from boa._doc_utils import add_ref_to_rel_init
+
 logger = logging.getLogger(__file__)
 
 
@@ -37,7 +27,38 @@ PARAM_CLASSES = {
 
 
 @contextmanager
-def cd_and_cd_back(path=None):
+def cd_and_cd_back(path: os.PathLike | str = None):
+    """Context manager that will return to the starting directory
+    when the context manager exits, regardless of what directory
+    changes happen between start and end.
+
+    Parameters
+    ==========
+    path : os.PathLike | str
+        If supplied, will change directory to this path at the start of the
+        context manager (it will "cd" to this path before "cd" back to the
+        original directory)
+
+    Examples
+    ========
+    >>> starting_dir = os.getcwd()
+    ... with cd_and_cd_back():
+    ...     # with do some things that change the directory
+    ...     os.chdir("..")
+    ... # When we exit the context manager (dedent) we go back to the starting directory
+    ... ending_dir = os.getcwd()
+    ... assert starting_dir == ending_dir
+
+    >>> starting_dir = os.getcwd()
+    ... path_to_change_to = ".."
+    ... with cd_and_cd_back(path=path_to_change_to):
+    ...     # with do some things inside the context manager
+    ...     ...
+    ... # When we exit the context manager (dedent) we go back to the starting directory
+    ... ending_dir = os.getcwd()
+    ... assert starting_dir == ending_dir
+
+    """
     cwd = os.getcwd()
     try:
         if path:
@@ -48,6 +69,37 @@ def cd_and_cd_back(path=None):
 
 
 def cd_and_cd_back_dec(path=None):
+    """Same as :func:`cd_and_cd_back` except as a function decorator instead of
+    a context manager.
+
+    Parameters
+    ==========
+    path : os.PathLike | str
+        If supplied, will change directory to this path at the start of the function run
+        (it will "cd" to this path before "cd" back to the original directory)
+
+    Examples
+    ========
+    >>> @cd_and_cd_back_dec
+    ... def foo():
+    ...     os.chdir("..")
+    ...
+    ... starting_dir = os.getcwd()
+    ... foo()
+    ... ending_dir = os.getcwd()
+    ... assert starting_dir == ending_dir
+
+    >>> @cd_and_cd_back_dec(path="..")
+    ... def bar():
+    ...     os.chdir("..")
+    ...
+    ... starting_dir = os.getcwd()
+    ... bar()
+    ... ending_dir = os.getcwd()
+    ... assert starting_dir == ending_dir
+
+    """
+
     def _cd_and_cd_back_dec(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -59,7 +111,7 @@ def cd_and_cd_back_dec(path=None):
     return _cd_and_cd_back_dec
 
 
-def load_json(file_path: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
+def load_json(file: os.PathLike | str, normalize: bool = True, *args, **kwargs) -> dict:
     """
     Read experiment configuration file for setting up the optimization.
     The configuration file contains the list of parameters, and whether each parameter is a fixed
@@ -68,7 +120,7 @@ def load_json(file_path: os.PathLike, normalize: bool = True, *args, **kwargs) -
 
     Parameters
     ----------
-    config_file : os.PathLike
+    file : os.PathLike
         File path for the experiment configuration file
     normalize : bool
         Whether to run boa.wrapper_utils.normalize_config after loading config
@@ -77,49 +129,18 @@ def load_json(file_path: os.PathLike, normalize: bool = True, *args, **kwargs) -
         Alternative keys or paths to keys to parse  as parameters to optimize,
         for more information, see :func:`~boa.wrapper_utils.wpr_params_to_boa`
 
-
     Examples
     --------
-    If you have a parameters in your configration like this
 
-    >>> from boa import normalize_config
-    >>> config = {
-    ...     "params": {
-    ...         "a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
-    ...         "b": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
-    ...     },
-    ...     "params2": [
-    ...         {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
-    ...         {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
-    ...     ],
-    ...     "params_a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
-    ... }
-    >>> parameter_keys = [
-    ...     ["params", "a"],
-    ...     ["params", "b"],
-    ...     ["params_a"],
-    ...     ["params2", 0, 0],
-     ...    ["params2", 1, 0],
-    ... ]
-    >>> config = normalize_config(config, parameter_keys)
-    >>> pprint(config["parameters"])
-    [{'bounds': [0, 1], 'name': 'params_a_x1', 'type': 'range'},
-     {'name': 'params_a_x2', 'type': 'fixed', 'value': 0.5},
-     {'bounds': [0, 1], 'name': 'params_b_x1', 'type': 'range'},
-     {'name': 'params_b_x2', 'type': 'fixed', 'value': 0.5},
-     {'bounds': [0, 1], 'name': 'params_a_x1_0', 'type': 'range'},
-     {'name': 'params_a_x2_0', 'type': 'fixed', 'value': 0.5},
-     {'bounds': [0, 1], 'name': 'params2_0_0_x1', 'type': 'range'},
-     {'name': 'params2_0_0_x2', 'type': 'fixed', 'value': 0.5},
-     {'bounds': [0, 1], 'name': 'params2_1_0_x1', 'type': 'range'},
-     {'name': 'params2_1_0_x2', 'type': 'fixed', 'value': 0.5}]
+        config_path = Path("path/to/your/config.json_or_yaml")
+        config = load_jsonlike(config_path)
 
     Returns
     -------
     loaded_configs: dict
     """
-    file_path = Path(file_path).expanduser()
-    with open(file_path, "r") as f:
+    file = Path(file).expanduser()
+    with open(file, "r") as f:
         config = json.load(f)
 
     if normalize:
@@ -128,9 +149,9 @@ def load_json(file_path: os.PathLike, normalize: bool = True, *args, **kwargs) -
 
 
 @copy_doc(load_json)
-def load_yaml(file_path: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
-    file_path = Path(file_path).expanduser()
-    with open(file_path, "r") as f:
+def load_yaml(file: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
+    file = Path(file).expanduser()
+    with open(file, "r") as f:
         config = yaml.safe_load(f)
 
     if normalize:
@@ -139,15 +160,15 @@ def load_yaml(file_path: os.PathLike, normalize: bool = True, *args, **kwargs) -
 
 
 @copy_doc(load_json)
-def load_jsonlike(file_path: os.PathLike, *args, **kwargs):
-    file_path = Path(file_path)
-    if file_path.suffix.lstrip(".").lower() in {"yaml", "yml"}:
-        return load_yaml(file_path, *args, **kwargs)
-    elif file_path.suffix.lstrip(".").lower() == "json":
-        return load_json(file_path, *args, **kwargs)
+def load_jsonlike(file: os.PathLike, *args, **kwargs):
+    file = Path(file)
+    if file.suffix.lstrip(".").lower() in {"yaml", "yml"}:
+        return load_yaml(file, *args, **kwargs)
+    elif file.suffix.lstrip(".").lower() == "json":
+        return load_json(file, *args, **kwargs)
     else:
         raise ValueError(
-            f"Invalid config file format for config file {file_path}" "\nAccepted file formats are YAML and JSON."
+            f"Invalid config file format for config file {file}" "\nAccepted file formats are YAML and JSON."
         )
 
 
@@ -215,6 +236,40 @@ def normalize_config(
             params_a_x1:
                 type: fixed
                 value: 0.5
+
+    # A more complicated working example
+        >>> from boa import normalize_config
+        >>> from pprint import pprint
+        >>> config = {
+        ...     "params": {
+        ...         "a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
+        ...         "b": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
+        ...     },
+        ...     "params2": [
+        ...         {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
+        ...         {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
+        ...     ],
+        ...     "params_a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
+        ... }
+        >>> parameter_keys = [
+        ...     ["params", "a"],
+        ...     ["params", "b"],
+        ...     ["params_a"],
+        ...     ["params2", 0, 0],
+        ...     ["params2", 1, 0],
+        ... ]
+        >>> config = normalize_config(config, parameter_keys)
+        >>> pprint(config["parameters"])
+        [{'bounds': [0, 1], 'name': 'params_a_x1', 'type': 'range'},
+         {'name': 'params_a_x2', 'type': 'fixed', 'value': 0.5},
+         {'bounds': [0, 1], 'name': 'params_b_x1', 'type': 'range'},
+         {'name': 'params_b_x2', 'type': 'fixed', 'value': 0.5},
+         {'bounds': [0, 1], 'name': 'params_a_x1_0', 'type': 'range'},
+         {'name': 'params_a_x2_0', 'type': 'fixed', 'value': 0.5},
+         {'bounds': [0, 1], 'name': 'params2_0_0_x1', 'type': 'range'},
+         {'name': 'params2_0_0_x2', 'type': 'fixed', 'value': 0.5},
+         {'bounds': [0, 1], 'name': 'params2_1_0_x1', 'type': 'range'},
+         {'name': 'params2_1_0_x2', 'type': 'fixed', 'value': 0.5}]
 
     Returns
     -------
@@ -355,6 +410,13 @@ def boa_params_to_wpr(params: list[dict], mapping, from_trial=True):
 
 
 def get_dt_now_as_str(fmt: str = "%Y%m%dT%H%M%S"):
+    """get the datetime as now as a str.
+
+    fmt : str
+        Default format is file friendly.
+        See `strftime documentation <https://docs.python.org/3/library/datetime.html
+        #strftime-and-strptime-behavior>`_ for more information on choices.
+    """
     return dt.datetime.now().strftime(fmt)
 
 
@@ -475,30 +537,13 @@ def make_trial_dir(experiment_dir: os.PathLike, trial_index: int, **kwargs):
     return trial_dir
 
 
-def write_configs(trial_dir, parameters, model_options):
-    """
-    Write model configuration file for each trial (model run). This is the config file used by FETCH3
-    for the model run.
+__doc__ = f"""
+########################
+Wrapper Utility Tools
+########################
 
-    The config file is written as ```config.yml``` inside the trial directory.
+Utility tools for to ease model wrapping.
 
-    Parameters
-    ----------
-    trial_dir : Path
-        Trial directory where the config file will be written
-    parameters : list
-        Model parameters for the trial, generated by the ax client
-    model_options : dict
-        Model options loaded from the experiment config yml file.
+{add_ref_to_rel_init()}
 
-    Returns
-    -------
-    str
-        Path for the config file.
-    """
-    with open(trial_dir / "config.yml", "w") as f:
-        # Write model options from loaded config
-        # Parameters for the trial from Ax
-        config_dict = {"model_options": model_options, "parameters": parameters}
-        yaml.dump(config_dict, f)
-        return f.name
+"""
