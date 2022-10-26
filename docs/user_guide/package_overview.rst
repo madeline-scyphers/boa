@@ -26,7 +26,7 @@ See the :ref:`instructions for configurations files<configuration>` for details.
 Objective functions
 ====================
 
-When specifying your objective function to minimize or maximize, boa comes with a number of metrics you can use with your model output, such as MSE, :math:`R^2`, and others. For a list of current list of premade available of metrics, see See :class:`boa.metrics.metrics.METRICS`
+When specifying your objective function to minimize or maximize, boa comes with a number of metrics you can use with your model output, such as MSE, :math:`R^2`, and others. For a list of current list of premade available of metrics, see See :mod:`.metrics.metrics`
 
 
 
@@ -42,7 +42,7 @@ the model).
     A goal for the next stage of development is to allow for model wrapper functions to be written in other languages
     (e.g., R)
 
-See the :ref:`instructions for creating a model wrapper <wrapper-user-guide>` for details.
+See the :mod:`instructions for creating a model wrapper <boa.wrappers>` for details.
 
 ************************
 Creating a run script
@@ -58,6 +58,6 @@ See the :ref:`instructions for creating a run script <run_script>` for details.
 .. toctree::
     :maxdepth: 2
 
-    wrapper
+    ../api/boa.wrappers
     configuration
     run_script

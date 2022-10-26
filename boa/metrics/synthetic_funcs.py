@@ -1,8 +1,13 @@
+"""
+########################
+Synthetic Function
+########################
+
+"""
+
 from ax.utils.measurement.synthetic_functions import from_botorch
 from botorch.test_functions.synthetic import Hartmann
 from torch import Tensor
-
-from boa._doc_utils import add_ref_to_rel_init
 
 
 class Hartmann4(Hartmann):
@@ -23,12 +28,3 @@ class Hartmann4(Hartmann):
 
 
 hartmann4 = from_botorch(Hartmann4())
-
-
-__doc__ = f"""
-########################
-Synthetic Function
-########################
-
-{add_ref_to_rel_init()}
-"""

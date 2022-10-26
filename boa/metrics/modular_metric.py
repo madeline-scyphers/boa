@@ -1,3 +1,10 @@
+"""
+########################
+Modular Metric
+########################
+
+"""
+
 from __future__ import annotations
 
 import logging
@@ -16,7 +23,6 @@ from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
 from sklearn.metrics import __all__ as sklearn_all
 
 import boa.metrics.synthetic_funcs
-from boa._doc_utils import add_ref_to_rel_init
 from boa.metaclasses import MetricRegister
 from boa.utils import (
     extract_init_args,
@@ -155,8 +161,8 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     ``metric_to_eval``.
 
     You can further customize the behavior of your metric by passing a
-    :class:`Wrapper<boa.wrapper.BaseWrapper>`, which has will run methods
-    such as  :meth:`~boa.wrapper.BaseWrapper.fetch_trial_data` before
+    :class:`Wrapper<.BaseWrapper>`, which has will run methods
+    such as  :meth:`~.BaseWrapper.fetch_trial_data` before
     calling the specified metric to evaluate, which can allow you
     to preprocess/prepare model output data for your metric calculation.
 
@@ -320,12 +326,3 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
         arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
         return f"{self.__class__.__name__}({arg_str})"
-
-
-__doc__ = f"""
-########################
-Modular Metric
-########################
-
-{add_ref_to_rel_init()}
-"""

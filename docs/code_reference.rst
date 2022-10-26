@@ -3,8 +3,8 @@ Code reference
 ##############
 
 
-:mod:`boa.wrappers`: Wrapping tools
-===================================
+:mod:`Wrappers and Tools <boa.wrappers>`
+=============================================
 
 This is where you will find information about :doc:`BOA's </index>` Wrapper classes for optimization, as well as general wrapping utility functions that might be useful to wrap a model
 
@@ -18,8 +18,8 @@ This is where you will find information about :doc:`BOA's </index>` Wrapper clas
     boa.wrappers.wrapper_utils
 
 
-:mod:`boa.metrics`: Metrics
-============================
+:mod:`Metrics <boa.metrics>`:
+=================================
 
 This is where you will find information about :doc:`BOA's </index>` Metrics.
 
@@ -48,7 +48,9 @@ Advanced Usage/Direct Python Access
     :toctree: api
     :template: custom_module_template_short.rst
 
+    boa.controller
     boa.ax_instantiation_utils
     boa.runner
     boa.utils
     boa.metaclasses
+    boa.instantiation_base

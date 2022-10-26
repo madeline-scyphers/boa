@@ -10,6 +10,7 @@ except ImportError:
     __version__ = "0.0.0"
 
 from boa.ax_instantiation_utils import *  # noqa
+from boa.controller import *  # noqa
 from boa.instantiation_base import *  # noqa
 from boa.metrics.modular_metric import *  # noqa
 from boa.runner import *  # noqa

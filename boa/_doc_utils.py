@@ -1,26 +1,29 @@
-import inspect
-from pathlib import Path
+import importlib
+import pkgutil
 
-FILENAME = Path(__file__).name
-
-
-def get_calling_file_path():
-    frames = inspect.stack()
-    frame = 1
-    while (file_path := Path(frames[frame].filename)).name == FILENAME:
-        frame += 1
-    return file_path
+import boa
 
 
-def add_ref_to_rel_init():
-    file_path = get_calling_file_path()
+def get_boa_submodules():
+    print(boa)
+    module_list = []
+    packages = []
+    for module_finder, modname, is_pkg in pkgutil.walk_packages(boa.__path__):
+        if is_pkg:
+            packages.append(modname)
+        if len(modname.split(".")) > 1:
+            module_list.append(modname)
+    return module_list
 
-    parent = file_path.parent
-    pathing_ls = []
-    for part in reversed(parent.parts):
-        pathing_ls.append(part)
-        if part == "boa":
-            break
-    pathing = ".".join(module for module in reversed(pathing_ls))
 
-    return f"""**See More Information Here**: :mod:`{pathing}`"""
+def import_boa_submod(submod_str):
+    return importlib.import_module(f"boa.{submod_str}")
+
+
+def add_ref_to_all_submodules_inits():
+    module_list = get_boa_submodules()
+    for mod_str in module_list:
+        submod = import_boa_submod(mod_str)
+        info = f"""**Overview Information Here**: :mod:`{submod.__package__}`"""
+
+        submod.__doc__ = f"{submod.__doc__}\n\n{info}" if submod.__doc__ else info

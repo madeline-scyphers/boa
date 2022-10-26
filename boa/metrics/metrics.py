@@ -1,6 +1,40 @@
+"""
+########################
+List of Metrics
+########################
+
+List of Metrics that are already defined in BOA
+
+Any of these Metrics can be used directly in your configuration file
+
+Examples
+========
+..  code-block:: YAML
+
+    # Single objective optimization config
+    optimization_options:
+        objective_options:
+            objectives:
+                # List all of your metrics here,
+                # only list 1 metric for a single objective optimization
+                - metric: RootMeanSquaredError
+
+..  code-block:: YAML
+
+    # MultiObjective Optimization config
+    optimization_options:
+        objective_options:
+            objectives:
+                # List all of your metrics here,
+                # only list multiple objectives for a multi objective optimization
+                - metric: RMSE
+                - metric: R2
+
+"""
+
+
 import numpy as np
 
-from boa._doc_utils import add_ref_to_rel_init
 from boa.metrics.metric_funcs import (
     normalized_root_mean_squared_error as normalized_root_mean_squared_error_,
 )
@@ -148,39 +182,3 @@ class NormalizedRootMeanSquaredError(ModularMetric):
 
 NRMSE = NormalizedRootMeanSquaredError
 normalized_root_mean_squared_error = NormalizedRootMeanSquaredError
-
-
-__doc__ = f"""
-########################
-List of Metrics
-########################
-
-List of Metrics that are already defined in BOA
-
-Any of these Metrics can be used directly in your configuration file
-
-Examples
-========
-..  code-block:: YAML
-
-    # Single objective optimization config
-    optimization_options:
-        objective_options:
-            objectives:
-                # List all of your metrics here,
-                # only list 1 metric for a single objective optimization
-                - metric: RootMeanSquaredError
-
-..  code-block:: YAML
-
-    # MultiObjective Optimization config
-    optimization_options:
-        objective_options:
-            objectives:
-                # List all of your metrics here,
-                # only list multiple objectives for a multi objective optimization
-                - metric: RMSE
-                - metric: R2
-
-{add_ref_to_rel_init()}
-"""

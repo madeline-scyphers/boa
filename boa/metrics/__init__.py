@@ -1,8 +1,4 @@
-def foo():
-    return "hi"
-
-
-__doc__ = f"""
+"""
 ################################################
 Metrics Overview & Advanced Usage
 ################################################
@@ -17,8 +13,6 @@ by passing in the name of the metric into your configuration file
 
 See :doc:`/user_guide/configuration`
 
-
-{foo()}
 """
 
 from boa.metrics.metrics import *  # noqa

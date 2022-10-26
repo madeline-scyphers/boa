@@ -1,3 +1,12 @@
+"""
+###################################
+Wrapped Runner
+###################################
+
+Runner that calls your :mod:`.wrappers` to run your model and poll the trial status.
+
+"""
+
 from collections import defaultdict
 from typing import Any, Dict, Iterable, Set
 

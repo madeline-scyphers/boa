@@ -1,3 +1,12 @@
+"""
+########################
+Wrapper Utility Tools
+########################
+
+Utility tools for to ease model wrapping.
+
+"""
+
 from __future__ import annotations
 
 import datetime as dt
@@ -13,8 +22,6 @@ from typing import Union
 import yaml
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
 from ax.utils.common.docutils import copy_doc
-
-from boa._doc_utils import add_ref_to_rel_init
 
 logger = logging.getLogger(__file__)
 
@@ -123,11 +130,11 @@ def load_json(file: os.PathLike | str, normalize: bool = True, *args, **kwargs) 
     file : os.PathLike
         File path for the experiment configuration file
     normalize : bool
-        Whether to run boa.wrapper_utils.normalize_config after loading config
+        Whether to run :func:`.normalize_config` after loading config
         to run certain predictable configuration normalization. (default true)
     parameter_keys : str | list[Union[str, list[str], list[Union[str, int]]]]
         Alternative keys or paths to keys to parse  as parameters to optimize,
-        for more information, see :func:`~boa.wrapper_utils.wpr_params_to_boa`
+        for more information, see :func:`.wpr_params_to_boa`
 
     Examples
     --------
@@ -421,8 +428,8 @@ def get_dt_now_as_str(fmt: str = "%Y%m%dT%H%M%S"):
 
 
 def make_experiment_dir(
-    working_dir: os.PathLike = None,
-    experiment_dir: os.PathLike = None,
+    working_dir: os.PathLike | str = None,
+    experiment_dir: os.PathLike | str = None,
     experiment_name: str = "",
     append_timestamp: bool = True,
     exist_ok: bool = True,
@@ -433,10 +440,10 @@ def make_experiment_dir(
 
     Parameters
     ----------
-    working_dir : os.Pathlike
+    working_dir : os.PathLike | str
         Working directory, the parent directory where the experiment directory will be written.
         Specify either a working directory and an experiment name or an experiment_dir
-    experiment_dir : os.Pathlike
+    experiment_dir : os.PathLike | str
         The exact dir the experiment directory boa will use to write the runs to.
         Specify either a working directory and an experiment name or an experiment_dir
     experiment_name: str
@@ -450,7 +457,7 @@ def make_experiment_dir(
 
     Returns
     -------
-    Path
+    pathlib.Path
         Path to the directory for the experiment
     """
     if (working_dir and experiment_dir) or (not working_dir and not experiment_dir):
@@ -505,7 +512,7 @@ def get_trial_dir(experiment_dir: os.PathLike, trial_index: int, **kwargs):
 
     Returns
     -------
-    Path
+    pathlib.Path
         Directory for the trial
     """
     trial_dir = Path(experiment_dir) / zfilled_trial_index(trial_index, **kwargs)  # zero-padded trial index
@@ -529,21 +536,9 @@ def make_trial_dir(experiment_dir: os.PathLike, trial_index: int, **kwargs):
 
     Returns
     -------
-    Path
+    pathlib.Path
         Directory for the trial
     """
     trial_dir = get_trial_dir(experiment_dir, trial_index, **kwargs)
     trial_dir.mkdir()
     return trial_dir
-
-
-__doc__ = f"""
-########################
-Wrapper Utility Tools
-########################
-
-Utility tools for to ease model wrapping.
-
-{add_ref_to_rel_init()}
-
-"""
