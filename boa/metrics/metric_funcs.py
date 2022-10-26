@@ -6,11 +6,14 @@ Metric Functions
 Functions used for Metrics
 
 """
+from __future__ import annotations
 
 import logging
 
 import numpy as np
 import scipy.stats as stats
+import sklearn.metrics
+from sklearn.metrics import __all__ as sklearn_all
 from sklearn.metrics import mean_squared_error
 
 from boa.utils import get_dictionary_from_callable
@@ -57,3 +60,24 @@ def normalized_root_mean_squared_error(y_true, y_pred, normalizer="iqr", **kwarg
 
     nrmse = rmse / norm
     return nrmse
+
+
+def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
+    import boa.metrics.metrics
+
+    def modular_sklearn_metric(**kwargs):
+        return boa.metrics.metrics.SklearnMetric(**{**kw, **kwargs, "metric_to_eval": metric_to_eval})
+
+    return modular_sklearn_metric(**kw) if instantiate else modular_sklearn_metric
+
+
+def get_sklearn_func(metric_to_eval):
+    if metric_to_eval in sklearn_all:
+        metric = getattr(sklearn.metrics, metric_to_eval)
+    # we also check the attribute name incase metric_to_eval is actual a class b/c ModularMetric
+    # has been cloned
+    elif getattr(metric_to_eval, "name", None) in sklearn_all:
+        metric = getattr(sklearn.metrics, metric_to_eval.name)
+    else:
+        raise AttributeError(f"Sklearn metric: {metric_to_eval} not found!")
+    return metric

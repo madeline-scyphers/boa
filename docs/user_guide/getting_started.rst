@@ -59,6 +59,6 @@ Once everything is installed, run the test script to ensure everything is instal
 
 If this test case runs successfully, you can move on to the next steps.
 
-:ref:`contributions`
+:doc:`/contributing`
 
-If you have errors, see the :ref:`Troubleshooting` section.
+If you have errors, see the :doc:`/troubleshooting` section.

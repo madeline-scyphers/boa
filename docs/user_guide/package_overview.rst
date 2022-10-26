@@ -17,7 +17,7 @@ Creating a configuration File
 
 Configuration is usually done through a configuration file in YAML or json format. The goal of boa is allow as much functionality of the bayesian optimization through the configuration as possible. Allowing users to worry mostly about their model itself instead of the optimization. In the configuration file you can do a single objective, multi objective, or scalarize objective optimization. You can specify different acquisition functions, or let them be selected for you, what parameters you are optimizing, parameter constraints, outcome constraints, and more.
 
-See the :ref:`instructions for configurations files<configuration>` for details.
+See the :doc:`instructions for configurations files<configuration>` for details.
 
 .. note::
     We are adding more and more functionality to the configuration directly, but if there are features not supported in the boa configuration file yet, but are support in the underlying Ax or botorch libraries, you can customize things further  with your run script. See below.
@@ -42,7 +42,7 @@ the model).
     A goal for the next stage of development is to allow for model wrapper functions to be written in other languages
     (e.g., R)
 
-See the :mod:`instructions for creating a model wrapper <boa.wrappers>` for details.
+See the :doc:`instructions for creating a model wrapper </api/boa.wrappers>` for details.
 
 ************************
 Creating a run script
@@ -50,7 +50,7 @@ Creating a run script
 
 A basic run script to initialize your wrapper, load your configuration, and run your optimization.
 
-See the :ref:`instructions for creating a run script <run_script>` for details.
+See the :doc:`instructions for creating a run script <run_script>` for details.
 
 .. note::
     A goal for the next stage of development is for standard run scripts not be needed, and boa handle all based on configuration and your wrapper. And you will only need to make a run script if you need more customization.
@@ -58,6 +58,7 @@ See the :ref:`instructions for creating a run script <run_script>` for details.
 .. toctree::
     :maxdepth: 2
 
-    ../api/boa.wrappers
     configuration
     run_script
+
+:doc:`/api/boa.wrappers`

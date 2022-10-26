@@ -14,5 +14,3 @@ by passing in the name of the metric into your configuration file
 See :doc:`/user_guide/configuration`
 
 """
-
-from boa.metrics.metrics import *  # noqa

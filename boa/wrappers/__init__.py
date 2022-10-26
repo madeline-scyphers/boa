@@ -14,8 +14,8 @@ wrapper:
 * :meth:`.BaseWrapper.run_model`: Defines how to run the model.
 * :meth:`.BaseWrapper.set_trial_status`: Defines how to determine the status of a trial (i.e., if the model
   run is completed, still running, failed, etc).
-* :meth:`.BaseWrapper.fetch_trial_data`: Retrieves the trial data and prepares it for the metric(s) used in
-  the objective function.
+* :meth:`boa.wrappers.wrapper.BaseWrapper.fetch_trial_data`: Retrieves the trial data and prepares it for the metric(s)
+  used in the objective function.
 
 Apart from these core functions, your model wrapper can have additional functions as needed (for example, to help with
 formatting or scaling model outputs,  )
@@ -28,8 +28,8 @@ See :doc:`FETCH3 <fetch3:user_guide/optimization>`'s
 Example wrapper functions
 *************************
 
-The ``write_configs`` function
-==============================
+The :meth:`.write_configs` function
+=====================================
 
 This function is usually used to write out the configurations files used in an individual optimization trial run,
 or to dynamically write a run script to start an optimization trial run.
@@ -47,8 +47,8 @@ but also a batch job script is written for each optimization trial run.
    :pyobject: Wrapper.write_configs
 
 
-The ``run_model`` function
-==========================
+The :meth:`.run_model` function
+===============================================================
 
 This function can simply launch a python or shell script to start a model run.
 
@@ -65,8 +65,8 @@ The job script also utilizes the YAML file written above as well.
    :pyobject: Wrapper.run_model
 
 
-The ``set_trial_status`` function
-=================================
+The :meth:`boa.wrappers.wrapper.BaseWrapper.fetch_trial_data` function
+======================================================================
 
 Marks the status of a trial to reflect the status of the model run for the trial.
 
@@ -86,8 +86,8 @@ In these two examples, the trial status is determined by checking the log file o
 .. rli:: https://raw.githubusercontent.com/madeline-scyphers/palm_wrapper/main/palm_wrapper/optimize/wrapper.py
    :pyobject: Wrapper.set_trial_status
 
-The ``fetch_trial_data`` function
-=================================
+The :meth:`BaseWrapper.fetch_trial_data` function
+======================================================================
 
 Retrieves the trial data and prepares it for the metric(s) used in the objective
 function. The return value needs to be a dictionary with the keys matching the keys

@@ -7,3 +7,6 @@ User guide
 
     getting_started
     package_overview
+
+
+:doc:`/api/boa.wrappers`

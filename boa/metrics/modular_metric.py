@@ -9,20 +9,14 @@ from __future__ import annotations
 
 import logging
 from functools import partial
-from inspect import isclass
 from typing import Any, Callable, Optional
 
-import ax.utils.measurement.synthetic_functions
-import botorch.test_functions.synthetic
-import sklearn.metrics
 from ax import Metric
 from ax.core.base_trial import BaseTrial
 from ax.core.types import TParameterization
 from ax.metrics.noisy_function import NoisyFunctionMetric
-from ax.utils.measurement.synthetic_functions import FromBotorch, from_botorch
-from sklearn.metrics import __all__ as sklearn_all
+from ax.utils.measurement.synthetic_functions import FromBotorch
 
-import boa.metrics.synthetic_funcs
 from boa.metaclasses import MetricRegister
 from boa.utils import (
     extract_init_args,
@@ -34,94 +28,16 @@ from boa.wrappers.wrapper import BaseWrapper
 logger = logging.getLogger(__name__)
 
 
-def get_metric_from_config(config, instantiate=True, **kwargs):
-    if config.get("metric"):
-        config = config["metric"]
-    if config.get("boa_metric"):
-        kwargs["metric_name"] = config["boa_metric"]
-        metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
-    elif config.get("sklearn_metric"):
-        kwargs["metric_name"] = config["sklearn_metric"]
-        kwargs["sklearn_"] = True
-        metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
-    elif config.get("synthetic_metric"):
-        metric = setup_synthetic_metric(instantiate=instantiate, **config, **kwargs)
-    else:
-        # TODO link to docs for configuration when it exists
-        raise KeyError("No valid configuration for metric found.")
-    return metric
-
-
-def get_metric_by_class_name(metric_name, instantiate=True, sklearn_=False, **kwargs):
-    if sklearn_:
-        return setup_sklearn_metric(metric_name, instantiate=True, **kwargs)
-    return get_boa_metric(metric_name)(**kwargs) if instantiate else get_boa_metric(metric_name)
-
-
-def get_boa_metric(name):
-    import boa.metrics.metrics
-
-    return getattr(boa.metrics.metrics, name)
-
-
-def get_sklearn_func(metric_to_eval):
-    if metric_to_eval in sklearn_all:
-        metric = getattr(sklearn.metrics, metric_to_eval)
-    # we also check the attribute name incase metric_to_eval is actual a class b/c ModularMetric
-    # has been cloned
-    elif getattr(metric_to_eval, "name", None) in sklearn_all:
-        metric = getattr(sklearn.metrics, metric_to_eval.name)
-    else:
-        raise AttributeError(f"Sklearn metric: {metric_to_eval} not found!")
-    return metric
-
-
-def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
-    import boa.metrics.metrics
-
-    def modular_sklearn_metric(**kwargs):
-        return boa.metrics.metrics.SklearnMetric(**{**kw, **kwargs, "metric_to_eval": metric_to_eval})
-
-    return modular_sklearn_metric(**kw) if instantiate else modular_sklearn_metric
-
-
-def get_synth_func(synthetic_metric: str):
-    synthetic_funcs_modules = [
-        boa.metrics.synthetic_funcs,
-        ax.utils.measurement.synthetic_functions,
-        botorch.test_functions.synthetic,
-    ]
-    for module in synthetic_funcs_modules:
-        try:
-            return getattr(module, synthetic_metric)
-        except AttributeError:
-            continue
-    # If we don't find the class by the end of the modules, raise attribute error
-    raise AttributeError(f"boa synthetic function: {synthetic_metric} not found in modules: {synthetic_funcs_modules}!")
-
-
 def _get_func_by_name(metric: str):
-    for func in [get_sklearn_func, get_synth_func]:
+    import boa.metrics.metric_funcs
+    import boa.metrics.synthetic_funcs
+
+    for func in [boa.metrics.metric_funcs.get_sklearn_func, boa.metrics.synthetic_funcs.get_synth_func]:
         try:
             return func(metric)
         except AttributeError:
             continue
     raise AttributeError(f"No metric with name {metric} found!")
-
-
-def setup_synthetic_metric(synthetic_metric, instantiate=True, **kw):
-    metric = get_synth_func(synthetic_metric)
-
-    if isclass(metric) and issubclass(metric, ax.utils.measurement.synthetic_functions):
-        metric = metric()  # if they pass a ax synthetic metric class, not instance
-    elif isclass(metric) and issubclass(metric, botorch.test_functions.synthetic.SyntheticTestFunction):
-        # botorch synthetic functions need to be converted
-        metric = from_botorch(botorch_synthetic_function=metric())
-
-    def modular_synthetic_metric(**kwargs):
-        return ModularMetric(**{**kw, **kwargs, "metric_to_eval": metric})
-
-    return modular_synthetic_metric(**kw) if instantiate else modular_synthetic_metric
 
 
 def _get_name(obj):
@@ -139,13 +55,6 @@ def _get_name(obj):
     else:
         obj = obj.__class__
     return _get_name(obj)
-
-
-def generic_closure(close_around, instantiate=True, **kw):
-    def modular_metric(**kwargs):
-        return close_around(**{**kw, **kwargs})
-
-    return modular_metric(**kw) if instantiate else modular_metric
 
 
 class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
@@ -190,12 +99,11 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         self,
         metric_to_eval: Callable | str,
         metric_func_kwargs: Optional[dict] = None,
-        # param_names: list[str] = None,
+        param_names: list[str] = None,
         noise_sd: Optional[float] = 0.0,
         name: Optional[str] = None,
         wrapper: Optional[BaseWrapper] = None,
         properties: Optional[dict[str]] = None,
-        metric_type: Optional[str] = None,
         **kwargs,
     ):
         """"""  # remove init docstring from parent class to stop it showing in sphinx
@@ -205,14 +113,13 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             self._to_eval_name = _get_name(metric_to_eval)
         self.metric_func_kwargs = metric_func_kwargs or {}
         if isinstance(metric_to_eval, str):
-            _get_func_by_name(metric_to_eval)
+            metric_to_eval = _get_func_by_name(metric_to_eval)
         self.metric_to_eval = metric_to_eval
 
         if name is None:
             name = self._to_eval_name
-        if "param_names" not in kwargs:
-            kwargs["param_names"] = []
-        # param_names = param_names if param_names is not None else []
+
+        kwargs["param_names"] = param_names or []
         self.wrapper = wrapper or BaseWrapper()
         super().__init__(
             noise_sd=noise_sd,

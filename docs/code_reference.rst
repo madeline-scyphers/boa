@@ -2,6 +2,12 @@
 Code reference
 ##############
 
+Check out the user guide section as well!
+
+.. toctree::
+    :maxdepth: 2
+
+    /user_guide/index
 
 :mod:`Wrappers and Tools <boa.wrappers>`
 =============================================

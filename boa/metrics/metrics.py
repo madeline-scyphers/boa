@@ -31,14 +31,17 @@ Examples
                 - metric: R2
 
 """
-
+from __future__ import annotations
 
 import numpy as np
 
+from boa.metrics.metric_funcs import get_sklearn_func
 from boa.metrics.metric_funcs import (
     normalized_root_mean_squared_error as normalized_root_mean_squared_error_,
 )
-from boa.metrics.modular_metric import ModularMetric, get_sklearn_func
+from boa.metrics.metric_funcs import setup_sklearn_metric
+from boa.metrics.modular_metric import ModularMetric
+from boa.metrics.synthetic_funcs import setup_synthetic_metric
 
 
 class SklearnMetric(ModularMetric):
@@ -182,3 +185,34 @@ class NormalizedRootMeanSquaredError(ModularMetric):
 
 NRMSE = NormalizedRootMeanSquaredError
 normalized_root_mean_squared_error = NormalizedRootMeanSquaredError
+
+
+def get_metric_from_config(config, instantiate=True, **kwargs):
+    if config.get("metric"):
+        config = config["metric"]
+    if config.get("boa_metric"):
+        kwargs["metric_name"] = config["boa_metric"]
+        metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
+    elif config.get("sklearn_metric"):
+        kwargs["metric_name"] = config["sklearn_metric"]
+        kwargs["sklearn_"] = True
+        metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
+    elif config.get("synthetic_metric"):
+        metric = setup_synthetic_metric(instantiate=instantiate, **config, **kwargs)
+    else:
+        # TODO link to docs for configuration when it exists
+        raise KeyError("No valid configuration for metric found.")
+    return metric
+
+
+def get_metric_by_class_name(metric_name, instantiate=True, sklearn_=False, **kwargs):
+    if sklearn_:
+        return setup_sklearn_metric(metric_name, instantiate=True, **kwargs)
+    return get_boa_metric(metric_name)(**kwargs) if instantiate else get_boa_metric(metric_name)
+
+
+def get_boa_metric(name):
+    try:
+        return globals()[name]
+    except KeyError:
+        raise ValueError(f"Invalid Metric Name specified: {name}")

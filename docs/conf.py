@@ -9,7 +9,7 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+
 import os
 import sys
 
@@ -69,6 +69,11 @@ nitpick_ignore_regex = [
     (r'.*', r'.*botorch.*'),
     (r'.*', r'array.*like'),
 ]
+#
+# exclude_patterns = [
+#     # "**/.svn",
+#     "user_guide/wrappers_mirror.rst",
+# ]
 
 # torch.nn has doc string reference sphinx has troubles resolving in its own code
 # Which get reference when we import from pytorch in general

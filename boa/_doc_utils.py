@@ -5,7 +5,6 @@ import boa
 
 
 def get_boa_submodules():
-    print(boa)
     module_list = []
     packages = []
     for module_finder, modname, is_pkg in pkgutil.walk_packages(boa.__path__):
