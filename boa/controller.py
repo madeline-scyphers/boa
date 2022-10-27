@@ -6,24 +6,36 @@ Controller
 The Controller class controls the optimization
 
 """
-
+from __future__ import annotations
 
 import logging
-import os
 import time
 from pathlib import Path
-
-from ax.service.scheduler import Scheduler
 
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.runner import WrappedJobRunner
 from boa.storage import scheduler_to_json_file
 from boa.utils import get_dictionary_from_callable
-from boa.wrappers.wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import get_dt_now_as_str
 
 
 class Controller:
+    """
+    Controls the instantiation of your :mod:`.wrapper` and the
+    necessary ax objects to start your experiment and control
+    the ax scheduler. Once it sets up your Experiment, it starts
+    the scheduler to have the scheduler run your trials, and then it
+    saves the scheduler to a json file.
+
+    Parameters
+    ----------
+    config_path : os.Pathlike or str
+        path to configuration yaml or json file
+    wrapper : Type[BaseWrapper]
+        Your Wrapper subclass of BaseWrapper to be instantiated
+
+    """
+
     def __init__(self, config_path, wrapper):
         self.config_path = config_path
         self.wrapper = wrapper
@@ -32,7 +44,29 @@ class Controller:
 
         self.scheduler = None
 
-    def setup(self, append_timestamp: bool = None, experiment_dir: os.PathLike = None, **kwargs):
+    def setup(self, append_timestamp=None, experiment_dir=None, **kwargs):
+        """
+        Sets up all the classes and objects needed to create the ax Scheduler
+
+        Parameters
+        ----------
+        append_timestamp : bool
+            whether to append the output experiment directory with a timestamp or not
+            (default True)
+        experiment_dir : os.PathLike or str
+            output experiment directory to save the experiment and trials to
+            (defaults to what is specified in the config,
+            or what working_dir/experiment_name [working_dir specified in config]
+            or current_dir/experiment_name [if working_dir and experiment_dir and
+            not specified])
+
+        Returns
+        -------
+        tuple[Scheduler, BaseWrapper]
+            returns a tuple with the first element being the scheduler
+            and the second element being your wrapper (both initialized
+            and ready to go)
+        """
         kwargs["config_path"] = self.config_path
         if experiment_dir:
             kwargs["experiment_dir"] = experiment_dir
@@ -56,9 +90,27 @@ class Controller:
 
         experiment = get_experiment(config, WrappedJobRunner(wrapper=self.wrapper), self.wrapper)
         self.scheduler = get_scheduler(experiment, config=config)
-        return self.scheduler
+        return self.scheduler, self.wrapper
 
-    def run(self, scheduler: Scheduler = None, wrapper: BaseWrapper = None):
+    def run(self, scheduler=None, wrapper=None):
+        """
+        Run trials for scheduler
+
+        Parameters
+        ----------
+        scheduler : Scheduler
+            initialed scheduler or None, if None, defaults to
+            ``self.scheduler`` (the scheduler set up in :meth:`.Controller.setup`
+        wrapper : BaseWrapper
+            initialed wrapper or None, if None, defaults to
+            ``self.wrapper`` (the wrapper set up in :meth:`.Controller.setup`
+
+        Returns
+        -------
+        Scheduler
+            The scheduler after all trials have been run or the
+            experiment has been stopped for another reason.
+        """
         start = time.time()
 
         scheduler = scheduler or self.scheduler
