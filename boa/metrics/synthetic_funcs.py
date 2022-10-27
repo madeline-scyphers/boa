@@ -38,7 +38,11 @@ class Hartmann4(Hartmann):
 hartmann4 = from_botorch(Hartmann4())
 
 
-def get_synth_func(synthetic_metric: str) -> type:
+def get_synth_func(
+    synthetic_metric: str,
+) -> (
+    botorch.test_functions.synthetic.SyntheticTestFunction | ax.utils.measurement.synthetic_functions.SyntheticFunction
+):
     synthetic_funcs_modules = [
         sys.modules[__name__],  # this module
         ax.utils.measurement.synthetic_functions,
