@@ -41,7 +41,7 @@ def cd_and_cd_back(path: os.PathLike | str = None):
 
     Parameters
     ==========
-    path : os.PathLike | str
+    path
         If supplied, will change directory to this path at the start of the
         context manager (it will "cd" to this path before "cd" back to the
         original directory)
@@ -75,13 +75,13 @@ def cd_and_cd_back(path: os.PathLike | str = None):
         os.chdir(cwd)
 
 
-def cd_and_cd_back_dec(path=None):
+def cd_and_cd_back_dec(path: os.PathLike | str = None):
     """Same as :func:`cd_and_cd_back` except as a function decorator instead of
     a context manager.
 
     Parameters
     ==========
-    path : os.PathLike | str
+    path
         If supplied, will change directory to this path at the start of the function run
         (it will "cd" to this path before "cd" back to the original directory)
 
@@ -127,12 +127,12 @@ def load_json(file: os.PathLike | str, normalize: bool = True, *args, **kwargs) 
 
     Parameters
     ----------
-    file : os.PathLike
+    file
         File path for the experiment configuration file
-    normalize : bool
+    normalize
         Whether to run :func:`.normalize_config` after loading config
         to run certain predictable configuration normalization. (default true)
-    parameter_keys : str | list[Union[str, list[str], list[Union[str, int]]]]
+    parameter_keys
         Alternative keys or paths to keys to parse  as parameters to optimize,
         for more information, see :func:`.wpr_params_to_boa`
 
@@ -145,6 +145,10 @@ def load_json(file: os.PathLike | str, normalize: bool = True, *args, **kwargs) 
     Returns
     -------
     loaded_configs: dict
+
+    See Also
+    --------
+    :func:`.normalize_config` for information on ``parameter_keys`` option
     """
     file = Path(file).expanduser()
     with open(file, "r") as f:
@@ -159,7 +163,7 @@ def load_json(file: os.PathLike | str, normalize: bool = True, *args, **kwargs) 
 def load_yaml(file: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
     file = Path(file).expanduser()
     with open(file, "r") as f:
-        config = yaml.safe_load(f)
+        config: dict = yaml.safe_load(f)
 
     if normalize:
         return normalize_config(config, *args, **kwargs)
@@ -208,6 +212,11 @@ def normalize_config(
         This needs to be a json path to a key or keys where parameters or stored. So
         either a single string (the key) or a list of strings and ints (the keys and list indices),
         or a list of those lists for multiple paths.
+
+    Returns
+    -------
+    config: dict
+        normalized configuration
 
     Examples
     --------
@@ -277,10 +286,6 @@ def normalize_config(
          {'name': 'params2_0_0_x2', 'type': 'fixed', 'value': 0.5},
          {'bounds': [0, 1], 'name': 'params2_1_0_x1', 'type': 'range'},
          {'name': 'params2_1_0_x2', 'type': 'fixed', 'value': 0.5}]
-
-    Returns
-    -------
-    config : dict
     """
     config["optimization_options"] = config.get("optimization_options", {})
     for key in ["experiment", "generation_strategy", "scheduler"]:
@@ -325,15 +330,10 @@ def wpr_params_to_boa(params: dict, parameter_keys: str | list[Union[str, list[s
 
     Parameters
     ----------
-    params : dict
+    params
         dictionary containing parameters
-    parameter_keys :  str | list[Union[str, list[str], list[Union[str, int]]]]
+    parameter_keys
         str of key to parameters, or list of json paths to key(s) of parameters.
-
-
-    Returns
-    -------
-
     """
     # if only one key is passed in as a str, wrap it in a list
     if isinstance(parameter_keys, str):
@@ -416,7 +416,7 @@ def boa_params_to_wpr(params: list[dict], mapping, from_trial=True):
     return new_params
 
 
-def get_dt_now_as_str(fmt: str = "%Y%m%dT%H%M%S"):
+def get_dt_now_as_str(fmt: str = "%Y%m%dT%H%M%S") -> str:
     """get the datetime as now as a str.
 
     fmt : str
@@ -440,18 +440,18 @@ def make_experiment_dir(
 
     Parameters
     ----------
-    working_dir : os.PathLike | str
+    working_dir
         Working directory, the parent directory where the experiment directory will be written.
         Specify either a working directory and an experiment name or an experiment_dir
-    experiment_dir : os.PathLike | str
+    experiment_dir
         The exact dir the experiment directory boa will use to write the runs to.
         Specify either a working directory and an experiment name or an experiment_dir
-    experiment_name: str
+    experiment_name
         Name of the experiment
-    append_timestamp : bool
+    append_timestamp
         Whether to append a timestamp to the end of the experiment directory
         to ensure uniqueness
-    exist_ok : bool
+    exist_ok
         Whether it is ok if the directory already exists or not
         (will throw an error if set to False and it already exists)
 
@@ -496,19 +496,19 @@ def zfilled_trial_index(trial_index: int, fill_size: int = 6) -> str:
     return str(trial_index).zfill(fill_size)
 
 
-def get_trial_dir(experiment_dir: os.PathLike, trial_index: int, **kwargs):
+def get_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs):
     """
     Return a directory for a trial,
-    Trial directory is named with the trial index.
+    Trial directory is named with the trial index (0 padded to 6 decimal)
 
     Parameters
     ----------
-    experiment_dir : os.PathLike
+    experiment_dir
         Directory for the experiment
-    trial_index : int
+    trial_index
         Trial index from the Ax client
-    kwargs
-        kwargs passed to ``zfilled_trial_index``
+    **kwargs
+        keyword args passed to ``zfilled_trial_index``
 
     Returns
     -------
@@ -519,20 +519,21 @@ def get_trial_dir(experiment_dir: os.PathLike, trial_index: int, **kwargs):
     return trial_dir
 
 
-def make_trial_dir(experiment_dir: os.PathLike, trial_index: int, **kwargs):
+def make_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs):
     """
     Create a directory for a trial, and return the path to the directory.
-    Trial directory is created inside the experiment directory, and named with the trial index.
+    Trial directory is created inside the experiment directory,
+    and named with the trial index (0 padded to 6 decimal).
     Model configs and outputs for each trial will be written here.
 
     Parameters
     ----------
-    experiment_dir : os.PathLike
+    experiment_dir
         Directory for the experiment
-    trial_index : int
+    trial_index
         Trial index from the Ax client
-    kwargs
-        kwargs passed to ``get_trial_dir``
+    **kwargs
+        keyword args passed to ``get_trial_dir``
 
     Returns
     -------

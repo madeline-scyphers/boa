@@ -78,18 +78,22 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     Parameters
     ----------
-    metric_to_eval : Callable | str
-    metric_func_kwargs : Optional[dict]
+    metric_to_eval
+    metric_func_kwargs
         dictionary of keyword arguments to pass to the metric to eval function
-    noise_sd : Optional[float]
+    noise_sd
         Scale of normal noise added to the function result. If None, interpret the function as
         noisy with unknown noise level.
-    name : Optional[str]
-        name: Name of the metric, if not specified, defaults to name of ``metric_to_eval``
-    wrapper : Optional[BaseWrapper]
+    param_names
+        An ordered list of names of parameters to be passed to the metric_to_eval
+        Useful for filtering out parameters before those parameters are passed to
+        your metric
+    name
+        The name of the metric, if not specified, defaults to name of ``metric_to_eval``
+    wrapper
         Boa wrapper to handle running the model and getting the data, allows injecting custom
         function in the middle of ``ModularMetric``
-    properties : Optional[dict[str]]
+    properties
         Arbitrary dictionary of properties to store. Properties need to be json
         serializable
     kwargs

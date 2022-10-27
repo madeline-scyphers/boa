@@ -39,18 +39,19 @@ class BaseWrapper(metaclass=WrapperRegister):
                 self.config = config
             self.mk_experiment_dir(*args, **kwargs)
 
-    def load_config(self, config_path: os.PathLike, *args, **kwargs):
+    def load_config(self, config_path: os.PathLike | str, *args, **kwargs) -> dict:
         """
         Load config file and return a dictionary # TODO finish this
 
         Parameters
         ----------
-        config_path : os.PathLike
+        config_path
             File path for the experiment configuration file
 
         Returns
         -------
-        loaded_config: dict
+        dict
+            loaded_config
         """
         try:
             config = load_jsonlike(config_path, normalize=False)
@@ -67,31 +68,31 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     def mk_experiment_dir(
         self,
-        experiment_dir: os.PathLike = None,
-        working_dir: os.PathLike = None,
+        experiment_dir: os.PathLike | str = None,
+        working_dir: os.PathLike | str = None,
         experiment_name: str = None,
         append_timestamp: bool = True,
         **kwargs,
-    ):
+    ) -> None:
         """
         Make the experiment directory that boa will write all of its trials and logs to.
 
         Parameters
         ----------
-        experiment_dir: os.PathLike
+        experiment_dir
             Path to the directory for the output of the experiment
             You may specify this or working_dir in your configuration file instead.
             (Defaults to None and using your configuration file instead)
-        working_dir: os.PathLike
+        working_dir
             Working directory of project, experiment_dir will be placed inside
             working dir based on experiment name.
             Because of this only either experiment_dir or working_dir may be specified.
             You may specify this or experiment_dir in your configuration file instead.
             (Defaults to None and using your configuration file instead)
-        experiment_name: str
+        experiment_name
             Name of experiment, used for creating path to experiment dir with the working dir
             (Defaults to None and using your configuration file instead)
-        append_timestamp : bool
+        append_timestamp
             Whether to append a timestamp to the end of the experiment directory
             to ensure uniqueness
         """
@@ -125,7 +126,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
-        trial : BaseTrial
+        trial
         """
 
     def run_model(self, trial: BaseTrial) -> None:
@@ -134,7 +135,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
-        trial : BaseTrial
+        trial
         """
 
     def set_trial_status(self, trial: BaseTrial) -> None:
@@ -183,13 +184,13 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
-        trial : BaseTrial
-        metric_properties: dict
-        metric_name: str
+        trial
+        metric_properties
+        metric_name
 
         Returns
         -------
         dict
             A dictionary with the keys matching the keys of the metric function
-                used in the objective
+            used in the objective
         """

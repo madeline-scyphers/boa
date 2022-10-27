@@ -69,14 +69,6 @@ nitpick_ignore_regex = [
     (r'.*', r'.*botorch.*'),
     (r'.*', r'array.*like'),
 ]
-#
-# exclude_patterns = [
-#     # "**/.svn",
-#     "user_guide/wrappers_mirror.rst",
-# ]
-
-# torch.nn has doc string reference sphinx has troubles resolving in its own code
-# Which get reference when we import from pytorch in general
 
 
 # Use saved output in notebooks rather than executing on build
@@ -97,7 +89,7 @@ autoclass_content = "both"  # Add __init__ doc (ie. params) to class summaries
 # html_show_sourcelink = False  # Remove "view source code" from top of page (for html, not python)
 autodoc_inherit_docstrings = True  # If no docstring, inherit from base class
 autodoc_member_order = "bysource"
-
+autodoc_typehints = "both"
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
