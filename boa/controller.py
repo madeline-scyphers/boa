@@ -3,6 +3,8 @@
 Controller
 ###################################
 
+The Controller class controls the optimization
+
 """
 
 
@@ -37,7 +39,7 @@ class Controller:
         if append_timestamp is not None:
             kwargs["append_timestamp"] = append_timestamp
 
-        load_config_kwargs = get_dictionary_from_callable(self.wrapper.load_config, kwargs)
+        load_config_kwargs = get_dictionary_from_callable(self.wrapper.__init__, kwargs)
         self.wrapper = self.wrapper(**load_config_kwargs)
         config = self.wrapper.config
 

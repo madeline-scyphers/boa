@@ -71,7 +71,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     You can further customize the behavior of your metric by passing a
     :class:`Wrapper<.BaseWrapper>`, which has will run methods
-    such as  :meth:`~.BaseWrapper.fetch_trial_data` before
+    such as  :meth:`.BaseWrapper.fetch_trial_data` before
     calling the specified metric to evaluate, which can allow you
     to preprocess/prepare model output data for your metric calculation.
 

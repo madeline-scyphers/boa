@@ -5,5 +5,5 @@ Examples
 .. toctree::
     :maxdepth: 2
 
-    test
+    example_py_run
     example_optimization_results

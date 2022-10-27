@@ -14,7 +14,7 @@ wrapper:
 * :meth:`.BaseWrapper.run_model`: Defines how to run the model.
 * :meth:`.BaseWrapper.set_trial_status`: Defines how to determine the status of a trial (i.e., if the model
   run is completed, still running, failed, etc).
-* :meth:`boa.wrappers.wrapper.BaseWrapper.fetch_trial_data`: Retrieves the trial data and prepares it for the metric(s)
+* :meth:`.BaseWrapper.fetch_trial_data`: Retrieves the trial data and prepares it for the metric(s)
   used in the objective function.
 
 Apart from these core functions, your model wrapper can have additional functions as needed (for example, to help with
@@ -65,7 +65,7 @@ The job script also utilizes the YAML file written above as well.
    :pyobject: Wrapper.run_model
 
 
-The :meth:`boa.wrappers.wrapper.BaseWrapper.fetch_trial_data` function
+The :meth:`.BaseWrapper.set_trial_status` function
 ======================================================================
 
 Marks the status of a trial to reflect the status of the model run for the trial.
@@ -86,7 +86,7 @@ In these two examples, the trial status is determined by checking the log file o
 .. rli:: https://raw.githubusercontent.com/madeline-scyphers/palm_wrapper/main/palm_wrapper/optimize/wrapper.py
    :pyobject: Wrapper.set_trial_status
 
-The :meth:`BaseWrapper.fetch_trial_data` function
+The :meth:`.BaseWrapper.fetch_trial_data` function
 ======================================================================
 
 Retrieves the trial data and prepares it for the metric(s) used in the objective
@@ -114,5 +114,10 @@ link to source: https://github.com/jemissik/fetch3_nhl/blob/develop/fetch3/optim
    :pyobject: Wrapper
 
 link to source: https://github.com/madeline-scyphers/palm_wrapper/blob/main/palm_wrapper/optimize/wrapper.py
+
+.. toctree::
+
+    /api/boa.wrappers.wrapper
+    /api/boa.wrappers.wrapper_utils
 
 """

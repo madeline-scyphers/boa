@@ -69,7 +69,7 @@ All Style Checks Passed Successfully
         )
 
 
-@task
+@task(aliases=["tests"])
 def test(command, options=""):
     """Runs pytest to identify failing tests and doctests"""
 

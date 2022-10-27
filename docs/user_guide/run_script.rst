@@ -7,6 +7,8 @@ Example Run Scripts
 ***********************
 
 
+A run script needs to initialize your wrapper, load your configuration, and run your optimization.
+
 Single Objective Optimization Run Scripts
 ===========================================
 

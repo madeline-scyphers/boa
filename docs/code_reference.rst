@@ -9,7 +9,7 @@ Check out the user guide section as well!
 
     /user_guide/index
 
-:mod:`Wrappers and Tools <boa.wrappers>`
+:doc:`Wrappers and Tools <api/boa.wrappers>`
 =============================================
 
 This is where you will find information about :doc:`BOA's </index>` Wrapper classes for optimization, as well as general wrapping utility functions that might be useful to wrap a model
@@ -24,7 +24,7 @@ This is where you will find information about :doc:`BOA's </index>` Wrapper clas
     boa.wrappers.wrapper_utils
 
 
-:mod:`Metrics <boa.metrics>`:
+:doc:`Metrics <api/boa.metrics>`:
 =================================
 
 This is where you will find information about :doc:`BOA's </index>` Metrics.

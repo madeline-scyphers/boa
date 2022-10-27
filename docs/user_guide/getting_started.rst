@@ -1,8 +1,8 @@
 .. _getting_started:
 
-###############
-Getting Started
-###############
+##############################
+Installing and Test Run
+##############################
 
 ************
 Installation
