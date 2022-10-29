@@ -12,7 +12,9 @@ POSIX = os.name == "posix"
 
 @task
 def black(command, checkonly=False):
-    """Runs black (autoformatter) on all .py files recursively"""
+    """Runs black (autoformatter) on all .py files recursively
+    if checkonly=True, only checks if would change files
+    """
     print(
         """
 Running Black the Python code formatter
@@ -25,7 +27,9 @@ Running Black the Python code formatter
 
 @task
 def isort(command, checkonly=False):
-    """Runs isort (import sorter) on all .py files recursively"""
+    """Runs isort (import sorter) on all .py files recursively
+    if checkonly=True, only checks if would change files
+    """
     print(
         """
 Running isort the Python code import sorter
@@ -50,23 +54,21 @@ Running flakeheaven, a Python code linter
     command.run("flakeheaven lint", echo=True, pty=POSIX)
 
 
-@task(pre=[black, isort, lint])
-def style(
-    command,
-):
+@task
+def style(command, checkonly=False):
     """Runs black, isort, and flake8
-    Arguments:
-        command {[type]} -- [description]
+    if checkonly=True, only checks if would change files
     """
-    # If we get to this point all tests listed in 'pre' have  passed
-    # unless we have run the task with the --warn flag
-    if not command.config.run.warn:
-        print(
-            """
+    black(command, checkonly=checkonly)
+    isort(command, checkonly=checkonly)
+    lint(command)
+    # Only prints if doesn't exit from the above not failing out
+    print(
+        """
 All Style Checks Passed Successfully
 ====================================
 """
-        )
+    )
 
 
 @task(aliases=["tests"])
@@ -83,9 +85,7 @@ Running pytest the test framework
 
 
 @task
-def docs(
-    command,
-):
+def docs(command, warn_is_error=False):
     """Runs Sphinx to build the docs locally for testing"""
     print(
         """
@@ -93,11 +93,12 @@ Running Sphinx to test the docs building
 ========================================
 """
     )
+    options = "-W " if warn_is_error else ""
     shutil.rmtree("docs/_build", ignore_errors=True)
     shutil.rmtree("docs/api", ignore_errors=True)
     shutil.rmtree("docs/code_reference/api", ignore_errors=True)
     shutil.rmtree("docs/jupyter_execute", ignore_errors=True)
-    command.run("sphinx-build -b html docs docs/_build", echo=True, pty=POSIX)
+    command.run(f"sphinx-build {options}-b html docs docs/_build", echo=True, pty=POSIX)
 
 
 @task(pre=[black, isort, lint, test, docs])

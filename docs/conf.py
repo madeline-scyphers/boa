@@ -46,6 +46,8 @@ extensions = [
     "myst_nb",
 ]
 
+suppress_warnings = ["mystnb.unknown_mime_type"]
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
@@ -73,7 +75,9 @@ nitpick_ignore_regex = [
 
 # Use saved output in notebooks rather than executing on build
 # Since the current examples are not part of boa, they need to execute locally
-nb_execution_mode = "off"
+# nb_execution_mode = "off"
+
+nb_execution_excludepatterns = ["example_optimization_results.ipynb"]
 
 html_js_files = ["https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"]
 

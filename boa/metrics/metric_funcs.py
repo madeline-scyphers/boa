@@ -11,7 +11,6 @@ from __future__ import annotations
 import logging
 
 import numpy as np
-from numpy.typing import ArrayLike
 import scipy.stats as stats
 import sklearn.metrics
 from sklearn.metrics import __all__ as sklearn_all

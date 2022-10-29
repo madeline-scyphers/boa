@@ -37,7 +37,17 @@ def _get_func_by_name(metric: str):
             return func(metric)
         except AttributeError:
             continue
-    raise AttributeError(f"No metric with name {metric} found!")
+    try:
+        import boa.metrics.metrics
+
+        M = boa.metrics.metrics.get_boa_metric(metric)
+        metric_to_eval = M._metric_to_eval  # class defined default for deserialization
+        if not metric_to_eval:  # not defined on class level
+            m = M()
+            metric_to_eval = m.metric_to_eval
+        return metric_to_eval
+    except (AttributeError, TypeError):
+        raise AttributeError(f"No metric with name {metric} found!")
 
 
 def _get_name(obj):
@@ -99,9 +109,11 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     kwargs
     """
 
+    _metric_to_eval = None
+
     def __init__(
         self,
-        metric_to_eval: Callable | str,
+        metric_to_eval: Callable | str = None,
         metric_func_kwargs: Optional[dict] = None,
         param_names: list[str] = None,
         noise_sd: Optional[float] = 0.0,
@@ -111,6 +123,11 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         **kwargs,
     ):
         """"""  # remove init docstring from parent class to stop it showing in sphinx
+        # some classes put their metric_to_evals as class attributes to access non instantiated for deserialization
+        # also, if we don't access through __class__, it bounds it to self and passes self as first arg
+        metric_to_eval = metric_to_eval or self.__class__._metric_to_eval
+        if not metric_to_eval:
+            raise TypeError("__init__() missing 1 required positional argument: 'metric_to_eval'")
         if "to_eval_name" in kwargs:
             self._to_eval_name = kwargs.pop("to_eval_name")
         else:
@@ -169,6 +186,8 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def _evaluate(self, params: TParameterization, **kwargs) -> float:
         kwargs.update(params.pop("kwargs"))
+        print(self.metric_to_eval)
+        print(kwargs)
         return self.f(**get_dictionary_from_callable(self.metric_to_eval, kwargs))
 
     def f(self, *args, **kwargs):
@@ -228,12 +247,13 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             args=args, class_=cls, parents=parents_b4_metric, match_private=True, exclude_fields=["wrapper"]
         )
 
-    def __repr__(self) -> str:
-        init_dict = serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True)
-        init_dict = {k: v for k, v in init_dict.items() if v}
-
-        if isinstance(init_dict["metric_to_eval"], partial):
-            init_dict["metric_to_eval"] = init_dict["metric_to_eval"]
-
-        arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
-        return f"{self.__class__.__name__}({arg_str})"
+    #
+    # def __repr__(self) -> str:
+    #     init_dict = serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True)
+    #     init_dict = {k: v for k, v in init_dict.items() if v}
+    #
+    #     if isinstance(init_dict["metric_to_eval"], partial):
+    #         init_dict["metric_to_eval"] = init_dict["metric_to_eval"]
+    #
+    #     arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
+    #     return f"{self.__class__.__name__}({arg_str})"

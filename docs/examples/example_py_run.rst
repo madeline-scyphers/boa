@@ -22,8 +22,8 @@ as well as a configuration file (this one is in JSON, but an equivalent one in Y
 
 *config.py*
 
-.. literalinclude:: ../../tests/scripts/stand_alone_opt_package/stand_alone_pkg_config.yaml
-    :language: python
+.. literalinclude:: single_config.yaml
+    :language: yaml
 
 
 You can start and run your optimization like this:

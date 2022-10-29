@@ -33,6 +33,8 @@ Examples
 """
 from __future__ import annotations
 
+from typing import Type
+
 import numpy as np
 
 from boa.metrics.metric_funcs import get_sklearn_func
@@ -56,7 +58,7 @@ class SklearnMetric(ModularMetric):
         For information on all parameters various metrics in general can be supplied
     """
 
-    def __init__(self, metric_to_eval: str, *args, **kwargs):
+    def __init__(self, metric_to_eval: str = None, *args, **kwargs):
         if isinstance(metric_to_eval, str):
             kwargs["to_eval_name"] = metric_to_eval
             metric_to_eval = get_sklearn_func(metric_to_eval)
@@ -75,8 +77,10 @@ class MeanSquaredError(SklearnMetric):
         For information on all parameters various metrics in general can be supplied
     """
 
-    def __init__(self, metric_to_eval="mean_squared_error", lower_is_better=True, *args, **kwargs):
-        super().__init__(metric_to_eval=metric_to_eval, lower_is_better=lower_is_better, *args, **kwargs)
+    _metric_to_eval = "mean_squared_error"
+
+    def __init__(self, lower_is_better=True, *args, **kwargs):
+        super().__init__(lower_is_better=lower_is_better, *args, **kwargs)
 
 
 MSE = MeanSquaredError
@@ -95,9 +99,10 @@ class RootMeanSquaredError(SklearnMetric):
         For information on all parameters various metrics in general can be supplied
     """
 
+    _metric_to_eval = "mean_squared_error"
+
     def __init__(
         self,
-        metric_to_eval="mean_squared_error",
         lower_is_better=True,
         metric_func_kwargs=(("squared", False),),
         *args,
@@ -106,7 +111,6 @@ class RootMeanSquaredError(SklearnMetric):
         if metric_func_kwargs == (("squared", False),):
             metric_func_kwargs = dict((y, x) for x, y in metric_func_kwargs)
         super().__init__(
-            metric_to_eval=metric_to_eval,
             lower_is_better=lower_is_better,
             metric_func_kwargs=metric_func_kwargs,
             *args,
@@ -135,8 +139,10 @@ class RSquared(SklearnMetric):
         For information on all parameters various metrics in general can be supplied
     """
 
-    def __init__(self, metric_to_eval="r2_score", lower_is_better=True, *args, **kwargs):
-        super().__init__(metric_to_eval=metric_to_eval, lower_is_better=lower_is_better, *args, **kwargs)
+    _metric_to_eval = "r2_score"
+
+    def __init__(self, lower_is_better=True, *args, **kwargs):
+        super().__init__(lower_is_better=lower_is_better, *args, **kwargs)
 
 
 r2_score = RSquared
@@ -157,8 +163,10 @@ class Mean(ModularMetric):
         For information on all parameters various metrics in general can be supplied
     """
 
-    def __init__(self, metric_to_eval=np.mean, lower_is_better=True, *args, **kwargs):
-        super().__init__(metric_to_eval=metric_to_eval, lower_is_better=lower_is_better, *args, **kwargs)
+    _metric_to_eval = np.mean
+
+    def __init__(self, lower_is_better=True, *args, **kwargs):
+        super().__init__(lower_is_better=lower_is_better, *args, **kwargs)
 
 
 mean = Mean
@@ -179,8 +187,10 @@ class NormalizedRootMeanSquaredError(ModularMetric):
         For information on all parameters various metrics in general can be supplied
     """
 
-    def __init__(self, metric_to_eval=normalized_root_mean_squared_error_, lower_is_better=True, *args, **kwargs):
-        super().__init__(metric_to_eval=metric_to_eval, lower_is_better=lower_is_better, *args, **kwargs)
+    _metric_to_eval = normalized_root_mean_squared_error_
+
+    def __init__(self, lower_is_better=True, *args, **kwargs):
+        super().__init__(lower_is_better=lower_is_better, *args, **kwargs)
 
 
 NRMSE = NormalizedRootMeanSquaredError
@@ -211,8 +221,11 @@ def get_metric_by_class_name(metric_name, instantiate=True, sklearn_=False, **kw
     return get_boa_metric(metric_name)(**kwargs) if instantiate else get_boa_metric(metric_name)
 
 
-def get_boa_metric(name):
+def get_boa_metric(name) -> Type[ModularMetric]:
     try:
-        return globals()[name]
+        m = globals()[name]
+        if issubclass(m, ModularMetric):
+            return m
+        raise KeyError
     except KeyError:
         raise ValueError(f"Invalid Metric Name specified: {name}")

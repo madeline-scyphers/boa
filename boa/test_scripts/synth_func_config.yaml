@@ -27,4 +27,3 @@ parameters:
 
 model_options:
     input_size: 15
-    model_dir: .

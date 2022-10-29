@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+from pathlib import Path
 
 import numpy as np
 from ax import Trial
@@ -17,12 +18,12 @@ class Wrapper(boa.BaseWrapper):
     def run_model(self, trial: Trial):
         trial_dir = boa.make_trial_dir(self.experiment_dir, trial.index).resolve()
 
-        model_dir = self.model_settings["model_dir"]
+        model_dir = Path(__file__).resolve().parent.parent.parent
 
         os.chdir(model_dir)
 
         cmd = (
-            f"python synth_func_cli.py --output_dir {trial_dir}"
+            f"python -m boa.test_scripts.synth_func_cli --output_dir {trial_dir}"
             f" --standard_dev {self.ex_settings['objective_options']['objectives'][0]['noise_sd']}"
             f" --input_size {self.model_settings['input_size']}"
             f" -- {' '.join(str(val) for val in trial.arm.parameters.values())}"

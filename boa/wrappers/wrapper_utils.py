@@ -432,7 +432,7 @@ def make_experiment_dir(
     experiment_dir: os.PathLike | str = None,
     experiment_name: str = "",
     append_timestamp: bool = True,
-    exist_ok: bool = True,
+    exist_ok: bool = False,
 ):
     """
     Creates directory for the experiment and returns the path.
@@ -473,7 +473,7 @@ def make_experiment_dir(
 
 
 def _mk_exp_dir_from_working_dir(
-    working_dir: os.PathLike, experiment_name: str = "", append_timestamp: bool = True, exist_ok: bool = True
+    working_dir: os.PathLike, experiment_name: str = "", append_timestamp: bool = True, exist_ok: bool = False
 ):
     ts = get_dt_now_as_str() if append_timestamp else ""
     exp_name = "_".join(name for name in [experiment_name, ts] if name)
@@ -482,7 +482,7 @@ def _mk_exp_dir_from_working_dir(
     return ex_dir
 
 
-def _mk_exp_dir_from_exp_dir(exp_dir: os.PathLike, append_timestamp: bool = True, exist_ok: bool = True):
+def _mk_exp_dir_from_exp_dir(exp_dir: os.PathLike, append_timestamp: bool = True, exist_ok: bool = False):
     exp_dir = Path(exp_dir)
     working_dir = exp_dir.parent
     experiment_name = exp_dir.name

@@ -6,4 +6,6 @@ Examples
     :maxdepth: 2
 
     example_py_run
-    example_optimization_results
+    optimization_run
+    load_scheduler
+    cached_notebooks/example_optimization_results
