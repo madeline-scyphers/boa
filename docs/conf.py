@@ -13,7 +13,6 @@
 import os
 import sys
 
-# sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("../boa/"))
 
@@ -75,7 +74,7 @@ nitpick_ignore_regex = [
 
 # Use saved output in notebooks rather than executing on build
 # Since the current examples are not part of boa, they need to execute locally
-# nb_execution_mode = "off"
+nb_execution_mode = "off"
 
 nb_execution_excludepatterns = ["example_optimization_results.ipynb"]
 
@@ -133,6 +132,8 @@ intersphinx_mapping = {
     "sklearn": ("https://scikit-learn.org/stable", None),
     "torch": ("https://pytorch.org/docs/stable", None),
 }
+
+# BOA things
 
 # add a reference to the relative __init__.py of all files __doc__ in a submodules
 add_ref_to_all_submodules_inits()
