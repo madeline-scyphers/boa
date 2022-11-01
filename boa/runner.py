@@ -1,3 +1,12 @@
+"""
+###################################
+Wrapped Runner
+###################################
+
+Runner that calls your :mod:`.wrappers` to run your model and poll the trial status.
+
+"""
+
 from collections import defaultdict
 from typing import Any, Dict, Iterable, Set
 
@@ -60,7 +69,7 @@ class WrappedJobRunner(Runner, metaclass=RunnerRegister):
         return status_dict
 
     def to_dict(self) -> dict:
-        """Convert Ax synthetic runner to a dictionary."""
+        """Convert runner to a dictionary."""
 
         parents = self.__class__.mro()[1:]  # index 0 is the class itself
 

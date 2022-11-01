@@ -1,0 +1,15 @@
+# Single objective optimization config
+optimization_options:
+    objective_options:
+        objectives:
+            - boa_metric: mean
+    scheduler:
+        total_trials: 15
+parameters:
+    x0:
+        type: range
+        bounds: [-5.0, 10.0]
+    x1:
+        type: range
+        bounds: [0.0, 15.0]
+

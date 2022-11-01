@@ -10,8 +10,8 @@ from ax.storage.json_store.encoder import object_to_json
 
 import boa.metrics.metrics
 from boa.utils import get_dictionary_from_callable
-from boa.wrapper_utils import get_trial_dir, load_jsonlike, split_shell_command
 from boa.wrappers.base_wrapper import BaseWrapper
+from boa.wrappers.wrapper_utils import get_trial_dir, load_jsonlike, split_shell_command
 
 logger = logging.getLogger(__name__)
 
@@ -103,25 +103,36 @@ class ScriptWrapper(BaseWrapper):
         as it never writes the files. So this is a less ideal option and should be paired with timeouts
         in BOA or your scripts
 
-        Format
-        ------
-        .. code-block:: json
+        Parameters
+        ----------
+        trial
+            something something
+
+
+        **Relevant ENUM list**
+
+        You can set it to either to text version, or the numerical equivalent
+
+        ==================  =====
+        Text                Numerical Equivalent
+        ==================  =====
+        FAILED                2
+        COMPLETED             3
+        RUNNING               4 -- you don't need to set it to running, it is already set to running
+        ABANDONED             4
+        EARLY_STOPPED         7
+        ==================  =====
+
+        **Format**
+
+        format for trial_status.json file
+
+        .. code-block:: none
 
             {
                 "trial_status": "COMPLETED"
             }
 
-        Relevant ENUM list
-        ------------------
-        # FAILED = 2
-        # COMPLETED = 3
-        # RUNNING = 4  # you don't need to set it to running, it is already set to running
-        # ABANDONED = 5
-        # EARLY_STOPPED = 7
-
-        Parameters
-        ----------
-        trial : BaseTrial
         See Also
         --------
         :meth:`~boa.wrappers.script_wrapper.ScriptWrapper.run_model`
@@ -162,8 +173,7 @@ class ScriptWrapper(BaseWrapper):
         The return value of this function is a dictionary, with keys that match the keys
         of the metric used in the objective function.
 
-        Format
-        ------
+
         .. code-block:: json
 
             {
@@ -217,7 +227,7 @@ class ScriptWrapper(BaseWrapper):
                 if key.lower() == metric_name.lower():
                     metric_closure = boa.metrics.metrics._get_boa_metric_any_case(metric_name)
                     metric = metric_closure()
-                    return get_dictionary_from_callable(metric.metric_to_eval.func, values)
+                    return get_dictionary_from_callable(metric.metric_to_eval, values)
 
     def _run_subprocess_script_cmd_if_exists(self, trial: BaseTrial, func_name: str, block: bool = False, **kwargs):
         """

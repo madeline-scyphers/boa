@@ -1,3 +1,10 @@
+"""
+########################
+Base Wrapper
+########################
+
+"""
+
 from __future__ import annotations
 
 import logging
@@ -7,7 +14,11 @@ from pathlib import Path
 from ax.core.base_trial import BaseTrial
 
 from boa.metaclasses import WrapperRegister
-from boa.wrapper_utils import load_jsonlike, make_experiment_dir, normalize_config
+from boa.wrappers.wrapper_utils import (
+    load_jsonlike,
+    make_experiment_dir,
+    normalize_config,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +34,8 @@ class BaseWrapper(metaclass=WrapperRegister):
     """
 
     def __init__(self, config_path: os.PathLike = None, *args, **kwargs):
-        self.model_settings = None
-        self.ex_settings = None
+        self.model_settings = {}
+        self.ex_settings = {}
         self.experiment_dir = None
         self.script_options = None
 
@@ -38,13 +49,13 @@ class BaseWrapper(metaclass=WrapperRegister):
                 self.config = config
             self.mk_experiment_dir(*args, **kwargs)
 
-    def load_config(self, config_path: os.PathLike, *args, **kwargs):
+    def load_config(self, config_path: os.PathLike | str, *args, **kwargs) -> dict:
         """
         Load config takes a configuration path of either a JSON file or a YAML file and returns
         your configuration dictionary.
 
         Load_config will (unless overwritten in a subclass), do some basic "normalizations"
-        to your configuration for convenience. See :func:`~boa.wrapper_utils.normalize_config`
+        to your configuration for convenience. See :func:`.normalize_config`
         for more information about how the normalization works and what config options you
         can control.
 
@@ -53,12 +64,13 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
-        config_path : os.PathLike
+        config_path
             File path for the experiment configuration file
 
         Returns
         -------
-        loaded_config: dict
+        dict
+            loaded_config
         """
         try:
             config = load_jsonlike(config_path, normalize=False)
@@ -76,12 +88,12 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     def mk_experiment_dir(
         self,
-        experiment_dir: os.PathLike = None,
-        working_dir: os.PathLike = None,
+        experiment_dir: os.PathLike | str = None,
+        working_dir: os.PathLike | str = None,
         experiment_name: str = None,
         append_timestamp: bool = True,
         **kwargs,
-    ):
+    ) -> None:
         """
         Make the experiment directory that boa will write all of its trials and logs to.
 
@@ -92,7 +104,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
-        experiment_dir: os.PathLike
+        experiment_dir
             Path to the directory for the output of the experiment
             You may specify this or working_dir in your configuration file instead.
             (Defaults to your configuration file and then None)
@@ -102,8 +114,8 @@ class BaseWrapper(metaclass=WrapperRegister):
             Because of this only either experiment_dir or working_dir may be specified.
             You may specify this or experiment_dir in your configuration file instead.
             (Defaults to your configuration file and then None, if neither
-                experiment_dir nor working_dir are specified, working_dir defaults
-                to whatever pwd returns (and equivalent on windows))
+            experiment_dir nor working_dir are specified, working_dir defaults
+            to whatever pwd returns (and equivalent on windows))
         experiment_name: str
             Name of experiment, used for creating path to experiment dir with the working dir
             (Defaults to your configuration file and then boa_runs)
@@ -118,14 +130,14 @@ class BaseWrapper(metaclass=WrapperRegister):
         experiment_name = experiment_name or self.ex_settings.get("experiment", {}).get("name", "boa_runs")
         append_timestamp = append_timestamp or self.script_options.get("append_timestamp")
         if experiment_dir:
-            mk_exp_dir_kw = dict(experiment_dir=experiment_dir, append_timestamp=append_timestamp)
+            mk_exp_dir_kw = dict(experiment_dir=experiment_dir, append_timestamp=append_timestamp, **kwargs)
         else:  # if no exp dir, instead grab working dir from config or passed in
             if not working_dir:
                 # if no working dir (or exp dir) set to cwd
                 working_dir = Path.cwd()
 
             mk_exp_dir_kw = dict(
-                working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp
+                working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, **kwargs
             )
 
             # We use str() because make_experiment_dir returns a Path object (json serialization)
@@ -143,7 +155,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
-        trial : BaseTrial
+        trial
         """
 
     def run_model(self, trial: BaseTrial) -> None:
@@ -152,7 +164,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
-        trial : BaseTrial
+        trial
         """
 
     def set_trial_status(self, trial: BaseTrial) -> None:
@@ -172,7 +184,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
-        trial : BaseTrial
+        trial
 
         Examples
         --------
@@ -181,19 +193,28 @@ class BaseWrapper(metaclass=WrapperRegister):
         trial.mark_abandoned()
         trial.mark_early_stopped()
 
-        # You can also do
-        from ax.core.base_trial import TrialStatus
-        trial.mark_as(TrialStatus.COMPLETED)
-        # or
-        trial.mark_as(3)  # TrialStatus is an ENUM with COMPLETED being equivalent to 3
+        You can also do:
 
-        Relevant ENUM list
-        ------------------
-        # FAILED = 2
-        # COMPLETED = 3
-        # RUNNING = 4  # you don't need to set it to running, it is already set to running
-        # ABANDONED = 5
-        # EARLY_STOPPED = 7
+            from ax.core.base_trial import TrialStatus
+            trial.mark_as(TrialStatus.COMPLETED)
+
+        or:
+
+            trial.mark_as(3)  # TrialStatus is an ENUM with COMPLETED being equivalent to 3
+
+        **Relevant ENUM list**
+
+        You can set it to either to text version, or the numerical equivalent
+
+        ==================  =====
+        Relevant ENUM list   Numerical Equivalent
+        ==================  =====
+        FAILED                2
+        COMPLETED             3
+        RUNNING               4 -- you don't need to set it to running, it is already set to running
+        ABANDONED             4
+        EARLY_STOPPED         7
+        ==================  =====
 
         See Also
         --------
@@ -215,13 +236,13 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
-        trial : BaseTrial
-        metric_properties: dict
-        metric_name: str
+        trial
+        metric_properties
+        metric_name
 
         Returns
         -------
         dict
             A dictionary with the keys matching the keys of the metric function
-                used in the objective
+            used in the objective
         """

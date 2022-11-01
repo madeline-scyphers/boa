@@ -7,7 +7,7 @@ from pathlib import Path
 import click
 
 from boa.controller import Controller
-from boa.wrapper_utils import cd_and_cd_back, load_jsonlike
+from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
 
 
 @click.command()
@@ -59,10 +59,7 @@ def _main(config_path, rel_to_here, experiment_dir=None):
     config = load_jsonlike(config_path, normalize=False)
 
     script_options = config.get("script_options", {})
-    wrapper_path = script_options.get("wrapper_path", "wrapper.py")
     wrapper_name = script_options.get("wrapper_name", "Wrapper")
-    working_dir = script_options.get("working_dir")
-    experiment_dir = experiment_dir or script_options.get("experiment_dir")
     append_timestamp = script_options.get("append_timestamp", True)
 
     wrapper_path = script_options.get("wrapper_path", "wrapper.py")
@@ -83,18 +80,19 @@ def _main(config_path, rel_to_here, experiment_dir=None):
             module_name = "user_wrapper"
             spec = importlib.util.spec_from_file_location(module_name, wrapper_path)
             # create that module from that spec from above
-            UsrModule = importlib.util.module_from_spec(spec)
-            sys.modules[module_name] = UsrModule
+            user_wrapper = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = user_wrapper
             # execute the loading and importing of the module
-            spec.loader.exec_module(UsrModule)
+            spec.loader.exec_module(user_wrapper)
 
             # since we just loaded the module where the wrapper class is, we can now load it
-            WrapperCls = getattr(UsrModule, wrapper_name)
+            WrapperCls = getattr(user_wrapper, wrapper_name)
         else:
             from boa.wrappers.script_wrapper import ScriptWrapper as WrapperCls
 
         controller = Controller(config_path=config_path, wrapper=WrapperCls)
-        scheduler = controller.run(append_timestamp=append_timestamp, experiment_dir=experiment_dir)
+        controller.setup(append_timestamp=append_timestamp, experiment_dir=experiment_dir)
+        scheduler = controller.run()
         print(f"total time = {time.time() - s}")
         return scheduler
 

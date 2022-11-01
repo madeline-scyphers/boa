@@ -19,25 +19,30 @@ parameters:
     x1:
         type: range
         bounds: [0, 1]
+        value_type: float
 
     x2:
         type: range
         bounds: [0, 1]
+        value_type: float
 
     x3:
         type: range
         bounds: [0, 1]
+        value_type: float
 
     x4:
         type: range
         bounds: [0, 1]
+        value_type: float
 
     x5:
         type: fixed
-        values: .5
+        value: .5
+        value_type: float
 
 parameter_constraints:
-    - x2 + x1 => >.1
+    - x2 + x1 >= .1
     - x2 + x1 + .6*x1 <= .6
 
 model_options:

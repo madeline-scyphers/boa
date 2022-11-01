@@ -17,19 +17,23 @@ parameters:
     x1:  # Ratio of urban area that is house (not ground, not trees)
         type: range
         bounds: [0, 1]
+        value_type: float
 
     x2:  # Ratio of urban area that is ground (not house, not trees)
         type: range
         bounds: [0, 1]
+        value_type: float
 
     x3:  # Size of a plot of land (area of a house and its ground it sits on)
         type: range
         bounds: [0, 1]
+        value_type: float
 
     x4:  # The mean LAI of the canopy. There will be random perturbations to this
         type: range
         bounds: [0, 1]
+        value_type: float
 
 parameter_constraints:
-    - x2 + x1 => >.1
+    - x2 + x1 >= .1
     - x2 + x1 + .6*x1 <= .6
