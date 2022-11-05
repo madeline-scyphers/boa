@@ -1,0 +1,29 @@
+optimization_options:
+    objective_options: # can also use the key moo
+        objectives:
+            - name: rmse
+              metric: RMSE
+              noise_sd: .1
+    generation_strategy:
+        steps:
+            - model: SOBOL
+              num_trials: 5
+            - model: GPEI
+              num_trials: -1
+    scheduler:
+        total_trials: 20
+    experiment:
+        name: "test_experiment"
+
+parameters:
+    x0:
+        'bounds': [ -5, 10 ]
+        'type': 'range'
+        'value_type': 'float'
+    x1:
+        'bounds': [ 0, 15 ]
+        'type': 'range'
+        'value_type': 'float'
+
+model_options:
+    input_size: 15

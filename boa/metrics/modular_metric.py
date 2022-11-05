@@ -186,8 +186,6 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def _evaluate(self, params: TParameterization, **kwargs) -> float:
         kwargs.update(params.pop("kwargs"))
-        print(self.metric_to_eval)
-        print(kwargs)
         return self.f(**get_dictionary_from_callable(self.metric_to_eval, kwargs))
 
     def f(self, *args, **kwargs):
@@ -257,3 +255,4 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     #
     #     arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
     #     return f"{self.__class__.__name__}({arg_str})"
+from ax.service.utils.report_utils import get_standard_plots

@@ -7,7 +7,7 @@ from boa import (
     scheduler_to_json_file,
 )
 from boa.definitions import TEST_SCRIPTS_DIR
-from boa.test_scripts.script_wrappers import Wrapper
+from boa.scripts.script_wrappers import Wrapper
 
 
 def test_exp_dir_exists(script_main_run):

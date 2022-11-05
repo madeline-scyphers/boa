@@ -2,14 +2,33 @@
 optimization_options:
     objective_options:
         objectives:
-            - boa_metric: mean
+            - name: Cosine8
+              boa_metric: mean
     scheduler:
-        total_trials: 15
+        total_trials: 100
 parameters:
     x0:
         type: range
-        bounds: [-5.0, 10.0]
+        bounds: [0.0, 1.0]
     x1:
         type: range
-        bounds: [0.0, 15.0]
+        bounds: [0.0, 1.0]
+    x2:
+        type: range
+        bounds: [0.0, 1.0]
+    x3:
+        type: range
+        bounds: [0.0, 1.0]
+    x4:
+        type: range
+        bounds: [0.0, 1.0]
+    x5:
+        type: range
+        bounds: [0.0, 1.0]
+    x6:
+        type: range
+        bounds: [0.0, 1.0]
+    x7:
+        type: range
+        bounds: [0.0, 1.0]
 
