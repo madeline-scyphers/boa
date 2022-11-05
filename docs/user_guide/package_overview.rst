@@ -3,7 +3,7 @@ Package Overview
 ################
 
 
-There are 2 core components to running boa, configuration, a model wrapper. Each are detailed below.
+There are two core components to using boa: a configuration file, and a model wrapper. Each are detailed below.
 
 *****************************
 Creating a configuration File
@@ -28,18 +28,24 @@ When specifying your objective function to minimize or maximize, :doc:`BOA </ind
 Creating a model wrapper
 ************************
 
-Using a model with :doc:`BOA </index>` requires writing a minimal wrapper to define the essential functions needed for :doc:`BOA </index>` to interact
-with the model (i.e. reading and writing configurations for the model, running the model, and retrieving outputs from
-the model). This can be written in another language, and then there is a standard interface to follow
+Using a model with :doc:`BOA </index>` requires writing a minimal wrapper to define the essential functions needed for
+:doc:`BOA </index>` to interact with the model (i.e. reading and writing configurations for the model, running the
+model, and retrieving outputs from the model). This can be written in any language (not just python),
+and there is a standard interface to follow.
 
 
 See the :mod:`instructions for creating a model wrapper <.boa.wrappers>` for details.
 
 *********************************************
-Creating a run script (Sometimes Needed)
+Creating a run script (sometimes needed)
 *********************************************
 
-Most of the time you won't need to write a run script because BOA has an built-in run script in its :mod:`.controller`. But if you do need more control over your run script than that, you can either subclass :class:`.Controller` or write your own run script. Subclassing :class:`.Controller` might be easier if you just need to modify :meth:`.Controller.run` or :meth:`.Controller.setup` but can utilize the rest of the functions. If you need a lot of customization, writing your own run script might be easier. Some Custom run scripts are included in the link below.
+Most of the time you won't need to write a run script because BOA has an built-in run script in
+its :mod:`.controller`. But if you do need more control over your run script than the default
+provides, you can either subclass :class:`.Controller` or write your own run script. Subclassing
+:class:`.Controller` might be easier if you just need to modify :meth:`.Controller.run` or :meth:`.Controller.setup`
+but can utilize the rest of the functions. If you need a lot of customization, writing your own run script might be
+easier. Some Custom run scripts are included in the link below.
 
 
 See :doc:`examples of custom run scripts <run_script>` for details.
@@ -48,17 +54,17 @@ See :doc:`examples of custom run scripts <run_script>` for details.
 Starting From Command Line
 *********************************************
 
-If you are using :doc:`BOA's </index>` in built :mod:`.controller` for your run script, you can start your run easily from the command line
+If you are using :doc:`BOA's </index>` in built :mod:`.controller` for your run script,
+you can start your run easily from the command line.
 
-With your conda environment activated:
+With your conda environment for boa activated, run:
 
     python -m boa --config_path path/to/your/config/file
 
-type:
+For a list of options and descriptions, type:
 
     python -m boa --help
 
-for a list of options and descriptions
 
 .. todo::
     Add more information here when other language feature is fully merged in

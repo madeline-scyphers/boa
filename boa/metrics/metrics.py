@@ -3,9 +3,15 @@
 List of Metrics
 ########################
 
-List of Metrics that are already defined in BOA
+Metrics that are already defined in BOA:
 
-Any of these Metrics can be used directly in your configuration file
+- :class:`.MeanSquaredError`
+- :class:`.RootMeanSquaredError`
+- :class:`.RSquared`
+- :class:`.Mean`
+- :class:`.NormalizedRootMeanSquaredError`
+
+Any of these Metrics can be used directly in your configuration file.
 
 Examples
 ========

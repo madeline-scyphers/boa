@@ -18,7 +18,7 @@ and some "model" it is running (in this case it is just calling a synthetic func
 .. literalinclude:: ../../tests/scripts/stand_alone_opt_package/stand_alone_model_func.py
     :language: python
 
-as well as a configuration file (this one is in JSON, but an equivalent one in YAML would work just the same):
+as well as a configuration file:
 
 *config.py*
 
@@ -30,7 +30,7 @@ You can start and run your optimization like this:
 
 ..  code-block:: console
 
-    $ python -m config.json
+    $ python -m boa -c config.json
     Start time: 20221026T210522
     [INFO 10-26 21:05:22] ax.service.utils.instantiation: Inferred value type of ParameterType.FLOAT for parameter x0. If that is not the expected value type, you can explicity specify 'value_type' ('int', 'float', 'bool' or 'str') in parameter dict.
     [INFO 10-26 21:05:22] ax.service.utils.instantiation: Inferred value type of ParameterType.FLOAT for parameter x1. If that is not the expected value type, you can explicity specify 'value_type' ('int', 'float', 'bool' or 'str') in parameter dict.
@@ -49,6 +49,3 @@ You can start and run your optimization like this:
 
     Trials completed! Total run time: 3
     Saved JSON-serialized state of optimization to `/path/to/working/dir/boa_runs_20221026T210522/scheduler.json`.
-
-
-
