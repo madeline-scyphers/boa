@@ -186,8 +186,6 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def _evaluate(self, params: TParameterization, **kwargs) -> float:
         kwargs.update(params.pop("kwargs"))
-        print(self.metric_to_eval)
-        print(kwargs)
         return self.f(**get_dictionary_from_callable(self.metric_to_eval, kwargs))
 
     def f(self, *args, **kwargs):

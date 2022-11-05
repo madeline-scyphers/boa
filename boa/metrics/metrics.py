@@ -36,6 +36,22 @@ Examples
                 - metric: RMSE
                 - metric: R2
 
+If your metric is computed elsewhere (say by your model code or your model wrapping code),
+then you can use as a value passthrough the metric Mean. BOA will be adding
+a dedicated passthrough Metric in the near future, but for the moment you can use Mean
+and in your Wapper.fetch_trial_data you can do something like this
+
+..  code-block:: python
+
+    def fetch_trial_data(self, trial, *args, **kwargs):
+        value = get_value_somehow()
+        return dict(a=[value])
+
+Mean expects to get called with a parameter a being an array or list of values
+(notice that it isn't `dict(a=value)` it is `dict(a=[value])` with `[value]` making it
+a mean of just value, so it acts as a passthrough, but you have to return it as a dictionary
+with of a => list[value]
+
 """
 from __future__ import annotations
 

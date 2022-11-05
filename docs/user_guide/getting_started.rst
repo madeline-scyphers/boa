@@ -58,7 +58,8 @@ If you want to install the latest (bleeding-edge) develop version of boa::
 Installing for Contributing
 ********************************
 
-Clone the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
+fork the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
+and then clone your forked repo
 
 If you are not on an x86 mac (or a mac with python running through rosetta), from the root directory of the cloned repository, run::
 

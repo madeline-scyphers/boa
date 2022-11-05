@@ -27,7 +27,6 @@ install_requires = [
     "pandas",
     "numpy",
     "click",
-    "xarray",
     "sqlalchemy",
     "PyYAML",
 ]

@@ -39,6 +39,10 @@ class Controller:
     wrapper
         Your Wrapper subclass of BaseWrapper to be instantiated
 
+    See Also
+    --------
+    :ref:`Creating a configuration File`
+
     """
 
     def __init__(self, config_path: os.PathLike | str, wrapper: Type[BaseWrapper]):
@@ -62,7 +66,7 @@ class Controller:
             (default True)
         experiment_dir
             Output experiment directory to which the experiment and trials will be saved
-            (defaults to experiment_dir specified in the config,
+            (defaults to experiment_dir specified in the config script options
             or working_dir/experiment_name [if working_dir specified in config]
             or current_dir/experiment_name [if working_dir and experiment_dir and
             not specified])

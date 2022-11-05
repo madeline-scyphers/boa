@@ -1,4 +1,9 @@
 # Single objective optimization config
+########################
+# Optimization Options #
+########################
+# The general optimization options that control everything
+# from the acquisition function to what your objective metric is
 optimization_options:
     objective_options:
         objectives:
@@ -66,15 +71,41 @@ parameters:
         value: .5
         value_type: float
 
+#########################
+# Parameter Constraints #
+#########################
 # optimization parameter constraints
 parameter_constraints:
     - x2 + x1 >= .1
     - x2 + x1 + .6*x1 <= .6
 
+
+#################
+# Model Options #
+#################
 # non optimization model options
-# anything can go here
+# anything can go here that you want to pass to your model
+# instead of BOA
 model_options:
     model_specific_options:
         - 1
         - 2
         - 3
+
+##################
+# Script Options #
+##################
+# The script options section is for is you are using the BOA command line
+# interface and passing your configuration file directly by path to BOA
+# by command line
+# see the example "Running an Experiment from Command Line (Python Wrapper)" for more info
+script_options:
+#    wrapper_path: ./wrapper.py
+#    wrapper_name: Wrapper
+#    working_dir: .
+#    # this is where boa will write logs to by default
+#    # if not specified it will be working_dir/experiment_name
+#    experiment_dir: ...
+#    append_timestamp: True
+ This last option appends a timestamp to our output experiment directory.
+ This is also the default (True)
