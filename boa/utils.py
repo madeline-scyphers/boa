@@ -1,8 +1,18 @@
+"""
+###################################
+General Package Utility Functions
+###################################
+
+Utility functions useful for various package things like
+getting the signature matching
+
+"""
+
 from __future__ import annotations
 
 import inspect
 from collections.abc import Iterable, Mapping
-from typing import Callable, Optional
+from typing import Any, Callable, Optional, Type
 
 
 def get_callable_signature(callable: Callable) -> inspect.Signature:
@@ -19,15 +29,15 @@ def get_dictionary_matching_signature(
     args = {}
     exclude_fields = exclude_fields or []
     params = signature.parameters
-    if accept_all_kwargs:
-        for param in params.values():
-            if param.kind == param.VAR_KEYWORD:  # this accepts **kwargs, therefore let everything through
-                for key, value in d.items():
-                    if match_private and (key.startswith("_") or key.startswith("__")):
-                        key = key.lstrip("_")
-                    if key not in exclude_fields:
-                        args[key] = value
-                return args
+
+    has_kwargs = inspect.Parameter.VAR_KEYWORD in [param.kind for param in params.values()]
+    if accept_all_kwargs and has_kwargs:
+        for key, value in d.items():
+            if match_private and (key.startswith("_") or key.startswith("__")):
+                key = key.lstrip("_")
+            if key not in exclude_fields:
+                args[key] = value
+        return args
 
     for key, value in d.items():
         if match_private and (key.startswith("_") or key.startswith("__")):
@@ -42,15 +52,27 @@ def get_dictionary_from_callable(callable: Callable, d: dict, **kwargs) -> dict:
     return get_dictionary_matching_signature(signature, d, **kwargs)
 
 
-def serialize_init_args(instance, *, parents, match_private: bool = False, **kwargs):
+def serialize_init_args(class_, *, parents: list[Type] = None, match_private: bool = False, **kwargs):
+    """Given an object, return a dictionary of the arguments that are
+    needed by its constructor.
+    """
+    args = vars(class_)  # TODO don't use vars? maybe?
+    return extract_init_args(args, class_=class_, parents=parents, match_private=match_private, **kwargs)
+
+
+def extract_init_args(
+    args: dict[str, Any], class_: Type, *, parents: list[Type] = None, match_private: bool = False, **kwargs
+) -> dict[str, Any]:
+    """Given a dictionary, extract the arguments required for the
+    given class's constructor.
+    """
     parents = parents or []
-    args = vars(instance)  # TODO don't use vars?
     kw = {}
 
     parents_init = [parent.__init__ for parent in parents]
-    callable_ls = [instance.__class__.__init__, *parents_init]
-    for callable in callable_ls:
-        kw.update(get_dictionary_from_callable(callable, args, match_private=match_private, **kwargs))
+    init_ls = [class_.__class__.__init__, *parents_init]
+    for init in init_ls:
+        kw.update(get_dictionary_from_callable(init, args, match_private=match_private, **kwargs))
     return kw
 
 

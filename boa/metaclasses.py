@@ -1,3 +1,14 @@
+"""
+########################
+Meta Classes
+########################
+
+Meta class modify class behaviors. For example, the :class:`.WrapperRegister` ensures that all subclasses of
+:class:`.BaseWrapper` will wrap functions in :func:`.cd_and_cd_back_dec`
+to make sure that if users do any directory changes inside a wrapper function,
+the original directory is returned to afterwards.
+
+"""
 import logging
 import traceback
 from abc import ABCMeta
@@ -7,7 +18,7 @@ from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_R
 from ax.storage.metric_registry import CORE_METRIC_REGISTRY
 from ax.storage.runner_registry import CORE_RUNNER_REGISTRY
 
-from boa.wrapper_utils import cd_and_cd_back_dec
+from boa.wrappers.wrapper_utils import cd_and_cd_back_dec
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +64,3 @@ class MetricRegister(ABCMeta):
         CORE_DECODER_REGISTRY[cls.__name__] = cls
         next_pk = max(CORE_METRIC_REGISTRY.values()) + 1
         CORE_METRIC_REGISTRY[cls] = next_pk
-
-
-class MetricToEvalRegister(type):
-    def __init__(cls, *args, **kwargs):
-        CORE_ENCODER_REGISTRY[cls] = cls.to_dict
-        CORE_DECODER_REGISTRY[cls.__name__] = cls

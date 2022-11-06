@@ -6,7 +6,7 @@ from pathlib import Path
 import click
 
 from boa.controller import Controller
-from boa.wrapper_utils import cd_and_cd_back, load_jsonlike
+from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
 
 
 @click.command()
@@ -84,10 +84,12 @@ def _main(config_path, rel_to_here, experiment_dir=None):
             # since we just loaded the module where the wrapper class is, we can now load it
             WrapperCls = getattr(user_wrapper, wrapper_name)
         else:
-            from boa.wrapper import BaseWrapper as WrapperCls
+            from boa.wrappers.wrapper import BaseWrapper as WrapperCls
 
         controller = Controller(config_path=config_path, wrapper=WrapperCls)
-        scheduler = controller.run(append_timestamp=append_timestamp, experiment_dir=experiment_dir)
+
+        controller.setup(append_timestamp=append_timestamp, experiment_dir=experiment_dir)
+        scheduler = controller.run()
         return scheduler
 
 

@@ -107,7 +107,7 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
         with open(Path(config_path), "w") as file:
             json.dump(config, file)
     else:
-        config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.json"
+        config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.yaml"
 
     args = f"--config_path {config_path} -td"
     yield dunder_main.main(args.split(), standalone_mode=False)

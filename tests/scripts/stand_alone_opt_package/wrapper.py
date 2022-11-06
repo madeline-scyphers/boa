@@ -3,10 +3,10 @@ from __future__ import annotations
 from ax import Trial
 from stand_alone_model_func import run_branin_from_trial
 
-from boa.wrapper import BaseWrapper
+import boa
 
 
-class Wrapper(BaseWrapper):
+class Wrapper(boa.BaseWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data = {}

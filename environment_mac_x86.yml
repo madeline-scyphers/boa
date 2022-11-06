@@ -1,5 +1,6 @@
-name: boa
+name: boa2
 channels:
+#- pytorch-nightly
 - pytorch
 - conda-forge
 - anaconda
@@ -7,21 +8,20 @@ channels:
 dependencies:
 - python=3.9
 - mkl<2022
-- pytorch::pytorch<1.12.0
-- pytorch::torchvision
-- pytorch::torchaudio
+- pytorch<1.12.0
+- torchvision
+- torchaudio
 - numpy
 - pandas
-- xarray
-- dask
-- netCDF4
-- bottleneck
 - scipy
 - scikit-learn
 - click
 - sqlalchemy
+- plotly
+- notebook
+- ipywidgets
+- ax-platform
+- PyYAML
 - pip
 - pip:
-  - ax-platform>=0.2.8
-  - PyYAML
-  - -e .
+  - -e . --install-option="--no-deps"

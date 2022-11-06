@@ -1,3 +1,12 @@
+"""
+###################################
+Ax Instantiation Utility Functions
+###################################
+
+Utility functions to instantiate Ax objects
+
+"""
+
 from __future__ import annotations
 
 import copy
@@ -55,7 +64,7 @@ def get_scheduler(
     generation_strategy: GenerationStrategy = None,
     scheduler_options: SchedulerOptions = None,
     config: dict = None,
-):
+) -> Scheduler:
     scheduler_options = scheduler_options or SchedulerOptions(**config["optimization_options"]["scheduler"])
     if generation_strategy is None:
         if (
