@@ -17,21 +17,16 @@ readme = open("README.md").read()
 # set the install requirements
 install_requires = [
     "torch>=1.9",
-    "torch>=1.9,<1.12.0;(platform_machine!='arm64' and sys_platform=='darwin')",
-    "mkl<2022;(platform_machine!='arm64' and sys_platform=='darwin')",
     "torchvision",
     "torchaudio",
     "gpytorch>=1.5",
     "botorch>=0.5",
-    "ax-platform>=0.2.0",
+    "ax-platform>=0.2.8",
     "scikit-learn",
     "scipy",
-    # 2022/09/25 Pinning because pandas 1.4.3 broke something with ax
-    # ax is working on a fix
-    "pandas<=1.4.0",
+    "pandas",
     "numpy",
     "click",
-    "xarray",
     "sqlalchemy",
     "PyYAML",
 ]

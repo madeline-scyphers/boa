@@ -1,9 +1,10 @@
 .. _contributions:
+
 ###################
 Contributing to boa
 ###################
 
-First make sure you have read :ref:`getting_started` to get your development environment set up
+First make sure you have read :doc:`/user_guide/getting_started` to get your development environment set up
 
 When in question about rst, see references under docs/references in the source code.
 

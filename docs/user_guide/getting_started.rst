@@ -1,7 +1,8 @@
 .. _getting_started:
-###############
-Getting Started
-###############
+
+##############################
+Installing and Test Run
+##############################
 
 ************
 Installation
@@ -42,7 +43,8 @@ If you are not on an x86 mac (or a mac with python running through rosetta), run
 
 x86 macs (or a mac with python running through rosetta), run::
 
-    conda install botorch -c pytorch-nightly -c pytorch -c gpytorch -c conda-forge
+    conda install pytorch<1.12.0 -c pytorch
+    conda install botorch -c pytorch -c gpytorch -c conda-forge
     pip install ax-platform
 
 Install boa::
@@ -57,7 +59,8 @@ If you want to install the latest (bleeding-edge) develop version of boa::
 Installing for Contributing
 ********************************
 
-Clone the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
+fork the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
+and then clone your forked repo
 
 If you are not on an x86 mac (or a mac with python running through rosetta), from the root directory of the cloned repository, run::
 
@@ -83,6 +86,6 @@ Once everything is installed, run the test script to ensure everything is instal
 
 If this test case runs successfully, you can move on to the next steps.
 
-:ref:`contributions`
+:doc:`/contributing`
 
-If you have errors, see the :ref:`Troubleshooting` section.
+If you have errors, see the :doc:`/troubleshooting` section.

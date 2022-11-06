@@ -1,7 +1,7 @@
 Welcome to boa's documentation!
 ====================================
 
-``boa`` is a high-level Bayesian optimization framework and model wrapping tool. It provides an easy-to-use interface
+:doc:`BOA's </index>` is a high-level Bayesian optimization framework and model wrapping tool. It provides an easy-to-use interface
 between models and the python libraries `Ax <https://ax.dev>`_ and `BoTorch <https://botorch.org>`_.
 
 Key features
@@ -32,9 +32,8 @@ Contents
 .. toctree::
     :maxdepth: 2
 
-    overview
     user_guide/index
-    notebooks/index
+    examples/index
     troubleshooting
     changelog
     Code reference <code_reference>

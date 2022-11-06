@@ -39,37 +39,47 @@ params:
         x1:
             type: range
             bounds: [0, 1]
+            value_type: float
         x2:
             type: fixed
             value: 0.5
+            value_type: float
     b:
         x1:
             type: range
             bounds: [ 0, 1 ]
+            value_type: float
         x2:
             type: fixed
             value: 0.5
+            value_type: float
 
 params_a:
     x1:
         type: range
         bounds: [ 0, 1 ]
+        value_type: float
     x2:
         type: fixed
         value: 0.5
+        value_type: float
 
 params2:
     - 0:
           x1:
               type: range
               bounds: [ 0, 1 ]
+              value_type: float
           x2:
               type: fixed
               value: 0.5
+              value_type: float
     - 0:
           x1:
               type: range
               bounds: [ 0, 1 ]
+              value_type: float
           x2:
               type: fixed
               value: 0.5
+              value_type: float

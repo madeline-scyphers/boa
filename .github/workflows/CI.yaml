@@ -53,14 +53,15 @@ jobs:
       - name: Lint
         shell: bash -l {0}
         run: |
-          invoke lint
-          invoke black --checkonly
-          invoke isort --checkonly
+          invoke style --checkonly
 
       - name: Run tests
         shell: bash -l {0}
-        run: pytest -s
+        run: invoke tests --options '-s -v'
 
+      - name: Test docs build with no errors
+        shell: bash -l {0}
+        run:  invoke docs -w
   mac:
 
     strategy:
