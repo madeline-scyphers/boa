@@ -3,7 +3,7 @@
 Controller
 ###################################
 
-The Controller class controls the optimization
+The Controller class controls the optimization.
 
 """
 from __future__ import annotations
@@ -27,17 +27,21 @@ from boa.wrappers.wrapper_utils import get_dt_now_as_str
 class Controller:
     """
     Controls the instantiation of your :class:`.BaseWrapper` and the
-    necessary ax objects to start your experiment and control
-    the ax scheduler. Once it sets up your Experiment, it starts
-    the scheduler to have the scheduler run your trials, and then it
+    necessary Ax objects to start your Experiment and control
+    the Ax scheduler. Once the Controller sets up your Experiment, it starts
+    the scheduler, which runs your trials. It then
     saves the scheduler to a json file.
 
     Parameters
     ----------
     config_path
-        path to configuration yaml or json file
+        Path to configuration yaml or json file
     wrapper
         Your Wrapper subclass of BaseWrapper to be instantiated
+
+    See Also
+    --------
+    :ref:`Creating a configuration File`
 
     """
 
@@ -53,17 +57,17 @@ class Controller:
         self, append_timestamp: bool = None, experiment_dir: os.PathLike = None, **kwargs
     ) -> tuple[Scheduler, BaseWrapper]:
         """
-        Sets up all the classes and objects needed to create the ax Scheduler
+        Sets up all the classes and objects needed to create the Ax Scheduler
 
         Parameters
         ----------
         append_timestamp
-            whether to append the output experiment directory with a timestamp or not
+            Whether to append the output experiment directory with a timestamp or not
             (default True)
         experiment_dir
-            output experiment directory to save the experiment and trials to
-            (defaults to what is specified in the config,
-            or what working_dir/experiment_name [working_dir specified in config]
+            Output experiment directory to which the experiment and trials will be saved
+            (defaults to experiment_dir specified in the config script options
+            or working_dir/experiment_name [if working_dir specified in config]
             or current_dir/experiment_name [if working_dir and experiment_dir and
             not specified])
 

@@ -22,7 +22,10 @@ parameters:
 #script_options:
 #    wrapper_path: ./wrapper.py
 #    wrapper_name: Wrapper
-#    working_dur: .
+#    working_dir: .
+#    # this is where boa will write logs to by default
+#    # if not specified it will be working_dir/experiment_name
+#    experiment_dir: ...
 #    append_timestamp: True
 # This last option appends a timestamp to our output experiment directory.
 # This is also the default (True)

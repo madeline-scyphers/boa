@@ -43,7 +43,8 @@ If you are not on an x86 mac (or a mac with python running through rosetta), run
 
 x86 macs (or a mac with python running through rosetta), run::
 
-    conda install botorch -c pytorch-nightly -c pytorch -c gpytorch -c conda-forge
+    conda install pytorch<1.12.0 -c pytorch
+    conda install botorch -c pytorch -c gpytorch -c conda-forge
     pip install ax-platform
 
 Install boa::
@@ -58,7 +59,8 @@ If you want to install the latest (bleeding-edge) develop version of boa::
 Installing for Contributing
 ********************************
 
-Clone the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
+fork the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
+and then clone your forked repo
 
 If you are not on an x86 mac (or a mac with python running through rosetta), from the root directory of the cloned repository, run::
 

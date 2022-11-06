@@ -3,10 +3,10 @@
 Meta Classes
 ########################
 
-Meta class modify class behaviors, such as having all subclasses of
+Meta class modify class behaviors. For example, the :class:`.WrapperRegister` ensures that all subclasses of
 :class:`.BaseWrapper` will wrap functions in :func:`.cd_and_cd_back_dec`
-to make sure whatever directory changes users do inside a wrapper function,
-the directory is returned afterwards.
+to make sure that if users do any directory changes inside a wrapper function,
+the original directory is returned to afterwards.
 
 """
 import logging
