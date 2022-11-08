@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-import json
 import logging
 import subprocess
 
 from ax.core.base_trial import BaseTrial, TrialStatus
-from ax.exceptions.core import AxError
-from ax.storage.json_store.encoder import object_to_json
 
 import boa.metrics.metrics
 from boa.utils import get_dictionary_from_callable
 from boa.wrappers.base_wrapper import BaseWrapper
-from boa.wrappers.wrapper_utils import get_trial_dir, load_jsonlike, split_shell_command
+from boa.wrappers.wrapper_utils import (
+    get_trial_dir,
+    load_jsonlike,
+    save_trial_data,
+    split_shell_command,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -254,29 +256,7 @@ class ScriptWrapper(BaseWrapper):
         if run_cmd:
             # TODO BaseTrial doesn't have arm property, just arms.
             # With issue #22, fix this to fully support Batched Trials
-            trial_dir = get_trial_dir(self.experiment_dir, trial.index)
-            trial_dir.mkdir(parents=True, exist_ok=True)
-            kw = {}
-            for key, value in kwargs.items():
-                try:
-                    kw[key] = object_to_json(value)
-                except (AxError, ValueError) as e:
-                    kw[key] = str(value)
-                    logger.warning(e)
-            parameters_jsn = object_to_json(trial.arm.parameters)
-            trial_jsn = object_to_json(trial)
-            data = {
-                "parameters": parameters_jsn,
-                "trial": trial_jsn,
-                "trial_index": trial.index,
-                "trial_dir": str(trial_dir),
-                **kw,
-            }
-            for name, jsn in zip(["parameters", "trial", "data"], [parameters_jsn, trial_jsn, data]):
-                file_path = trial_dir / f"{name}.json"
-                if not file_path.exists():
-                    with open(file_path, "w+") as file:  # pragma: no cover
-                        file.write(json.dumps(jsn))
+            trial_dir = save_trial_data(trial, experiment_dir=self.experiment_dir, **kwargs)
             # for name, jsn in kw.items():
             #     file_path = trial_dir / f"{name}.json"
             #     if not file_path.exists():

@@ -21,7 +21,10 @@ from pathlib import Path
 from typing import Union
 
 import yaml
+from ax.core.base_trial import BaseTrial
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
+from ax.exceptions.core import AxError
+from ax.storage.json_store.encoder import object_to_json
 from ax.utils.common.docutils import copy_doc
 
 from boa.definitions import IS_WINDOWS
@@ -556,4 +559,36 @@ def make_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs
     """
     trial_dir = get_trial_dir(experiment_dir, trial_index, **kwargs)
     trial_dir.mkdir()
+    return trial_dir
+
+
+def save_trial_data(trial: BaseTrial, trial_dir: Path = None, experiment_dir: os.PathLike | str = None, **kwargs):
+    """Save trial data (trial.json, parameters.json and data.json) to
+    either: supplied trial_dir or supplied experiment_dir / trial.index
+    """
+
+    if not trial_dir:
+        trial_dir = get_trial_dir(experiment_dir, trial.index)
+        trial_dir.mkdir(parents=True, exist_ok=True)
+    kw = {}
+    for key, value in kwargs.items():
+        try:
+            kw[key] = object_to_json(value)
+        except (AxError, ValueError) as e:
+            kw[key] = str(value)
+            logger.warning(e)
+    parameters_jsn = object_to_json(trial.arm.parameters)
+    trial_jsn = object_to_json(trial)
+    data = {
+        "parameters": parameters_jsn,
+        "trial": trial_jsn,
+        "trial_index": trial.index,
+        "trial_dir": str(trial_dir),
+        **kw,
+    }
+    for name, jsn in zip(["parameters", "trial", "data"], [parameters_jsn, trial_jsn, data]):
+        file_path = trial_dir / f"{name}.json"
+        if not file_path.exists():
+            with open(file_path, "w+") as file:  # pragma: no cover
+                file.write(json.dumps(jsn))
     return trial_dir
