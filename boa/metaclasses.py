@@ -49,6 +49,8 @@ class WrapperRegister(ABCMeta):
         cls.run_model = write_exception_to_log(cd_and_cd_back_dec()(cls.run_model))
         cls.set_trial_status = write_exception_to_log(cd_and_cd_back_dec()(cls.set_trial_status))
         cls.fetch_trial_data = write_exception_to_log(cd_and_cd_back_dec()(cls.fetch_trial_data))
+        cls.fetch_all_trial_data = write_exception_to_log(cd_and_cd_back_dec()(cls.fetch_all_trial_data))
+        cls._fetch_all_metrics = write_exception_to_log(cd_and_cd_back_dec()(cls._fetch_all_metrics))
         super().__init__(*args, **kwargs)
 
 

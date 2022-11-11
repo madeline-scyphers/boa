@@ -6,7 +6,7 @@ import pytest
 
 import boa.__main__ as dunder_main
 import boa.scripts.run_branin as run_branin
-from boa import cd_and_cd_back, load_yaml, split_shell_command
+from boa import Controller, cd_and_cd_back, load_yaml, split_shell_command
 from boa.definitions import ROOT
 
 logger = logging.getLogger(__file__)

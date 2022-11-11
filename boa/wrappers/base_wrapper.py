@@ -33,14 +33,20 @@ class BaseWrapper(metaclass=WrapperRegister):
     kwargs
     """
 
-    def __init__(self, config_path: os.PathLike = None, *args, **kwargs):
+    def __init__(self, config_path: os.PathLike = None, config: dict = None, *args, **kwargs):
         self.model_settings = {}
         self.ex_settings = {}
         self.experiment_dir = None
         self.script_options = None
 
-        if config_path:
-            self.config = None
+        self._metric_dict = None
+
+        self.config = None
+        if config:
+            self.config = config
+            self.mk_experiment_dir(*args, **kwargs)
+
+        elif config_path:
             config = self.load_config(config_path, *args, **kwargs)
             # if load_config returns something, set to self.config
             # if users overwrite load_config and don't return anything, we don't
@@ -220,6 +226,21 @@ class BaseWrapper(metaclass=WrapperRegister):
         --------
         # TODO add sphinx link to ax trial status
         """
+
+    def _fetch_all_metrics(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
+        if self._metric_dict:  # if defined previously, return with only correct metric that called this time
+            return self._metric_dict.get(metric_name, {})
+        self._metric_dict = self.fetch_all_trial_data(trial=trial, metric_properties=metric_properties, *args, **kwargs)
+        # if returned with not None (user defined this), return with only correct metric that called this time
+        if self._metric_dict:
+            return self._metric_dict.get(metric_name, {})
+        # Else call fetch trial data one at a time for each metric as it comes in
+        return self.fetch_trial_data(
+            trial=trial, metric_properties=metric_properties, metric_name=metric_name, *args, **kwargs
+        )
+
+    def fetch_all_trial_data(self, trial: BaseTrial, metric_properties: dict, *args, **kwargs) -> dict:
+        """"""
 
     def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
         """

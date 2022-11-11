@@ -11,7 +11,7 @@ import logging
 from functools import partial
 from typing import Any, Callable, Optional
 
-from ax import Metric
+from ax import Data, Metric
 from ax.core.base_trial import BaseTrial
 from ax.core.types import TParameterization
 from ax.metrics.noisy_function import NoisyFunctionMetric
@@ -155,7 +155,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def fetch_trial_data(self, trial: BaseTrial, **kwargs):
         wrapper_kwargs = (
-            self.wrapper.fetch_trial_data(
+            self.wrapper._fetch_all_metrics(
                 trial=trial,
                 metric_properties=self.properties,
                 metric_name=self.name,
@@ -171,7 +171,6 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         for arm in trial.arms_by_name.values():
             arm._parameters["kwargs"] = safe_kwargs
         try:
-            # if isinstance(self.metric_to_eval.func, Metric):
             if isinstance(self.metric_to_eval, Metric):
                 trial_data = self.metric_to_eval.fetch_trial_data(
                     trial=trial,
@@ -179,6 +178,10 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
                 )
             else:
                 trial_data = super().fetch_trial_data(trial=trial, **safe_kwargs)
+            if "sem" in safe_kwargs:
+                trial_df = trial_data.df
+                trial_df["sem"] = safe_kwargs["sem"]
+                trial_data = Data(df=trial_df)
         finally:
             # We remove the extra parameters from the arms for json serialization
             [arm._parameters.pop("kwargs") for arm in trial.arms_by_name.values()]
@@ -186,6 +189,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def _evaluate(self, params: TParameterization, **kwargs) -> float:
         kwargs.update(params.pop("kwargs"))
+
         return self.f(**get_dictionary_from_callable(self.metric_to_eval, kwargs))
 
     def f(self, *args, **kwargs):
@@ -255,4 +259,3 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     #
     #     arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
     #     return f"{self.__class__.__name__}({arg_str})"
-from ax.service.utils.report_utils import get_standard_plots

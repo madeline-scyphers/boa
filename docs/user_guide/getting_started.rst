@@ -82,7 +82,7 @@ Test run
 
 Once everything is installed, run the test script to ensure everything is install properly::
 
-    python -m boa.test_scripts.run_branin
+    python -m boa.scripts.run_branin
 
 If this test case runs successfully, you can move on to the next steps.
 
