@@ -10,7 +10,6 @@ the original directory is returned to afterwards.
 
 """
 import logging
-import traceback
 from abc import ABCMeta
 from functools import wraps
 
@@ -29,10 +28,8 @@ def write_exception_to_log(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except Exception:
-            logger.warning(
-                "Boa Wrapper Exception encountered in %s. Traceback: %s", func.__name__, traceback.format_exc()
-            )
+        except Exception as e:
+            logger.exception(f"Boa Wrapper encountered Exception: {e!r} in %s", func.__name__)
             raise
 
     return wrapper
@@ -48,7 +45,7 @@ class WrapperRegister(ABCMeta):
         cls.write_configs = write_exception_to_log(cd_and_cd_back_dec()(cls.write_configs))
         cls.run_model = write_exception_to_log(cd_and_cd_back_dec()(cls.run_model))
         cls.set_trial_status = write_exception_to_log(cd_and_cd_back_dec()(cls.set_trial_status))
-        cls.fetch_trial_data = write_exception_to_log(cd_and_cd_back_dec()(cls.fetch_trial_data))
+        cls.fetch_trial_data_single = write_exception_to_log(cd_and_cd_back_dec()(cls.fetch_trial_data_single))
         cls.fetch_all_trial_data = write_exception_to_log(cd_and_cd_back_dec()(cls.fetch_all_trial_data))
         cls._fetch_all_metrics = write_exception_to_log(cd_and_cd_back_dec()(cls._fetch_all_metrics))
         super().__init__(*args, **kwargs)

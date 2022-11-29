@@ -5,8 +5,6 @@ import subprocess
 
 from ax.core.base_trial import BaseTrial, TrialStatus
 
-import boa.metrics.metrics
-from boa.utils import get_dictionary_from_callable
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import (
     get_trial_dir,
@@ -163,7 +161,81 @@ class ScriptWrapper(BaseWrapper):
                 except ValueError as e:
                     raise ValueError(f"Invalid trial status - {trial_status} - passed to `set_trial_status`") from e
 
-    def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
+    def fetch_all_trial_data(self, trial: BaseTrial, metric_properties: dict, *args, **kwargs) -> dict:
+        """
+        Retrieves the trial data and prepares it for the metric(s) used in the objective
+        function.
+
+        For example, for a case where you are minimizing the error between a model and observations, using RMSE as a
+        metric, this function would load the model output and the corresponding observation data that will be passed to
+        the RMSE metric.
+
+        The return value of this function is a dictionary, with keys that match the keys
+        of the metric used in the objective function.
+
+        You only need to specify either `fetch_all_trial_data` or `fetch_trial_data_single` and
+        for the case of ScriptWrapper, they ammount to basically the same thing.
+
+
+        .. code-block:: json
+
+            {
+                "mean": {
+                    "a": [-0.3691, 4.6544, 1.2675, -0.4327]
+                }
+            }
+
+        We use "mean" as the key in the above example, because we assumed
+        the metric that was specified in the config under objectives was mean.
+        mean is a wrapper around numpy mean, which takes as an argument an
+        array called a.
+        # TODO add link to numpy mean
+        # TODO add args to metrics in metric section
+
+        Multiple metrics can be specified for a Multi Objective Optimization,
+
+        .. code-block:: json
+
+            {
+                "mean": {
+                    "a": [-0.3691, 4.6544, 1.2675, -0.4327]
+                },
+                "MSE": {
+                    "y_true": [1.12, 1.25, 2.54, 4.52]
+                    "y_pred": [1.51, 1.01, 2.21, 4.50]
+                }
+            }
+
+        Parameters
+        ----------
+        trial : BaseTrial
+        metric_properties: dict
+            metric_properties specified in configuration file associated with metric
+            calling this fetch trial data
+
+        Returns
+        -------
+        dict
+            A dictionary with the keys matching the keys of the metric function
+                used in the objective
+        """
+        self._run_subprocess_script_cmd_if_exists(
+            trial,
+            func_names=[
+                "fetch_trial_data",
+                "fetch_all_trial_data",
+            ],
+            block=True,
+        )
+        data = self._read_subprocess_script_output(
+            trial, file_names=["output", "outputs", "result", "results", "metric", "metrics"]
+        )
+        if data:
+            return data
+
+    def fetch_trial_data_single(
+        self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs
+    ) -> dict:
         """
         Retrieves the trial data and prepares it for the metric(s) used in the objective
         function.
@@ -220,18 +292,30 @@ class ScriptWrapper(BaseWrapper):
             A dictionary with the keys matching the keys of the metric function
                 used in the objective
         """
-        self._run_subprocess_script_cmd_if_exists(trial, "fetch_trial_data", block=True)
-        data = self._read_subprocess_script_output(
-            trial, file_names=["output", "outputs", "result", "results", "metric", "metrics"]
-        )
+        if not (
+            data := self._read_subprocess_script_output(
+                trial, file_names=["output", "outputs", "result", "results", "metric", "metrics"]
+            )
+        ):
+            self._run_subprocess_script_cmd_if_exists(
+                trial,
+                func_names=[
+                    "fetch_trial_data",
+                    "fetch_trial_data_single",
+                ],
+                block=True,
+            )
+            data = self._read_subprocess_script_output(
+                trial, file_names=["output", "outputs", "result", "results", "metric", "metrics"]
+            )
         if data:
             for key, values in data.items():
                 if key.lower() == metric_name.lower():
-                    metric_closure = boa.metrics.metrics._get_boa_metric_any_case(metric_name)
-                    metric = metric_closure()
-                    return get_dictionary_from_callable(metric.metric_to_eval, values)
+                    return values
 
-    def _run_subprocess_script_cmd_if_exists(self, trial: BaseTrial, func_name: str, block: bool = False, **kwargs):
+    def _run_subprocess_script_cmd_if_exists(
+        self, trial: BaseTrial, func_names: list[str] | str, block: bool = False, **kwargs
+    ):
         """
         Run a script command from their config file in a subproccess.
         Dump the trial data into a json file for them to collect if need be
@@ -252,38 +336,42 @@ class ScriptWrapper(BaseWrapper):
         bool
             True if a script was run, False otherwise
         """
-        run_cmd = self.config.get("script_options", {}).get(f"{func_name}_run_cmd")
-        if run_cmd:
-            # TODO BaseTrial doesn't have arm property, just arms.
-            # With issue #22, fix this to fully support Batched Trials
-            trial_dir = save_trial_data(trial, experiment_dir=self.experiment_dir, **kwargs)
-            # for name, jsn in kw.items():
-            #     file_path = trial_dir / f"{name}.json"
-            #     if not file_path.exists():
-            #         with open(file_path, "w+") as file:  # pragma: no cover
-            #             file.write(json.dumps(jsn))
-            # output_file = trial_dir / f"{func_name}_to_wrapper.json"
-            # with open(output_file, "w+") as file:  # pragma: no cover
-            #     file.write(json.dumps(data))
+        if isinstance(func_names, str):
+            func_names = [func_names]
+        ran_cmds = False
+        for func_name in func_names:
+            run_cmd = self.config.get("script_options", {}).get(f"{func_name}_run_cmd")
+            if run_cmd:
+                ran_cmds = True
+                # TODO BaseTrial doesn't have arm property, just arms.
+                # With issue #22, fix this to fully support Batched Trials
+                trial_dir = save_trial_data(trial, experiment_dir=self.experiment_dir, **kwargs)
+                # for name, jsn in kw.items():
+                #     file_path = trial_dir / f"{name}.json"
+                #     if not file_path.exists():
+                #         with open(file_path, "w+") as file:  # pragma: no cover
+                #             file.write(json.dumps(jsn))
+                # output_file = trial_dir / f"{func_name}_to_wrapper.json"
+                # with open(output_file, "w+") as file:  # pragma: no cover
+                #     file.write(json.dumps(data))
 
-            args = split_shell_command(f"{run_cmd} {trial_dir}")
-            p = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
-            if block:
-                p.communicate()
-            # TODO move polling and print to another thread so it doesn't block but still writes to log?
-            # Grab stdout line by line as it becomes available.
-            # This will loop until p terminates.
-            # while p.poll() is None:
-            #     l = p.stdout.readline()  # This blocks until it receives a newline.
-            #     if l:
-            #         logger.info(l)
-            # # When the subprocess terminates there might be unconsumed output
-            # # that still needs to be processed.
-            # l = p.stdout.read()
-            # if l:
-            #     logger.info(l)
-            return True
-        return False
+                args = split_shell_command(f"{run_cmd} {trial_dir}")
+                p = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
+                if block:
+                    p.communicate()
+                # TODO move polling and print to another thread so it doesn't block but still writes to log?
+                # Grab stdout line by line as it becomes available.
+                # This will loop until p terminates.
+                # while p.poll() is None:
+                #     l = p.stdout.readline()  # This blocks until it receives a newline.
+                #     if l:
+                #         logger.info(l)
+                # # When the subprocess terminates there might be unconsumed output
+                # # that still needs to be processed.
+                # l = p.stdout.read()
+                # if l:
+                #     logger.info(l)
+        return ran_cmds
 
     def _read_subprocess_script_output(self, trial: BaseTrial, file_names: list[str] | str):
         trial_dir = get_trial_dir(self.experiment_dir, trial.index)

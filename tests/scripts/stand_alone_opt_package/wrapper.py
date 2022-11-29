@@ -19,5 +19,5 @@ class Wrapper(boa.BaseWrapper):
         if data_exists:
             trial.mark_completed()
 
-    def fetch_trial_data(self, trial: Trial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
+    def fetch_trial_data_single(self, trial: Trial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
         return dict(a=self.data[trial.index])

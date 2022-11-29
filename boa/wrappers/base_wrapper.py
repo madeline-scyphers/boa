@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
-from pathlib import Path
+import pathlib
 
 from ax.core.base_trial import BaseTrial
 
@@ -34,26 +34,63 @@ class BaseWrapper(metaclass=WrapperRegister):
     """
 
     def __init__(self, config_path: os.PathLike = None, config: dict = None, *args, **kwargs):
-        self.model_settings = {}
-        self.ex_settings = {}
         self.experiment_dir = None
-        self.script_options = None
-
-        self._metric_dict = None
+        self.ex_settings = {}
+        self.model_settings = {}
+        self.script_options = {}
+        self._metric_dict = {}
+        self._metric_properties = {}
+        self._metric_names = kwargs.get("metric_names", [])
 
         self.config = None
         if config:
             self.config = config
-            self.mk_experiment_dir(*args, **kwargs)
 
         elif config_path:
             config = self.load_config(config_path, *args, **kwargs)
             # if load_config returns something, set to self.config
-            # if users overwrite load_config and don't return anything, we don't
-            # want to set it to self.config if they set it in load_config
+            # if users overwrite load_config and don't return anything,
+            # we assume they set self.config in load_config and don't want
+            # to override it here (and set it to None)
             if config is not None:
                 self.config = config
-            self.mk_experiment_dir(*args, **kwargs)
+
+        if self.config:
+            experiment_dir = self.mk_experiment_dir(*args, **kwargs)
+            if not self.experiment_dir:
+                if experiment_dir:
+                    self.experiment_dir = experiment_dir
+                elif self.ex_settings["experiment_dir"]:
+                    self.experiment_dir = pathlib.Path(self.ex_settings["experiment_dir"])
+                else:
+                    raise ValueError("No experiment_dir set or returned from mk_experiment_dir")
+
+    @property
+    def metric_names(self):
+        """list of metric names names associated with this experiment"""
+        return self._metric_names
+
+    @metric_names.setter
+    def metric_names(self, metric_names):
+        self._metric_names = metric_names
+
+    @property
+    def config(self):
+        return self._config
+
+    @config.setter
+    def config(self, config):
+        self._config = config
+        if self._config:
+            self.ex_settings = self.config["optimization_options"]
+            self.model_settings = self.config.get("model_options", {})
+            self.script_options = self.config.get("script_options", {})
+            metric_propertis = {}
+            for metric in self.ex_settings["objective_options"]["objectives"]:
+                if "properties" in metric:
+                    metric_propertis["name"] = metric["properties"]
+
+            self._metric_properties = metric_propertis
 
     def load_config(self, config_path: os.PathLike | str, *args, **kwargs) -> dict:
         """
@@ -87,9 +124,6 @@ class BaseWrapper(metaclass=WrapperRegister):
         config = normalize_config(config=config, parameter_keys=parameter_keys)
 
         self.config = config
-        self.ex_settings = self.config["optimization_options"]
-        self.model_settings = self.config.get("model_options", {})
-        self.script_options = self.config.get("script_options", {})
         return self.config
 
     def mk_experiment_dir(
@@ -99,7 +133,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         experiment_name: str = None,
         append_timestamp: bool = True,
         **kwargs,
-    ) -> None:
+    ) -> pathlib.Path:
         """
         Make the experiment directory that boa will write all of its trials and logs to.
 
@@ -140,7 +174,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         else:  # if no exp dir, instead grab working dir from config or passed in
             if not working_dir:
                 # if no working dir (or exp dir) set to cwd
-                working_dir = Path.cwd()
+                working_dir = pathlib.Path.cwd()
 
             mk_exp_dir_kw = dict(
                 working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, **kwargs
@@ -152,6 +186,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         experiment_dir = make_experiment_dir(**mk_exp_dir_kw)
         self.ex_settings["experiment_dir"] = str(experiment_dir)
         self.experiment_dir = experiment_dir
+        return experiment_dir
 
     def write_configs(self, trial: BaseTrial) -> None:
         """
@@ -228,24 +263,87 @@ class BaseWrapper(metaclass=WrapperRegister):
         """
 
     def _fetch_all_metrics(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
-        if self._metric_dict:  # if defined previously, return with only correct metric that called this time
-            return self._metric_dict.get(metric_name, {})
-        self._metric_dict = self.fetch_all_trial_data(trial=trial, metric_properties=metric_properties, *args, **kwargs)
+        """Ax's experiment calls each metric in succession, so this allows people to calculate all their
+        metrics at once and return them through `fetch_all_trial_data`,
+        but if they don't want to, they can still do them one at a time through `fetch_trial_data_single`"""
+        # if defined previously, return with only correct metric that called this time
+        if self._metric_dict.get(trial.index, {}):
+            return self._metric_dict[trial.index].get(metric_name, {})
+        self._metric_dict[trial.index] = self.fetch_all_trial_data(
+            trial=trial, metric_properties=self._metric_properties, *args, **kwargs
+        )
         # if returned with not None (user defined this), return with only correct metric that called this time
-        if self._metric_dict:
-            return self._metric_dict.get(metric_name, {})
+        if self._metric_dict[trial.index]:
+            for metric_name in self.metric_names:
+                if metric_name not in self._metric_dict[trial.index]:
+                    logger.warning(f"metric: {metric_name} not returned by fetch_all_trial_data")
+            for metric_name in self._metric_dict[trial.index].keys():
+                if metric_name not in self.metric_names:
+                    logger.warning(
+                        f"found extra returned metric: {metric_name}" f" in returned metrics from fetch_1all_trial_data"
+                    )
+            try:
+                return self._metric_dict[trial.index][metric_name]
+            except KeyError as e:
+                raise KeyError(
+                    "Using `Fetch_all_trial_data` requires returning a dictionary in the form of"
+                    " {metric_name1 {metric_kwarg1: val1, metric_kwarg2: val2, 'sem': sem val},"
+                    " metric_name2: {metric_kwarg1: val1, metric_kwarg2: val2, 'sem': sem val})"
+                    " with sem being optional."
+                ) from e
         # Else call fetch trial data one at a time for each metric as it comes in
-        return self.fetch_trial_data(
+        return self.fetch_trial_data_single(
             trial=trial, metric_properties=metric_properties, metric_name=metric_name, *args, **kwargs
         )
 
     def fetch_all_trial_data(self, trial: BaseTrial, metric_properties: dict, *args, **kwargs) -> dict:
-        """"""
-
-    def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
         """
-        Retrieves the trial data and prepares it for the metric(s) used in the objective
-        function.
+        Retrieves the trial data and prepares it for the single metric passed in as metric_name
+
+        For example, for a case where you are minimizing the error between a model and observations, using RMSE as a
+        metric, this function would load the model output and the corresponding observation data that will be passed to
+        the RMSE metric.
+
+        The return value of this function is a dictionary, with keys that match the keys
+        of the metric used in the objective function.
+
+        Parameters
+        ----------
+        trial
+            The current trial. parameters can be accessed as trial.arm.parameters and trial
+            index can be accessed by trial.index
+        metric_properties
+            collection of all metric properties for all metrics as a nested dictionary.
+            a specific metric properties can be accessed as `metric_properties["metric_name1"]`
+
+        Returns
+        -------
+        dict
+            A dictionary with the keys being the name of a specific metric, and the values
+            being a dictionary of key word arguments to pass to that metric function.
+            ex: Mean uses np.mean, which expects the parameters a (a array like object),
+            so you could return {"Mean": {"a": [1, 2, 3, 4]}}
+            You can also include a key "sem" that is the standard error of the mean for
+            this trials metric value.
+
+        Examples
+        --------
+        >>> def fetch_all_trial_data(self, trial, metric_properties, *args, **kwargs):
+        ...     return {
+        ...         "Mean": {"a": trial.arm.parameters, "sem": 4.5},
+        ...         "RMSE": {
+        ...             "y_true": [1.12, 1.25, 2.54, 4.52],
+        ...             "y_pred": trial.arm.parameters,
+        ...         },
+        ...     }
+
+        """
+
+    def fetch_trial_data_single(
+        self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs
+    ) -> dict:
+        """
+        Retrieves the trial data and prepares it for the single metric passed in as metric_name
 
         For example, for a case where you are minimizing the error between a model and observations, using RMSE as a
         metric, this function would load the model output and the corresponding observation data that will be passed to
@@ -258,12 +356,28 @@ class BaseWrapper(metaclass=WrapperRegister):
         Parameters
         ----------
         trial
+            The current trial. parameters can be accessed as trial.arm.parameters and trial
+            index can be accessed by trial.index
         metric_properties
+            any metric properties passed in from config
         metric_name
+            the name of the metric that the arguments are being fetched for
 
         Returns
         -------
         dict
             A dictionary with the keys matching the keys of the metric function
-            used in the objective
+            used in the objective. You can also include a key "sem" that is the
+            standard error of the mean for this trials metric value.
+
+        Examples
+        --------
+        >>> def fetch_trial_data_single(self, trial, metric_properties, metric_name, *args, **kwargs):
+        ...     if metric_name == "Mean":
+        ...         return {"a": trial.arm.parameters, "sem": 4.5}
+        ...     elif metric_name == "RMSE":
+        ...         return {
+        ...             "y_true": [1.12, 1.25, 2.54, 4.52],
+        ...             "y_pred": trial.arm.parameters,
+        ...         }
         """

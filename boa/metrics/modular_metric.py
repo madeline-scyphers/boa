@@ -81,7 +81,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     You can further customize the behavior of your metric by passing a
     :class:`Wrapper<.BaseWrapper>`, which has will run methods
-    such as  :meth:`.BaseWrapper.fetch_trial_data` before
+    such as  :meth:`.BaseWrapper.fetch_trial_data_single` before
     calling the specified metric to evaluate, which can allow you
     to preprocess/prepare model output data for your metric calculation.
 
@@ -248,14 +248,3 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         return extract_init_args(
             args=args, class_=cls, parents=parents_b4_metric, match_private=True, exclude_fields=["wrapper"]
         )
-
-    #
-    # def __repr__(self) -> str:
-    #     init_dict = serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True)
-    #     init_dict = {k: v for k, v in init_dict.items() if v}
-    #
-    #     if isinstance(init_dict["metric_to_eval"], partial):
-    #         init_dict["metric_to_eval"] = init_dict["metric_to_eval"]
-    #
-    #     arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
-    #     return f"{self.__class__.__name__}({arg_str})"
