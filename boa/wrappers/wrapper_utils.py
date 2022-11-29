@@ -562,7 +562,9 @@ def make_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs
     return trial_dir
 
 
-def save_trial_data(trial: BaseTrial, trial_dir: pathlib.Path = None, experiment_dir: os.PathLike | str = None, **kwargs):
+def save_trial_data(
+    trial: BaseTrial, trial_dir: pathlib.Path = None, experiment_dir: os.PathLike | str = None, **kwargs
+):
     """Save trial data (trial.json, parameters.json and data.json) to
     either: supplied trial_dir or supplied experiment_dir / trial.index
     """
