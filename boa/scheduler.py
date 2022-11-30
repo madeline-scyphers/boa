@@ -82,8 +82,8 @@ class Scheduler(AxScheduler):
             otherwise a mapping from trial index to the tuple of:
             - the parameterization of the arm in that trial,
             - two-item tuple of metric means dictionary and covariance matrix
-                (model-predicted if ``use_model_predictions=True`` and observed
-                otherwise).
+            (model-predicted if ``use_model_predictions=True`` and observed
+            otherwise).
         """
         if self.experiment.is_moo_problem:
             try:

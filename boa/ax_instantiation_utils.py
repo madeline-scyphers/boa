@@ -1,3 +1,12 @@
+"""
+###################################
+Ax Instantiation Utility Functions
+###################################
+
+Utility functions to instantiate Ax objects
+
+"""
+
 from __future__ import annotations
 
 import copy
@@ -15,6 +24,7 @@ from ax.service.scheduler import SchedulerOptions
 from boa.instantiation_base import BoaInstantiationBase
 from boa.scheduler import Scheduler
 from boa.utils import get_dictionary_from_callable
+from boa.wrappers.base_wrapper import BaseWrapper
 
 logger = logging.getLogger(__file__)
 
@@ -63,7 +73,7 @@ def get_scheduler(
     generation_strategy: GenerationStrategy = None,
     scheduler_options: SchedulerOptions = None,
     config: dict = None,
-):
+) -> Scheduler:
     scheduler_options = scheduler_options or SchedulerOptions(**config["optimization_options"]["scheduler"])
     if generation_strategy is None:
         if (
@@ -99,7 +109,7 @@ def get_scheduler(
 def get_experiment(
     config: dict,
     runner: Runner,
-    wrapper=None,
+    wrapper: BaseWrapper = None,
 ):
     opt_options = config["optimization_options"]
 
@@ -116,12 +126,15 @@ def get_experiment(
         else:
             opt_options["experiment"]["name"] = time.time()
 
-    return Experiment(
+    exp = Experiment(
         search_space=search_space,
         optimization_config=optimization_config,
         runner=runner,
         **get_dictionary_from_callable(Experiment.__init__, opt_options["experiment"]),
     )
+    if not wrapper.metric_names:
+        wrapper.metric_names = list(exp.metrics.keys())
+    return exp
 
 
 def _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy):

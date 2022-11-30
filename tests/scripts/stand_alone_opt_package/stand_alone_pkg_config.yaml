@@ -1,0 +1,31 @@
+# Single objective optimization config
+optimization_options:
+    objective_options:
+        objectives:
+            - boa_metric: mean
+    generation_strategy:
+        steps:
+            - model: SOBOL
+              num_trials: 2
+            - model: GPEI
+              num_trials: -1
+    scheduler:
+        total_trials: 5
+parameters:
+    x0:
+        type: range
+        bounds: [-5.0, 10.0]
+    x1:
+        type: range
+        bounds: [0.0, 15.0]
+# These are all defaults, so we don't need to specify them in this case
+#script_options:
+#    wrapper_path: ./wrapper.py
+#    wrapper_name: Wrapper
+#    working_dir: .
+#    # this is where boa will write logs to by default
+#    # if not specified it will be working_dir/experiment_name
+#    experiment_dir: ...
+#    append_timestamp: True
+# This last option appends a timestamp to our output experiment directory.
+# This is also the default (True)

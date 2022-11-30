@@ -1,0 +1,43 @@
+# Single objective optimization config
+optimization_options:
+    objective_options:
+        objectives:
+            - name: Cosine8
+              boa_metric: mean
+    scheduler:
+        total_trials: 100
+parameters:
+    x0:
+        type: range
+        bounds: [0.0, 1.0]
+    x1:
+        type: range
+        bounds: [0.0, 1.0]
+    x2:
+        type: range
+        bounds: [0.0, 1.0]
+    x3:
+        type: range
+        bounds: [0.0, 1.0]
+    x4:
+        type: range
+        bounds: [0.0, 1.0]
+    x5:
+        type: range
+        bounds: [0.0, 1.0]
+    x6:
+        type: range
+        bounds: [0.0, 1.0]
+    x7:
+        type: range
+        bounds: [0.0, 1.0]
+# These are all defaults, so we don't need to specify them in this case
+#script_options:
+#    wrapper_path: ./wrapper.py
+#    wrapper_name: Wrapper
+#    working_dir: .
+#    experiment_dir: ... # this is where boa will write logs to by default
+                         # if not specified it will be working_dir/experiment_name
+#    append_timestamp: True
+# This last option appends a timestamp to our output experiment directory.
+# This is also the default (True)

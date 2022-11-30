@@ -2,7 +2,7 @@ optimization_options:
     objective_options: # can also use the key moo
         objectives:
             - name: rmse
-              boa_metric: RMSE
+              metric: RMSE
               noise_sd: .1
     generation_strategy:
         steps:
@@ -11,7 +11,7 @@ optimization_options:
             - model: GPEI
               num_trials: -1
     scheduler:
-        total_trials: 15
+        total_trials: 20
     experiment:
         name: "test_experiment"
 
@@ -27,4 +27,3 @@ parameters:
 
 model_options:
     input_size: 15
-    model_dir: .

@@ -2,7 +2,7 @@ optimization_options:
     objective_options:
         objectives:
             - name: rmse
-              boa_metric: RootMeanSquaredError
+              metric: RootMeanSquaredError
     generation_strategy:
         steps:
             - model: SOBOL
@@ -21,27 +21,32 @@ model_options:
         - 3
 
 parameters:
-    x1:  # Ratio of urban area that is house (not ground, not trees)
+    x1:
         type: range
         bounds: [0, 1]
+        value_type: float
 
-    x2:  # Ratio of urban area that is ground (not house, not trees)
+    x2:
         type: range
         bounds: [0, 1]
+        value_type: float
 
-    x3:  # Size of a plot of land (area of a house and its ground it sits on)
+    x3:
         type: range
         bounds: [0, 1]
+        value_type: float
 
-    x4:  # The mean LAI of the canopy. There will be random perturbations to this
+    x4:
         type: range
         bounds: [0, 1]
         value: .5  # dummy value for testing
+        value_type: float
 
     x5: # dummy value for testing
         type: fixed
         bounds: [ 0, 1 ]
-        values: .5  # dummy value for testing
+        value: .5  # dummy value for testing
+        value_type: float
 
 parameter_constraints:
     - x2 + x1 => >.1

@@ -1,3 +1,12 @@
+"""
+###################################
+Wrapped Runner
+###################################
+
+Runner that calls your :mod:`.wrappers` to run your model and poll the trial status.
+
+"""
+
 from collections import defaultdict
 from typing import Any, Dict, Iterable, Set
 
@@ -7,7 +16,7 @@ from ax.core.trial import Trial
 
 from boa.metaclasses import RunnerRegister
 from boa.utils import serialize_init_args
-from boa.wrapper import BaseWrapper
+from boa.wrappers.base_wrapper import BaseWrapper
 
 
 class WrappedJobRunner(Runner, metaclass=RunnerRegister):
@@ -60,7 +69,7 @@ class WrappedJobRunner(Runner, metaclass=RunnerRegister):
         return status_dict
 
     def to_dict(self) -> dict:
-        """Convert Ax synthetic runner to a dictionary."""
+        """Convert runner to a dictionary."""
 
         parents = self.__class__.mro()[1:]  # index 0 is the class itself
 

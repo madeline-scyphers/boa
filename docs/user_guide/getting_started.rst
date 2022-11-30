@@ -1,7 +1,8 @@
 .. _getting_started:
-###############
-Getting Started
-###############
+
+##############################
+Installing and Test Run
+##############################
 
 ************
 Installation
@@ -28,7 +29,38 @@ installed. There are two options for this:
 Install boa
 ===========
 
-Clone the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
+If you don't already have a dedicated conda environment for your model::
+
+     conda create -n boa
+     conda activate boa
+
+If you don't need to create a new environment, activate the existing conda environment you will be using.
+
+If you are not on an x86 mac (or a mac with python running through rosetta), run these commands to install the dependencies::
+
+    conda install botorch -c pytorch -c gpytorch -c conda-forge
+    pip install ax-platform
+
+x86 macs (or a mac with python running through rosetta), run::
+
+    conda install pytorch<1.12.0 -c pytorch
+    conda install botorch -c pytorch -c gpytorch -c conda-forge
+    pip install ax-platform
+
+Install boa::
+
+    pip install git+https://github.com/madeline-scyphers/boa.git
+
+If you want to install the latest (bleeding-edge) develop version of boa::
+
+    pip install git+https://github.com/madeline-scyphers/boa.git@develop
+
+********************************
+Installing for Contributing
+********************************
+
+fork the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
+and then clone your forked repo
 
 If you are not on an x86 mac (or a mac with python running through rosetta), from the root directory of the cloned repository, run::
 
@@ -44,20 +76,16 @@ x86 macs (or a mac with python running through rosetta), run::
 
 This will install boa in editable mode.
 
-To use install it with pip, run::
-
-    pip install -e .[dev,docs,examples]
-
 ********
 Test run
 ********
 
 Once everything is installed, run the test script to ensure everything is install properly::
 
-    python -m boa.test_scripts.run
+    python -m boa.scripts.run_branin
 
 If this test case runs successfully, you can move on to the next steps.
 
-:ref:`contributions`
+:doc:`/contributing`
 
-If you have errors, see the :ref:`Troubleshooting` section.
+If you have errors, see the :doc:`/troubleshooting` section.

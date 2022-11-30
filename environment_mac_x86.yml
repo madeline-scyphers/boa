@@ -1,5 +1,6 @@
-name: boa
+name: boa2
 channels:
+#- pytorch-nightly
 - pytorch
 - conda-forge
 - anaconda
@@ -11,19 +12,16 @@ dependencies:
 - torchvision
 - torchaudio
 - numpy
-  # 2022/09/25 Pinning because pandas 1.4.3 broke something with ax
-  # ax is working on a fix
-- pandas<=1.4.0
-- xarray
-- dask
-- netCDF4
-- bottleneck
+- pandas
 - scipy
 - scikit-learn
 - click
 - sqlalchemy
+- plotly
+- notebook
+- ipywidgets
+- ax-platform
+- PyYAML
 - pip
 - pip:
-  - ax-platform
-  - PyYAML
-  - -e .
+  - -e . --install-option="--no-deps"
