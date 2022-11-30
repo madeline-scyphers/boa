@@ -91,7 +91,8 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_all_trial_data_and_tes
     for _ in range(5):
         trial = experiment.new_trial(generator_run=scheduler.generation_strategy.gen(experiment))
         for name, metric in experiment.metrics.items():
-            data = metric.fetch_trial_data(trial)
+            ok = metric.fetch_trial_data(trial)
+            data = ok.value
             sem = wrapper._metric_dict[trial.index][name].pop("sem", None)
             f_ret = metric.f(**controller.wrapper._metric_dict[trial.index][name])
             assert f_ret == data.df["mean"].iloc[0]
@@ -129,9 +130,8 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_all_trial_data_and_tes
     experiment = controller.experiment
 
     trial = experiment.new_trial(generator_run=scheduler.generation_strategy.gen(experiment))
-    with pytest.raises(TypeError):  # injected MSE doesn't get correct args, so raise type error
-        for name, metric in experiment.metrics.items():
-            metric.fetch_trial_data(trial)
+    for name, metric in experiment.metrics.items():
+        metric.fetch_trial_data(trial)
 
     assert "not returned by fetch_all_trial_data" in caplog.text
 
@@ -148,7 +148,8 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_
     for _ in range(5):
         trial = experiment.new_trial(generator_run=scheduler.generation_strategy.gen(experiment))
         for name, metric in experiment.metrics.items():
-            data = metric.fetch_trial_data(trial)
+            ok = metric.fetch_trial_data(trial)
+            data = ok.value
             kw = wrapper.fetch_trial_data_single(trial, {}, name)
             sem = kw.pop("sem", None)
             f_ret = metric.f(**kw)

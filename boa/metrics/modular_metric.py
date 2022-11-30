@@ -15,6 +15,7 @@ from ax import Data, Metric
 from ax.core.base_trial import BaseTrial
 from ax.core.types import TParameterization
 from ax.metrics.noisy_function import NoisyFunctionMetric
+from ax.utils.common.result import Ok, Err
 from ax.utils.measurement.synthetic_functions import FromBotorch
 
 from boa.metaclasses import MetricRegister
@@ -178,10 +179,10 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
                 )
             else:
                 trial_data = super().fetch_trial_data(trial=trial, **safe_kwargs)
-            if "sem" in safe_kwargs:
-                trial_df = trial_data.df
+            if "sem" in safe_kwargs and not isinstance(trial_data, Err):
+                trial_df = trial_data.unwrap().df
                 trial_df["sem"] = safe_kwargs["sem"]
-                trial_data = Data(df=trial_df)
+                trial_data = Ok(Data(df=trial_df))
         finally:
             # We remove the extra parameters from the arms for json serialization
             [arm._parameters.pop("kwargs") for arm in trial.arms_by_name.values()]
