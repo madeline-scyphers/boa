@@ -15,7 +15,7 @@ from ax import Data, Metric
 from ax.core.base_trial import BaseTrial
 from ax.core.types import TParameterization
 from ax.metrics.noisy_function import NoisyFunctionMetric
-from ax.utils.common.result import Ok, Err
+from ax.utils.common.result import Err, Ok
 from ax.utils.measurement.synthetic_functions import FromBotorch
 
 from boa.metaclasses import MetricRegister
