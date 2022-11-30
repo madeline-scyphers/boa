@@ -381,3 +381,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         ...             "y_pred": trial.arm.parameters,
         ...         }
         """
+
+    def fetch_trial_data(self, *args, **kwargs):
+        """alias for fetch_trial_data_single"""
+        return self.fetch_trial_data_single(*args, **kwargs)
