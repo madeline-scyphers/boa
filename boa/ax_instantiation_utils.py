@@ -20,6 +20,7 @@ from ax.service.scheduler import Scheduler, SchedulerOptions
 
 from boa.instantiation_base import BoaInstantiationBase
 from boa.utils import get_dictionary_from_callable
+from boa.wrappers.base_wrapper import BaseWrapper
 
 
 def instantiate_search_space_from_json(
@@ -98,7 +99,7 @@ def get_scheduler(
 def get_experiment(
     config: dict,
     runner: Runner,
-    wrapper=None,
+    wrapper: BaseWrapper = None,
 ):
     opt_options = config["optimization_options"]
 
@@ -115,9 +116,12 @@ def get_experiment(
         else:
             opt_options["experiment"]["name"] = time.time()
 
-    return Experiment(
+    exp = Experiment(
         search_space=search_space,
         optimization_config=optimization_config,
         runner=runner,
         **get_dictionary_from_callable(Experiment.__init__, opt_options["experiment"]),
     )
+    if not wrapper.metric_names:
+        wrapper.metric_names = list(exp.metrics.keys())
+    return exp

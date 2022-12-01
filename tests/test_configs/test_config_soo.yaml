@@ -3,7 +3,7 @@ optimization_options:
   objective_options:  # can also use the key soo
     objectives:
       - name: rmse
-        boa_metric: RootMeanSquaredError
+        metric: RootMeanSquaredError
         properties:
           obs_file: path
 #        upper_bound:
@@ -13,7 +13,7 @@ optimization_options:
 #          bound: 0
 #          relative: false
       - name: r2
-        boa_metric: R2
+        metric: R2
     weights:
       - 1
       - 2

@@ -13,15 +13,21 @@ import datetime as dt
 import json
 import logging
 import os
+import pathlib
+import shlex
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
-from pathlib import Path
 from typing import Union
 
 import yaml
+from ax.core.base_trial import BaseTrial
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
+from ax.exceptions.core import AxError
+from ax.storage.json_store.encoder import object_to_json
 from ax.utils.common.docutils import copy_doc
+
+from boa.definitions import IS_WINDOWS
 
 logger = logging.getLogger(__file__)
 
@@ -118,6 +124,17 @@ def cd_and_cd_back_dec(path: os.PathLike | str = None):
     return _cd_and_cd_back_dec
 
 
+def split_shell_command(cmd: str):
+    """
+    split shell command for passing to python subproccess.
+    This should correctly split commands like "echo 'Hello, World!'"
+    to ['echo', 'Hello, World!'] (2 items) and not ['echo', "'Hello,", "World!'"] (3 items)
+
+    It also works for posix and windows systems appropriately
+    """
+    return shlex.split(cmd, posix=not IS_WINDOWS)
+
+
 def load_json(file: os.PathLike | str, normalize: bool = True, *args, **kwargs) -> dict:
     """
     Read experiment configuration file for setting up the optimization.
@@ -150,7 +167,7 @@ def load_json(file: os.PathLike | str, normalize: bool = True, *args, **kwargs) 
     --------
     :func:`.normalize_config` for information on ``parameter_keys`` option
     """
-    file = Path(file).expanduser()
+    file = pathlib.Path(file).expanduser()
     with open(file, "r") as f:
         config = json.load(f)
 
@@ -161,7 +178,7 @@ def load_json(file: os.PathLike | str, normalize: bool = True, *args, **kwargs) 
 
 @copy_doc(load_json)
 def load_yaml(file: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
-    file = Path(file).expanduser()
+    file = pathlib.Path(file).expanduser()
     with open(file, "r") as f:
         config: dict = yaml.safe_load(f)
 
@@ -172,7 +189,7 @@ def load_yaml(file: os.PathLike, normalize: bool = True, *args, **kwargs) -> dic
 
 @copy_doc(load_json)
 def load_jsonlike(file: os.PathLike, *args, **kwargs):
-    file = Path(file)
+    file = pathlib.Path(file)
     if file.suffix.lstrip(".").lower() in {"yaml", "yml"}:
         return load_yaml(file, *args, **kwargs)
     elif file.suffix.lstrip(".").lower() == "json":
@@ -477,13 +494,13 @@ def _mk_exp_dir_from_working_dir(
 ):
     ts = get_dt_now_as_str() if append_timestamp else ""
     exp_name = "_".join(name for name in [experiment_name, ts] if name)
-    ex_dir = Path(working_dir).expanduser() / exp_name
+    ex_dir = pathlib.Path(working_dir).expanduser() / exp_name
     ex_dir.mkdir(exist_ok=exist_ok)
     return ex_dir
 
 
 def _mk_exp_dir_from_exp_dir(exp_dir: os.PathLike, append_timestamp: bool = True, exist_ok: bool = False):
-    exp_dir = Path(exp_dir)
+    exp_dir = pathlib.Path(exp_dir)
     working_dir = exp_dir.parent
     experiment_name = exp_dir.name
     return _mk_exp_dir_from_working_dir(
@@ -515,7 +532,7 @@ def get_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs)
     pathlib.Path
         Directory for the trial
     """
-    trial_dir = Path(experiment_dir) / zfilled_trial_index(trial_index, **kwargs)  # zero-padded trial index
+    trial_dir = pathlib.Path(experiment_dir) / zfilled_trial_index(trial_index, **kwargs)  # zero-padded trial index
     return trial_dir
 
 
@@ -542,4 +559,38 @@ def make_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs
     """
     trial_dir = get_trial_dir(experiment_dir, trial_index, **kwargs)
     trial_dir.mkdir()
+    return trial_dir
+
+
+def save_trial_data(
+    trial: BaseTrial, trial_dir: pathlib.Path = None, experiment_dir: os.PathLike | str = None, **kwargs
+):
+    """Save trial data (trial.json, parameters.json and data.json) to
+    either: supplied trial_dir or supplied experiment_dir / trial.index
+    """
+
+    if not trial_dir:
+        trial_dir = get_trial_dir(experiment_dir, trial.index)
+        trial_dir.mkdir(parents=True, exist_ok=True)
+    kw = {}
+    for key, value in kwargs.items():
+        try:
+            kw[key] = object_to_json(value)
+        except (AxError, ValueError) as e:
+            kw[key] = str(value)
+            logger.warning(e)
+    parameters_jsn = object_to_json(trial.arm.parameters)
+    trial_jsn = object_to_json(trial)
+    data = {
+        "parameters": parameters_jsn,
+        "trial": trial_jsn,
+        "trial_index": trial.index,
+        "trial_dir": str(trial_dir),
+        **kw,
+    }
+    for name, jsn in zip(["parameters", "trial", "data"], [parameters_jsn, trial_jsn, data]):
+        file_path = trial_dir / f"{name}.json"
+        if not file_path.exists():
+            with open(file_path, "w+") as file:  # pragma: no cover
+                file.write(json.dumps(jsn))
     return trial_dir

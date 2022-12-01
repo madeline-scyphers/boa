@@ -14,19 +14,20 @@ import time
 from pathlib import Path
 from typing import Type
 
+from ax import Experiment
 from ax.service.scheduler import Scheduler
 
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.runner import WrappedJobRunner
 from boa.storage import scheduler_to_json_file
 from boa.utils import get_dictionary_from_callable
-from boa.wrappers.wrapper import BaseWrapper
+from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import get_dt_now_as_str
 
 
 class Controller:
     """
-    Controls the instantiation of your :mod:`.wrapper` and the
+    Controls the instantiation of your :class:`.BaseWrapper` and the
     necessary Ax objects to start your Experiment and control
     the Ax scheduler. Once the Controller sets up your Experiment, it starts
     the scheduler, which runs your trials. It then
@@ -45,13 +46,15 @@ class Controller:
 
     """
 
-    def __init__(self, config_path: os.PathLike | str, wrapper: Type[BaseWrapper]):
+    def __init__(self, wrapper: Type[BaseWrapper], config_path: os.PathLike | str = None, config: dict = None):
         self.config_path = config_path
+        self.config = config
+        if not (self.config or self.config_path):
+            raise TypeError("Controller __init__() requires either config_path or config")
         self.wrapper = wrapper
 
-        self.config = None
-
-        self.scheduler = None
+        self.experiment: Experiment = None
+        self.scheduler: Scheduler = None
 
     def setup(
         self, append_timestamp: bool = None, experiment_dir: os.PathLike = None, **kwargs
@@ -77,14 +80,17 @@ class Controller:
         and the second element being your wrapper (both initialized
         and ready to go)
         """
-        kwargs["config_path"] = self.config_path
+        if self.config:
+            kwargs["config"] = self.config
+        if self.config_path:
+            kwargs["config_path"] = self.config_path
         if experiment_dir:
             kwargs["experiment_dir"] = experiment_dir
         if append_timestamp is not None:
             kwargs["append_timestamp"] = append_timestamp
 
         load_config_kwargs = get_dictionary_from_callable(self.wrapper.__init__, kwargs)
-        self.wrapper = self.wrapper(**load_config_kwargs)
+        self.wrapper: BaseWrapper = self.wrapper(**load_config_kwargs)
         config = self.wrapper.config
 
         log_format = "%(levelname)s %(asctime)s - %(message)s"
@@ -98,8 +104,8 @@ class Controller:
         logger = logging.getLogger(__file__)
         logger.info("Start time: %s", get_dt_now_as_str())
 
-        experiment = get_experiment(config, WrappedJobRunner(wrapper=self.wrapper), self.wrapper)
-        self.scheduler = get_scheduler(experiment, config=config)
+        self.experiment = get_experiment(config, WrappedJobRunner(wrapper=self.wrapper), self.wrapper)
+        self.scheduler = get_scheduler(self.experiment, config=config)
         return self.scheduler, self.wrapper
 
     def run(self, scheduler: Scheduler = None, wrapper: BaseWrapper = None) -> Scheduler:
