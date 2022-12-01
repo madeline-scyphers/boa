@@ -161,7 +161,7 @@ class ScriptWrapper(BaseWrapper):
                 except ValueError as e:
                     raise ValueError(f"Invalid trial status - {trial_status} - passed to `set_trial_status`") from e
 
-    def fetch_all_trial_data(self, trial: BaseTrial, metric_properties: dict, *args, **kwargs) -> dict:
+    def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, *args, **kwargs) -> dict:
         """
         Retrieves the trial data and prepares it for the metric(s) used in the objective
         function.
@@ -173,10 +173,6 @@ class ScriptWrapper(BaseWrapper):
         The return value of this function is a dictionary, with keys that match the keys
         of the metric used in the objective function.
 
-        You only need to specify either `fetch_all_trial_data` or `fetch_trial_data_single` and
-        for the case of ScriptWrapper, they ammount to basically the same thing.
-
-
         .. code-block:: json
 
             {
@@ -187,10 +183,8 @@ class ScriptWrapper(BaseWrapper):
 
         We use "mean" as the key in the above example, because we assumed
         the metric that was specified in the config under objectives was mean.
-        mean is a wrapper around numpy mean, which takes as an argument an
+        mean is a wrapper around :external:py:func:`numpy.mean`, which takes as an argument an
         array called a.
-        # TODO add link to numpy mean
-        # TODO add args to metrics in metric section
 
         Multiple metrics can be specified for a Multi Objective Optimization,
 
@@ -221,10 +215,7 @@ class ScriptWrapper(BaseWrapper):
         """
         self._run_subprocess_script_cmd_if_exists(
             trial,
-            func_names=[
-                "fetch_trial_data",
-                "fetch_all_trial_data",
-            ],
+            func_names="fetch_trial_data",
             block=True,
         )
         data = self._read_subprocess_script_output(
@@ -232,86 +223,6 @@ class ScriptWrapper(BaseWrapper):
         )
         if data:
             return data
-
-    def fetch_trial_data_single(
-        self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs
-    ) -> dict:
-        """
-        Retrieves the trial data and prepares it for the metric(s) used in the objective
-        function.
-
-        For example, for a case where you are minimizing the error between a model and observations, using RMSE as a
-        metric, this function would load the model output and the corresponding observation data that will be passed to
-        the RMSE metric.
-
-        The return value of this function is a dictionary, with keys that match the keys
-        of the metric used in the objective function.
-
-
-        .. code-block:: json
-
-            {
-                "mean": {
-                    "a": [-0.3691, 4.6544, 1.2675, -0.4327]
-                }
-            }
-
-        We use "mean" as the key in the above example, because we assumed
-        the metric that was specified in the config under objectives was mean.
-        mean is a wrapper around numpy mean, which takes as an argument an
-        array called a.
-        # TODO add link to numpy mean
-        # TODO add args to metrics in metric section
-
-        Multiple metrics can be specified for a Multi Objective Optimization,
-
-        .. code-block:: json
-
-            {
-                "mean": {
-                    "a": [-0.3691, 4.6544, 1.2675, -0.4327]
-                },
-                "MSE": {
-                    "y_true": [1.12, 1.25, 2.54, 4.52]
-                    "y_pred": [1.51, 1.01, 2.21, 4.50]
-                }
-            }
-
-        Parameters
-        ----------
-        trial : BaseTrial
-        metric_properties: dict
-            metric_properties specified in configuration file associated with metric
-            calling this fetch trial data
-        metric_name: str
-            the name of the calling metric
-
-        Returns
-        -------
-        dict
-            A dictionary with the keys matching the keys of the metric function
-                used in the objective
-        """
-        if not (
-            data := self._read_subprocess_script_output(
-                trial, file_names=["output", "outputs", "result", "results", "metric", "metrics"]
-            )
-        ):
-            self._run_subprocess_script_cmd_if_exists(
-                trial,
-                func_names=[
-                    "fetch_trial_data",
-                    "fetch_trial_data_single",
-                ],
-                block=True,
-            )
-            data = self._read_subprocess_script_output(
-                trial, file_names=["output", "outputs", "result", "results", "metric", "metrics"]
-            )
-        if data:
-            for key, values in data.items():
-                if key.lower() == metric_name.lower():
-                    return values
 
     def _run_subprocess_script_cmd_if_exists(
         self, trial: BaseTrial, func_names: list[str] | str, block: bool = False, **kwargs

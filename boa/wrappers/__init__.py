@@ -14,7 +14,7 @@ wrapper:
 * :meth:`.BaseWrapper.run_model`: Defines how to run the model.
 * :meth:`.BaseWrapper.set_trial_status`: Defines how to determine the status of a trial (i.e., if the model
   run is completed, still running, failed, etc).
-* :meth:`.BaseWrapper.fetch_trial_data_single`: Retrieves the trial data (i.e., model outputs) and prepares it for
+* :meth:`.BaseWrapper.fetch_trial_data`: Retrieves the trial data (i.e., model outputs) and prepares it for
   the metric(s) used in the objective function.
 
 Apart from these core functions, your model wrapper can have additional functions as needed (for example, to help with
@@ -90,7 +90,7 @@ In these two examples, the trial status is determined by checking the log file o
 .. rli:: https://raw.githubusercontent.com/madeline-scyphers/palm_wrapper/main/palm_wrapper/optimize/wrapper.py
    :pyobject: Wrapper.set_trial_status
 
-The :meth:`.BaseWrapper.fetch_trial_data_single` function
+The :meth:`.BaseWrapper.fetch_trial_data` function
 ======================================================================
 
 Retrieves the trial data (i.e., model outputs) and prepares it for the metric(s) used in the objective

@@ -20,7 +20,7 @@ class Wrapper(BaseWrapper):
     def set_trial_status(self, trial) -> None:
         trial.mark_completed()
 
-    def fetch_all_trial_data(self, trial, metric_properties, *args, **kwargs):
+    def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
         if self.fetch_all:
             idx = trial.index + 1
             return {
@@ -31,10 +31,6 @@ class Wrapper(BaseWrapper):
                 },
             }
         else:
-            return
-
-    def fetch_trial_data_single(self, trial, metric_properties, metric_name, *args, **kwargs):
-        if not self.fetch_all:
             idx = trial.index + 1
             if metric_name == "Meanyyy":
                 return {"a": idx * np.array([-0.3691, 4.6544, 1.2675, -0.4327]), "sem": 4.5}
@@ -43,8 +39,6 @@ class Wrapper(BaseWrapper):
                     "y_true": idx * np.array([1.12, 1.25, 2.54, 4.52]),
                     "y_pred": idx * np.array([1.51, 1.01, 2.21, 4.50]),
                 }
-        else:
-            return
 
 
 def test_load_metric_by_name():
@@ -79,7 +73,7 @@ def test_load_metric_from_config(synth_config, metric_config):
         assert metric.metric_to_eval.__name__ == "mean_squared_error"
 
 
-def test_metric_fetch_trial_data_works_with_wrapper_fetch_all_trial_data_and_test_sem_passing(moo_config, tmp_path):
+def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_and_test_sem_passing(moo_config, tmp_path):
     controller = Controller(config=moo_config, wrapper=Wrapper)
     controller.setup(experiment_dir=tmp_path)
 
@@ -93,8 +87,8 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_all_trial_data_and_tes
         for name, metric in experiment.metrics.items():
             ok = metric.fetch_trial_data(trial)
             data = ok.value
-            sem = wrapper._metric_dict[trial.index][name].pop("sem", None)
-            f_ret = metric.f(**controller.wrapper._metric_dict[trial.index][name])
+            sem = wrapper._metric_cache[trial.index][name].pop("sem", None)
+            f_ret = metric.f(**controller.wrapper._metric_cache[trial.index][name])
             assert f_ret == data.df["mean"].iloc[0]
 
             if sem:
@@ -104,7 +98,7 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_all_trial_data_and_tes
             prev_f_ret = f_ret
 
 
-def test_metric_fetch_trial_data_works_with_wrapper_fetch_all_trial_data_and_test_sem_fails_with_wrong_metrics(
+def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_all_data_and_test_sem_fails_with_wrong_metrics(
     moo_config, caplog, tmp_path
 ):
     orig_metrics = moo_config["optimization_options"]["objective_options"]["objectives"]
@@ -121,20 +115,6 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_all_trial_data_and_tes
 
     assert "found extra returned metric: " in caplog.text
 
-    moo_config["optimization_options"]["objective_options"]["objectives"] = orig_metrics
-    moo_config["optimization_options"]["objective_options"]["objectives"].append({"metric": "MSE"})
-    controller = Controller(config=moo_config, wrapper=Wrapper)
-    controller.setup()
-
-    scheduler = controller.scheduler
-    experiment = controller.experiment
-
-    trial = experiment.new_trial(generator_run=scheduler.generation_strategy.gen(experiment))
-    for name, metric in experiment.metrics.items():
-        metric.fetch_trial_data(trial)
-
-    assert "not returned by fetch_all_trial_data" in caplog.text
-
 
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_test_sem_passing(moo_config, tmp_path):
     controller = Controller(config=moo_config, wrapper=Wrapper)
@@ -150,7 +130,7 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_
         for name, metric in experiment.metrics.items():
             ok = metric.fetch_trial_data(trial)
             data = ok.value
-            kw = wrapper.fetch_trial_data_single(trial, {}, name)
+            kw = wrapper.fetch_trial_data(trial, {}, name)
             sem = kw.pop("sem", None)
             f_ret = metric.f(**kw)
             assert f_ret == data.df["mean"].iloc[0]
