@@ -1,5 +1,6 @@
 import json
 import logging
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,11 @@ logger = logging.getLogger(__file__)
 
 TEST_DIR = ROOT / "tests"
 TEST_CONFIG_DIR = TEST_DIR / "test_configs"
+try:
+    subprocess.check_call(["R", "--version"])
+    R_INSTALLED = True
+except subprocess.CalledProcessError:
+    R_INSTALLED = False
 
 
 @pytest.fixture

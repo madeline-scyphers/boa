@@ -1,4 +1,5 @@
 import pytest
+from tests.conftest import R_INSTALLED
 
 
 # parametrize the test to pass in script options in config as relative and absolute paths
@@ -23,6 +24,7 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
     ["full", "light"],
     indirect=True,
 )
+@pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
 def test_calling_command_line_r_test_scripts(r_scripts_run):
     scheduler = r_scripts_run
     wrapper = scheduler.experiment.runner.wrapper
