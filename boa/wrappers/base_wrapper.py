@@ -40,7 +40,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         self.ex_settings = {}
         self.model_settings = {}
         self.script_options = {}
-        self._metric_dict = {}
+        self._metric_cache = {}
         self._metric_properties = {}
         self._metric_names = kwargs.get("metric_names", [])
 
@@ -90,7 +90,14 @@ class BaseWrapper(metaclass=WrapperRegister):
             metric_propertis = {}
             for metric in self.ex_settings["objective_options"]["objectives"]:
                 if "properties" in metric:
-                    metric_propertis["name"] = metric["properties"]
+                    name = (
+                        metric.get("name")
+                        or metric.get("metric")
+                        or metric.get("boa_metric")
+                        or metric.get("synthetic_metric")
+                        or metric.get("sklearn_metric")
+                    )
+                    metric_propertis[name] = metric["properties"]
 
             self._metric_properties = metric_propertis
 
@@ -287,50 +294,44 @@ class BaseWrapper(metaclass=WrapperRegister):
         # TODO add sphinx link to ax trial status
         """
 
-    def _fetch_all_metrics(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
-        """Ax's experiment calls each metric in succession, so this allows people to calculate all their
-        metrics at once and return them through `fetch_all_trial_data`,
-        but if they don't want to, they can still do them one at a time through `fetch_trial_data_single`"""
-        # if defined previously, return with only correct metric that called this time
-        if self._metric_dict.get(trial.index, {}):
-            return self._metric_dict[trial.index].get(metric_name, {})
-        self._metric_dict[trial.index] = self.fetch_all_trial_data(
-            trial=trial, metric_properties=self._metric_properties, *args, **kwargs
+    def _fetch_trial_data(self, trial: BaseTrial, metric_name: str, *args, **kwargs):
+        if trial.index not in self._metric_cache:
+            self._metric_cache[trial.index] = {}
+        if metric_name in self._metric_cache[trial.index]:
+            return self._metric_cache[trial.index][metric_name]
+        res = self.fetch_trial_data(
+            trial=trial, metric_properties=self._metric_properties, metric_name=metric_name, *args, **kwargs
         )
-        # if returned with not None (user defined this), return with only correct metric that called this time
-        if self._metric_dict[trial.index]:
-            for metric_name in self.metric_names:
-                if metric_name not in self._metric_dict[trial.index]:
-                    logger.warning(f"metric: {metric_name} not returned by fetch_all_trial_data")
-            for metric_name in self._metric_dict[trial.index].keys():
-                if metric_name not in self.metric_names:
-                    logger.warning(
-                        f"found extra returned metric: {metric_name}" f" in returned metrics from fetch_1all_trial_data"
-                    )
-            try:
-                return self._metric_dict[trial.index][metric_name]
-            except KeyError as e:
-                raise KeyError(
-                    "Using `Fetch_all_trial_data` requires returning a dictionary in the form of"
-                    " {metric_name1 {metric_kwarg1: val1, metric_kwarg2: val2, 'sem': sem val},"
-                    " metric_name2: {metric_kwarg1: val1, metric_kwarg2: val2, 'sem': sem val})"
-                    " with sem being optional."
-                ) from e
-        # Else call fetch trial data one at a time for each metric as it comes in
-        return self.fetch_trial_data_single(
-            trial=trial, metric_properties=metric_properties, metric_name=metric_name, *args, **kwargs
-        )
+        if metric_name not in res:
+            res = {metric_name: res}
+        self._metric_cache[trial.index].update(res)
 
-    def fetch_all_trial_data(self, trial: BaseTrial, metric_properties: dict, *args, **kwargs) -> dict:
+        for metric_name in self._metric_cache[trial.index].keys():
+            if metric_name not in self.metric_names:
+                logger.warning(
+                    f"found extra returned metric: {metric_name}" f" in returned metrics from fetch_trial_data"
+                )
+        return self._metric_cache[trial.index][metric_name]
+
+    def fetch_trial_data(
+        self, trial: BaseTrial, metric_properties: dict, metric_name: str, fetch_all=True, *args, **kwargs
+    ) -> dict:
         """
-        Retrieves the trial data and prepares it for the single metric passed in as metric_name
+        Retrieves the trial data for either the one metric that is specified in metric_name or all
+        metrics at once.
 
         For example, for a case where you are minimizing the error between a model and observations, using RMSE as a
         metric, this function would load the model output and the corresponding observation data that will be passed to
         the RMSE metric.
 
-        The return value of this function is a dictionary, with keys that match the keys
-        of the metric used in the objective function.
+        The return value of this function is a dictionary of dictionaries.
+        The keys are the names of the metrics that each dictionary goes to, then each
+        sub dictionary is the key value pair of parameters to pass to those metric functions.
+        If you are just returning one metric, you do not need to return an embedded dictionary,
+        and can just return the dictionary of key value parameter pairs.
+
+        In the key value parameter pairs, you can also specify the key "sem" for the standard error
+        for this metric on this trial.
 
         Parameters
         ----------
@@ -340,20 +341,46 @@ class BaseWrapper(metaclass=WrapperRegister):
         metric_properties
             collection of all metric properties for all metrics as a nested dictionary.
             a specific metric properties can be accessed as `metric_properties["metric_name1"]`
+        metric_name
+            the name of the metric that the arguments are being fetched for if you
+            choose to only return one metric at a time
 
         Returns
         -------
         dict
             A dictionary with the keys being the name of a specific metric, and the values
             being a dictionary of key word arguments to pass to that metric function.
-            ex: Mean uses np.mean, which expects the parameters a (a array like object),
+            ex: Mean uses' np.mean, which expects the parameters a (a array like object),
             so you could return {"Mean": {"a": [1, 2, 3, 4]}}
             You can also include a key "sem" that is the standard error of the mean for
-            this trials metric value.
+            these trials metric value.
+
+            example return values
+
+            .. code-block:: python
+
+                {
+                    "Mean": {"a": trial.arm.parameters, "sem": 4.5},
+                    "RMSE": {
+                        "y_true": [1.12, 1.25, 2.54, 4.52],
+                        "y_pred": trial.arm.parameters,
+                    },
+                }
+
+            .. code-block:: python
+
+                {"Mean": {"a": trial.arm.parameters}}
+
+            .. code-block:: python
+
+                {"a": trial.arm.parameters, "sem": 1}
 
         Examples
         --------
-        >>> def fetch_all_trial_data(self, trial, metric_properties, *args, **kwargs):
+        This example returns all the metrics at once.
+        You can imagine instead having a "calc_stuff" for whatever you need to throw into these
+
+        >>> def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
         ...     return {
         ...         "Mean": {"a": trial.arm.parameters, "sem": 4.5},
         ...         "RMSE": {
@@ -362,42 +389,11 @@ class BaseWrapper(metaclass=WrapperRegister):
         ...         },
         ...     }
 
-        """
+        This one only returns one metric at a time, it has some fragilities in that if you change
+        the name of the metrics in the config, this will break. But for quick and dirty things, this
+        can be great.
 
-    def fetch_trial_data_single(
-        self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs
-    ) -> dict:
-        """
-        Retrieves the trial data and prepares it for the single metric passed in as metric_name
-
-        For example, for a case where you are minimizing the error between a model and observations, using RMSE as a
-        metric, this function would load the model output and the corresponding observation data that will be passed to
-        the RMSE metric.
-
-        The return value of this function is a dictionary, with keys that match the keys
-        of the metric used in the objective function.
-        # TODO work on this description
-
-        Parameters
-        ----------
-        trial
-            The current trial. parameters can be accessed as trial.arm.parameters and trial
-            index can be accessed by trial.index
-        metric_properties
-            any metric properties passed in from config
-        metric_name
-            the name of the metric that the arguments are being fetched for
-
-        Returns
-        -------
-        dict
-            A dictionary with the keys matching the keys of the metric function
-            used in the objective. You can also include a key "sem" that is the
-            standard error of the mean for this trials metric value.
-
-        Examples
-        --------
-        >>> def fetch_trial_data_single(self, trial, metric_properties, metric_name, *args, **kwargs):
+        >>> def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
         ...     if metric_name == "Mean":
         ...         return {"a": trial.arm.parameters, "sem": 4.5}
         ...     elif metric_name == "RMSE":
@@ -405,8 +401,22 @@ class BaseWrapper(metaclass=WrapperRegister):
         ...             "y_true": [1.12, 1.25, 2.54, 4.52],
         ...             "y_pred": trial.arm.parameters,
         ...         }
-        """
 
-    def fetch_trial_data(self, *args, **kwargs):
-        """alias for fetch_trial_data_single"""
-        return self.fetch_trial_data_single(*args, **kwargs)
+        This one is a little more complicated, but it assumes in your config for each metric, you
+        define a properties section, which allows arbitrary information to be passed. You can then
+        associate a particular metric with a function and lookup that function at runtime in a dictionary
+        (a hashmap if coming from other languages).
+
+        >>> def func_a(array):
+        ...     return np.mean(np.exp(array))
+        ...
+        ... def func_b(array):
+        ...     return np.exp(np.mean(array))
+        ...
+        ... funcs = {func_a.__name__: func_a, func_b.__name__: func_b}
+        ...
+        ... def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
+        ...     # we define in our config the names of functions to associate with certain metrics
+        ...     # and look them up at run time
+        ...     return {"a": funcs[metric_properties[metric_name]["function"]](trial.arm.parameters)}
+        """

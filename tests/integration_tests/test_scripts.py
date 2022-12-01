@@ -1,5 +1,3 @@
-import logging
-
 from boa import (
     get_metric_from_config,
     get_trial_dir,

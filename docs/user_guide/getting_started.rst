@@ -76,6 +76,10 @@ x86 macs (or a mac with python running through rosetta), run::
 
 This will install boa in editable mode.
 
+If you plan on running any of the tests in other languages, run::
+
+    conda env update --name boa -f environment_language_updates.yml
+
 ********
 Test run
 ********

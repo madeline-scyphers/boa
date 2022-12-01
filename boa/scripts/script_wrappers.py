@@ -39,7 +39,7 @@ class Wrapper(boa.BaseWrapper):
         if output_file.exists():
             trial.mark_completed()
 
-    def fetch_trial_data_single(self, trial: Trial, *args, **kwargs):
+    def fetch_trial_data(self, trial: Trial, *args, **kwargs):
         output_file = boa.get_trial_dir(self.experiment_dir, trial.index) / "output.json"
         with open(output_file, "r") as f:
             data = json.load(f)
