@@ -9,7 +9,6 @@ stop and restart.
 """
 
 import json
-import logging
 import os
 from typing import Any, Callable, Dict, Optional, Type
 
@@ -28,8 +27,9 @@ from ax.storage.json_store.registry import (
 
 from boa.metrics.modular_metric import ModularMetric
 from boa.runner import WrappedJobRunner
+from boa.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def scheduler_to_json_file(scheduler, filepath: os.PathLike = "scheduler_snapshot.json") -> None:

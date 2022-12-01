@@ -12,8 +12,9 @@ from boa.wrappers.wrapper_utils import (
     save_trial_data,
     split_shell_command,
 )
+from boa.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ScriptWrapper(BaseWrapper):

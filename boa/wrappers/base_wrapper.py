@@ -19,8 +19,9 @@ from boa.wrappers.wrapper_utils import (
     make_experiment_dir,
     normalize_config,
 )
+from boa.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseWrapper(metaclass=WrapperRegister):
@@ -35,6 +36,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     def __init__(self, config_path: os.PathLike = None, config: dict = None, *args, **kwargs):
         self.experiment_dir = None
+        self.working_dir = None
         self.ex_settings = {}
         self.model_settings = {}
         self.script_options = {}
@@ -61,7 +63,7 @@ class BaseWrapper(metaclass=WrapperRegister):
                 if experiment_dir:
                     self.experiment_dir = experiment_dir
                 elif self.ex_settings["experiment_dir"]:
-                    self.experiment_dir = pathlib.Path(self.ex_settings["experiment_dir"])
+                    self.experiment_dir = self.ex_settings["experiment_dir"]
                 else:
                     raise ValueError("No experiment_dir set or returned from mk_experiment_dir")
 
@@ -91,6 +93,27 @@ class BaseWrapper(metaclass=WrapperRegister):
                     metric_propertis["name"] = metric["properties"]
 
             self._metric_properties = metric_propertis
+
+    @property
+    def experiment_dir(self):
+        return self._experiment_dir
+
+    @experiment_dir.setter
+    def experiment_dir(self, experiment_dir: os.PathLike | str):
+        if experiment_dir:
+            self._experiment_dir = pathlib.Path(experiment_dir).resolve()
+        else:
+            self._experiment_dir = experiment_dir
+    @property
+    def working_dir(self):
+        return self._working_dir
+
+    @working_dir.setter
+    def working_dir(self, working_dir: os.PathLike | str):
+        if working_dir:
+            self._working_dir = pathlib.Path(working_dir).resolve()
+        else:
+            self._working_dir = working_dir
 
     def load_config(self, config_path: os.PathLike | str, *args, **kwargs) -> dict:
         """
@@ -182,8 +205,10 @@ class BaseWrapper(metaclass=WrapperRegister):
 
             # We use str() because make_experiment_dir returns a Path object (json serialization)
             self.ex_settings["working_dir"] = str(working_dir)
+            self.working_dir = working_dir
 
         experiment_dir = make_experiment_dir(**mk_exp_dir_kw)
+
         self.ex_settings["experiment_dir"] = str(experiment_dir)
         self.experiment_dir = experiment_dir
         return experiment_dir

@@ -28,8 +28,9 @@ from ax.storage.json_store.encoder import object_to_json
 from ax.utils.common.docutils import copy_doc
 
 from boa.definitions import IS_WINDOWS
+from boa.logger import get_logger
 
-logger = logging.getLogger(__file__)
+logger = get_logger(__name__)
 
 
 PARAM_CLASSES = {
@@ -557,7 +558,9 @@ def make_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs
     pathlib.Path
         Directory for the trial
     """
+    print(experiment_dir)
     trial_dir = get_trial_dir(experiment_dir, trial_index, **kwargs)
+    print(trial_dir)
     trial_dir.mkdir()
     return trial_dir
 

@@ -13,7 +13,8 @@ try:
 except ImportError:
     from .script_wrappers import Wrapper
 
-from boa import WrappedJobRunner, get_experiment, get_scheduler
+from boa import WrappedJobRunner, get_experiment, get_scheduler, get_dt_now_as_str
+from boa.logger import get_logger, get_formatter
 
 
 @click.command()
@@ -33,16 +34,13 @@ def run_opt(output_dir):
     experiment_dir = wrapper.experiment_dir
     # Copy the experiment config to the experiment directory
     shutil.copyfile(config_file, experiment_dir / Path(config_file).name)
-    log_format = "%(levelname)s %(asctime)s - %(message)s"
-    logging.basicConfig(
-        filename=Path(experiment_dir) / "optimization.log",
-        filemode="w",
-        format=log_format,
-        level=logging.DEBUG,
-    )
-    logging.getLogger().addHandler(logging.StreamHandler())
-    logger = logging.getLogger(__file__)
-    logger.info("Start time: %s", dt.datetime.now().strftime("%Y%m%dT%H%M%S"))
+    logger = get_logger(__name__)
+    fh = logging.FileHandler(str(Path(wrapper.experiment_dir) / "optimization.log"))
+    formatter = get_formatter()
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    logger.info("Start time: %s", get_dt_now_as_str())
 
     experiment = get_experiment(config, WrappedJobRunner(wrapper=wrapper), wrapper)
     scheduler = get_scheduler(experiment, config=config)

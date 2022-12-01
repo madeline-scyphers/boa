@@ -6,8 +6,6 @@ from pprint import pformat
 from typing import Iterable, Optional
 
 from ax.core.optimization_config import OptimizationConfig
-from ax.modelbridge.modelbridge_utils import observed_pareto_frontier as observed_pareto
-from ax.modelbridge.registry import Models
 from ax.service.scheduler import Scheduler as AxScheduler
 
 from boa.runner import WrappedJobRunner
@@ -85,6 +83,7 @@ class Scheduler(AxScheduler):
             (model-predicted if ``use_model_predictions=True`` and observed
             otherwise).
         """
+        trials = None
         if self.experiment.is_moo_problem:
             try:
                 trials = self.get_pareto_optimal_parameters(
@@ -99,32 +98,13 @@ class Scheduler(AxScheduler):
                         idx: dict(params=trial_tup[0], means=trial_tup[1][0], cov_matrix=trial_tup[1][1])
                         for idx, trial_tup in trials.items()
                     }
-            except (TypeError, ValueError):
+            except (TypeError, ValueError) as e:
                 # If get_pareto doesn't work because of the gen_step not supporting multi obj
-                # then infer obj thresholds with generic MOO model
-                modelbridge = Models.MOO(
-                    experiment=self.experiment,
-                    search_space=self.experiment.search_space,
-                    data=self.experiment.lookup_data(),
-                )
-                ot = modelbridge.infer_objective_thresholds(
-                    search_space=self.experiment.search_space,
-                    optimization_config=self.experiment.optimization_config,
-                    fixed_features=None,
-                )
-                oc = self.experiment.optimization_config.clone()
-                oc.objective_thresholds = ot
-                # Once we have inferred objective thresholds, get pareto front
-                trials = observed_pareto(modelbridge=modelbridge, objective_thresholds=ot, optimization_config=oc)
-                if trials:
-                    trials = {
-                        int(obs.features.trial_index): dict(
-                            params=obs.features.parameters,
-                            means=obs.data.means_dict,
-                            cov_matrix=obs.data.covariance_matrix,
-                        )
-                        for obs in trials
-                    }
+                # then we log to the user that problem
+                logger.warning("Problem generating best fitted trials for pareto frontier. most likely cause"
+                               " is the generation step model/acquisition function is not intended for"
+                               f" multi objective optimizations. Exception: {e!r}")
+
         else:
             trials = self.get_best_trial(
                 optimization_config=optimization_config,
@@ -144,8 +124,9 @@ class Scheduler(AxScheduler):
                 trials = {int(best_trial): dict(params=best_params, means=means_dict, cov_matrix=cov_matrix)}
         return trials
 
-    def save_to_json(self, filepath: os.PathLike = "scheduler.json"):
-        """Save Scheduler to json file in `wrapper.experiment_dir`/`filepath`"""
+    def save_to_json(self, filepath: os.PathLike | str = None):
+        """Save Scheduler to json file. Defaults to `wrapper.experiment_dir` / `filepath`"""
+        filepath = filepath or "scheduler.json"
         try:
             experiment_dir = self.runner.wrapper.experiment_dir
             scheduler_to_json_file(self, experiment_dir / filepath)

@@ -26,7 +26,7 @@ from boa.utils import (
 )
 from boa.wrappers.base_wrapper import BaseWrapper
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__file__)
 
 
 def _get_func_by_name(metric: str):
