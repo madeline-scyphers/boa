@@ -1,6 +1,12 @@
+import subprocess
+
 import pytest
 
-from tests.conftest import R_INSTALLED
+try:
+    subprocess.check_call(["R", "--version"])
+    R_INSTALLED = True
+except subprocess.CalledProcessError:
+    R_INSTALLED = False
 
 
 # parametrize the test to pass in script options in config as relative and absolute paths
