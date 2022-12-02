@@ -1,13 +1,15 @@
 import subprocess
-from boa import split_shell_command
 
 import pytest
+
+from boa import split_shell_command
 
 try:
     subprocess.check_call(["R", "--version"])
     json_installed = subprocess.check_output(  # check if necessary R packages are installed
-        split_shell_command("""Rscript -e '"jsonlite" %in% rownames(installed.packages())'"""))
-    if "false" in json_installed.decode('UTF-8').lower():
+        split_shell_command("""Rscript -e '"jsonlite" %in% rownames(installed.packages())'""")
+    )
+    if "false" in json_installed.decode("UTF-8").lower():
         R_INSTALLED = False
     else:
         R_INSTALLED = True
