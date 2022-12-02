@@ -109,7 +109,7 @@ jobs:
 
       - name: Run tests
         shell: bash -l {0}
-        run: pytest -s
+        run: invoke tests --options '-s -v'
 
 #  win:
 #    strategy:

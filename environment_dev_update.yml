@@ -11,11 +11,11 @@ dependencies:
   - flakeheaven>=3.0.0
   - pytest
   - invoke
-  - sphinx
   - myst-nb
-  - pydata-sphinx-theme
   - jupyter
   - pip
   - pip:
+    - sphinx
+    - pydata-sphinx-theme
     - black[jupyter]
     - sphinxext-remoteliteralinclude
