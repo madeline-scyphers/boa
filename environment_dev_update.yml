@@ -5,8 +5,7 @@ channels:
 - conda-forge
 - defaults
 dependencies:
-  - black<=22.3.0
-  - black[jupyter]
+  - black
   - isort
   - flake8
   - flakeheaven>=3.0.0
@@ -18,4 +17,5 @@ dependencies:
   - jupyter
   - pip
   - pip:
+    - black[jupyter]
     - sphinxext-remoteliteralinclude

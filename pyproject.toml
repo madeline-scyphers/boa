@@ -52,7 +52,6 @@ exclude = '''
     | buck-out
     | build
     | dist
-    | docs/*
     | _version.py
     )
 )
@@ -60,7 +59,7 @@ exclude = '''
 
 [tool.flakeheaven]
 # 80 chars aren't enough in 21 century
-max_line_length = 120  # 110 for wiggle room for doc strings
+max_line_length = 120
 # show line of source code in output
 show_source = true
 
