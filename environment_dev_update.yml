@@ -1,10 +1,21 @@
 name: boa
 channels:
 - pytorch
-- conda-forge
 - anaconda
+- conda-forge
 - defaults
 dependencies:
+  - black
+  - isort
+  - flake8
+  - flakeheaven>=3.0.0
+  - pytest
+  - invoke
+  - myst-nb
+  - jupyter
   - pip
   - pip:
-    - -e .[dev,docs,examples]
+    - sphinx
+    - pydata-sphinx-theme
+    - black[jupyter]
+    - sphinxext-remoteliteralinclude

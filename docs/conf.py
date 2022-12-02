@@ -59,16 +59,16 @@ source_suffix = {
 
 nitpicky = True
 nitpick_ignore = [
-    ('py:class', 'SearchSpace'),
-    ('py:class', 'Objective'),
-    ('py:class', 'BaseTrial'),
-    ('py:class', 'BaseTrial'),
+    ("py:class", "SearchSpace"),
+    ("py:class", "Objective"),
+    ("py:class", "BaseTrial"),
+    ("py:class", "BaseTrial"),
 ]
 
 nitpick_ignore_regex = [
-    (r'.*', r'.*ax.*'),
-    (r'.*', r'.*botorch.*'),
-    (r'.*', r'array.*like'),
+    (r".*", r".*ax.*"),
+    (r".*", r".*botorch.*"),
+    (r".*", r"array.*like"),
 ]
 
 
@@ -115,7 +115,8 @@ html_theme_options = {
             # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
             "icon": "fab fa-github-square",
             # Whether icon should be a FontAwesome class, or a local file
-        }]
+        }
+    ]
 }
 
 
