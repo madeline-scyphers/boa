@@ -107,7 +107,9 @@ def get_scheduler(
 
 
 def get_experiment(
-    config: dict, runner: Runner, wrapper: BaseWrapper = None,
+    config: dict,
+    runner: Runner,
+    wrapper: BaseWrapper = None,
 ):
     opt_options = config["optimization_options"]
 

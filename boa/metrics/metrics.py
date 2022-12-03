@@ -124,12 +124,19 @@ class RootMeanSquaredError(SklearnMetric):
     _metric_to_eval = "mean_squared_error"
 
     def __init__(
-        self, lower_is_better=True, metric_func_kwargs=(("squared", False),), *args, **kwargs,
+        self,
+        lower_is_better=True,
+        metric_func_kwargs=(("squared", False),),
+        *args,
+        **kwargs,
     ):
         if metric_func_kwargs == (("squared", False),):
             metric_func_kwargs = dict((y, x) for x, y in metric_func_kwargs)
         super().__init__(
-            lower_is_better=lower_is_better, metric_func_kwargs=metric_func_kwargs, *args, **kwargs,
+            lower_is_better=lower_is_better,
+            metric_func_kwargs=metric_func_kwargs,
+            *args,
+            **kwargs,
         )
 
 

@@ -214,7 +214,9 @@ class ScriptWrapper(BaseWrapper):
                 used in the objective
         """
         self._run_subprocess_script_cmd_if_exists(
-            trial, func_names="fetch_trial_data", block=True,
+            trial,
+            func_names="fetch_trial_data",
+            block=True,
         )
         data = self._read_subprocess_script_output(
             trial, file_names=["output", "outputs", "result", "results", "metric", "metrics"]

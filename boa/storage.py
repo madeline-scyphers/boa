@@ -77,7 +77,9 @@ def scheduler_to_json_snapshot(
     return {
         "_type": scheduler.__class__.__name__,
         "experiment": object_to_json(
-            scheduler.experiment, encoder_registry=encoder_registry, class_encoder_registry=class_encoder_registry,
+            scheduler.experiment,
+            encoder_registry=encoder_registry,
+            class_encoder_registry=class_encoder_registry,
         ),
         "generation_strategy": object_to_json(
             scheduler.generation_strategy,
@@ -85,7 +87,9 @@ def scheduler_to_json_snapshot(
             class_encoder_registry=class_encoder_registry,
         ),
         "options": object_to_json(
-            scheduler.options, encoder_registry=encoder_registry, class_encoder_registry=class_encoder_registry,
+            scheduler.options,
+            encoder_registry=encoder_registry,
+            class_encoder_registry=class_encoder_registry,
         ),
     }
 
@@ -105,13 +109,17 @@ def scheduler_from_json_snapshot(
 
     if "options" in serialized:
         options = object_from_json(
-            serialized.pop("options"), decoder_registry=decoder_registry, class_decoder_registry=class_decoder_registry,
+            serialized.pop("options"),
+            decoder_registry=decoder_registry,
+            class_decoder_registry=class_decoder_registry,
         )
     else:
         options = SchedulerOptions()
 
     experiment = object_from_json(
-        serialized.pop("experiment"), decoder_registry=decoder_registry, class_decoder_registry=class_decoder_registry,
+        serialized.pop("experiment"),
+        decoder_registry=decoder_registry,
+        class_decoder_registry=class_decoder_registry,
     )
 
     serialized_generation_strategy = serialized.pop("generation_strategy")

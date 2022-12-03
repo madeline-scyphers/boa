@@ -45,7 +45,10 @@ class Wrapper(boa.BaseWrapper):
             data = json.load(f)
 
         return dict(
-            y_true=np.full(self.model_settings["input_size"], boa.get_synth_func("branin").fmin,),
+            y_true=np.full(
+                self.model_settings["input_size"],
+                boa.get_synth_func("branin").fmin,
+            ),
             y_pred=data["output"],
         )
 
