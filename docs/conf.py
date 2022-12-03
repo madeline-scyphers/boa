@@ -62,7 +62,7 @@ nitpick_ignore = [
     ("py:class", "SearchSpace"),
     ("py:class", "Objective"),
     ("py:class", "BaseTrial"),
-    ("py:class", "BaseTrial"),
+    ("py:class", "DBSettings"),
 ]
 
 nitpick_ignore_regex = [

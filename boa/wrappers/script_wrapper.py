@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import logging
 import subprocess
 
 from ax.core.base_trial import BaseTrial, TrialStatus
 
+from boa.logger import get_logger
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import (
     get_trial_dir,
@@ -12,7 +12,6 @@ from boa.wrappers.wrapper_utils import (
     save_trial_data,
     split_shell_command,
 )
-from boa.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -215,9 +214,7 @@ class ScriptWrapper(BaseWrapper):
                 used in the objective
         """
         self._run_subprocess_script_cmd_if_exists(
-            trial,
-            func_names="fetch_trial_data",
-            block=True,
+            trial, func_names="fetch_trial_data", block=True,
         )
         data = self._read_subprocess_script_output(
             trial, file_names=["output", "outputs", "result", "results", "metric", "metrics"]

@@ -5,17 +5,17 @@ channels:
 - conda-forge
 - defaults
 dependencies:
-  - black
-  - isort
-  - flake8
-  - flakeheaven>=3.0.0
-  - pytest
   - invoke
+  - isort
+  - pytest
   - myst-nb
   - jupyter
+  - flake8
+  - flakeheaven>=3.0.0
+  - black
   - pip
   - pip:
-    - sphinx
+    # we use external role, which is from v4.4. in conda this causes conflicts
+    - sphinx>=4.4
     - pydata-sphinx-theme
-    - black[jupyter]
     - sphinxext-remoteliteralinclude

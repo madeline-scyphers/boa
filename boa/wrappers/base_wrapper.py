@@ -7,19 +7,18 @@ Base Wrapper
 
 from __future__ import annotations
 
-import logging
 import os
 import pathlib
 
 from ax.core.base_trial import BaseTrial
 
+from boa.logger import get_logger
 from boa.metaclasses import WrapperRegister
 from boa.wrappers.wrapper_utils import (
     load_jsonlike,
     make_experiment_dir,
     normalize_config,
 )
-from boa.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -111,6 +110,7 @@ class BaseWrapper(metaclass=WrapperRegister):
             self._experiment_dir = pathlib.Path(experiment_dir).resolve()
         else:
             self._experiment_dir = experiment_dir
+
     @property
     def working_dir(self):
         return self._working_dir

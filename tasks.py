@@ -41,9 +41,7 @@ Running isort the Python code import sorter
 
 
 @task
-def lint(
-    command,
-):
+def lint(command,):
     """Runs flake8 plugin flakeheaven (linter) on all .py files recursively"""
     print(
         """
@@ -102,9 +100,7 @@ Running Sphinx to test the docs building
 
 
 @task(pre=[black, isort, lint, test, docs])
-def all(
-    command,
-):
+def all(command,):
     """Runs black, isort, flake8, and pytest
     Arguments:
         command {[type]} -- [description]

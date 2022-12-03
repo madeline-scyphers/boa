@@ -18,9 +18,7 @@ except subprocess.CalledProcessError:
 
 # parametrize the test to pass in script options in config as relative and absolute paths
 @pytest.mark.parametrize(
-    "stand_alone_opt_package_run",
-    ["relative", "absolute"],
-    indirect=True,
+    "stand_alone_opt_package_run", ["relative", "absolute"], indirect=True,
 )
 def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_no_of_trials(
     stand_alone_opt_package_run,
@@ -34,9 +32,7 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
 
 # parametrize the test to use the full version (all scripts) or the light version (only run_model.R)
 @pytest.mark.parametrize(
-    "r_scripts_run",
-    ["full", "light"],
-    indirect=True,
+    "r_scripts_run", ["full", "light"], indirect=True,
 )
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
 def test_calling_command_line_r_test_scripts(r_scripts_run):

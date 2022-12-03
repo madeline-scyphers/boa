@@ -16,9 +16,9 @@ from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_R
 from ax.storage.metric_registry import CORE_METRIC_REGISTRY
 from ax.storage.runner_registry import CORE_RUNNER_REGISTRY
 
+from boa.logger import get_logger
 from boa.registry import _add_common_encodes_and_decodes
 from boa.wrappers.wrapper_utils import cd_and_cd_back_dec
-from boa.logger import get_logger
 
 logger = get_logger(__name__)
 

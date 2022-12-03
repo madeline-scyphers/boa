@@ -69,6 +69,5 @@ base_pkgs = process_file(BASE_ENV)
 dev_pkgs = [pkg for pkg in process_file(DEV_ENV) if pkg not in base_pkgs]
 
 setup(
-    install_requires=base_pkgs,
-    extras_require={"dev": dev_pkgs},
+    install_requires=base_pkgs, extras_require={"dev": dev_pkgs},
 )

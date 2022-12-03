@@ -14,8 +14,8 @@ import sklearn.metrics
 from sklearn.metrics import __all__ as sklearn_all
 from sklearn.metrics import mean_squared_error
 
-from boa.utils import get_dictionary_from_callable
 from boa.logger import get_logger
+from boa.utils import get_dictionary_from_callable
 
 logger = get_logger(__name__)
 

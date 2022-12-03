@@ -144,9 +144,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         kwargs["param_names"] = param_names or []
         self.wrapper = wrapper or BaseWrapper()
         super().__init__(
-            noise_sd=noise_sd,
-            name=name,
-            **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs),
+            noise_sd=noise_sd, name=name, **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs),
         )
         self.properties = properties or {}
 
@@ -156,13 +154,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def fetch_trial_data(self, trial: BaseTrial, **kwargs):
         wrapper_kwargs = (
-            self.wrapper._fetch_trial_data(
-                trial=trial,
-                metric_name=self.name,
-                **kwargs,
-            )
-            if self.wrapper
-            else {}
+            self.wrapper._fetch_trial_data(trial=trial, metric_name=self.name, **kwargs,) if self.wrapper else {}
         )
         wrapper_kwargs = wrapper_kwargs or {}
         safe_kwargs = {"trial": trial, **kwargs, **wrapper_kwargs}
@@ -173,8 +165,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         try:
             if isinstance(self.metric_to_eval, Metric):
                 trial_data = self.metric_to_eval.fetch_trial_data(
-                    trial=trial,
-                    **get_dictionary_from_callable(self.metric_to_eval.fetch_trial_data, safe_kwargs),
+                    trial=trial, **get_dictionary_from_callable(self.metric_to_eval.fetch_trial_data, safe_kwargs),
                 )
             else:
                 trial_data = super().fetch_trial_data(trial=trial, **safe_kwargs)
@@ -198,9 +189,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     def clone(self) -> "Metric":
         """Create a copy of this Metric."""
         cls = type(self)
-        return cls(
-            **serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True),
-        )
+        return cls(**serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True),)
 
     def to_dict(self) -> dict:
         """Convert the Metric to a dictionary."""

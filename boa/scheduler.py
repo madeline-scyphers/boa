@@ -101,9 +101,11 @@ class Scheduler(AxScheduler):
             except (TypeError, ValueError) as e:
                 # If get_pareto doesn't work because of the gen_step not supporting multi obj
                 # then we log to the user that problem
-                logger.warning("Problem generating best fitted trials for pareto frontier. most likely cause"
-                               " is the generation step model/acquisition function is not intended for"
-                               f" multi objective optimizations. Exception: {e!r}")
+                logger.warning(
+                    "Problem generating best fitted trials for pareto frontier. most likely cause"
+                    " is the generation step model/acquisition function is not intended for"
+                    f" multi objective optimizations. Exception: {e!r}"
+                )
 
         else:
             trials = self.get_best_trial(

@@ -18,12 +18,12 @@ from ax import Experiment
 from ax.service.scheduler import Scheduler
 
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
+from boa.logger import get_formatter, get_logger
 from boa.runner import WrappedJobRunner
 from boa.storage import scheduler_to_json_file
 from boa.utils import get_dictionary_from_callable
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import get_dt_now_as_str
-from boa.logger import get_logger, get_formatter
 
 
 class Controller:

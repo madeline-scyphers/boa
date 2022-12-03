@@ -1,4 +1,3 @@
-import datetime as dt
 import logging
 import shutil
 import tempfile
@@ -13,8 +12,8 @@ try:
 except ImportError:
     from .script_wrappers import Wrapper
 
-from boa import WrappedJobRunner, get_experiment, get_scheduler, get_dt_now_as_str
-from boa.logger import get_logger, get_formatter
+from boa import WrappedJobRunner, get_dt_now_as_str, get_experiment, get_scheduler
+from boa.logger import get_formatter, get_logger
 
 
 @click.command()

@@ -10,7 +10,6 @@ Utility functions to instantiate Ax objects
 from __future__ import annotations
 
 import copy
-import logging
 import time
 
 from ax import Experiment, Runner, SearchSpace
@@ -22,10 +21,10 @@ from ax.models.torch.botorch_moo import MultiObjectiveBotorchModel
 from ax.service.scheduler import SchedulerOptions
 
 from boa.instantiation_base import BoaInstantiationBase
+from boa.logger import get_logger
 from boa.scheduler import Scheduler
 from boa.utils import get_dictionary_from_callable
 from boa.wrappers.base_wrapper import BaseWrapper
-from boa.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -108,9 +107,7 @@ def get_scheduler(
 
 
 def get_experiment(
-    config: dict,
-    runner: Runner,
-    wrapper: BaseWrapper = None,
+    config: dict, runner: Runner, wrapper: BaseWrapper = None,
 ):
     opt_options = config["optimization_options"]
 
