@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+from inspect import isclass
 from pathlib import Path
 from typing import Type
 
@@ -20,7 +21,7 @@ from ax.service.scheduler import Scheduler
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.logger import get_formatter, get_logger
 from boa.runner import WrappedJobRunner
-from boa.storage import scheduler_to_json_file
+from boa.storage import scheduler_to_json_file, scheduler_from_json_file
 from boa.utils import get_dictionary_from_callable
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import get_dt_now_as_str
@@ -47,15 +48,26 @@ class Controller:
 
     """
 
-    def __init__(self, wrapper: Type[BaseWrapper], config_path: os.PathLike | str = None, config: dict = None):
+    def __init__(self, wrapper: Type[BaseWrapper] | BaseWrapper, config_path: os.PathLike | str = None, config: dict = None):
+        if not (config or config_path or not isclass(wrapper)):
+            raise TypeError("Controller __init__() requires either config_path or config or a instantiated wrapper")
         self.config_path = config_path
-        self.config = config
-        if not (self.config or self.config_path):
-            raise TypeError("Controller __init__() requires either config_path or config")
+        if not isclass(wrapper):
+            self.config = wrapper.config
+        else:
+            self.config = config
         self.wrapper = wrapper
 
         self.experiment: Experiment = None
         self.scheduler: Scheduler = None
+
+    @classmethod
+    def from_scheduler_path(cls, scheduler_path, wrapper: BaseWrapper | Type[BaseWrapper] | str | os.PathLike = None):
+        scheduler = scheduler_from_json_file(scheduler_path, wrapper=wrapper)
+        inst = cls(wrapper=wrapper)
+        inst.scheduler = scheduler
+        inst.experiment = scheduler.experiment
+        return inst
 
     def setup(
         self, append_timestamp: bool = None, experiment_dir: os.PathLike = None, **kwargs
@@ -124,6 +136,9 @@ class Controller:
         The scheduler after all trials have been run or the
         experiment has been stopped for another reason.
         """
+        if isclass(self.wrapper):
+            raise
+
         start = time.time()
 
         scheduler = scheduler or self.scheduler

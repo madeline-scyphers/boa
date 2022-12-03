@@ -7,6 +7,7 @@ from pathlib import Path
 import click
 
 from boa.controller import Controller
+from boa.utils import _load_module_from_path, _load_attr_from_module
 from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
 
 
@@ -76,17 +77,8 @@ def _main(config_path, rel_to_here, experiment_dir=None):
     sys.path.append(str(rel_path))
     with cd_and_cd_back(working_dir):
         if wrapper_path.exists():
-            # create a module spec from a file location so we can then load that module
-            module_name = "user_wrapper"
-            spec = importlib.util.spec_from_file_location(module_name, wrapper_path)
-            # create that module from that spec from above
-            user_wrapper = importlib.util.module_from_spec(spec)
-            sys.modules[module_name] = user_wrapper
-            # execute the loading and importing of the module
-            spec.loader.exec_module(user_wrapper)
-
-            # since we just loaded the module where the wrapper class is, we can now load it
-            WrapperCls = getattr(user_wrapper, wrapper_name)
+            module = _load_module_from_path(wrapper_path, "user_wrapper")
+            WrapperCls = _load_attr_from_module(module, wrapper_name)
         else:
             from boa.wrappers.script_wrapper import ScriptWrapper as WrapperCls
 

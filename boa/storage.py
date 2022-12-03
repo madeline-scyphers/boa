@@ -42,7 +42,7 @@ def scheduler_to_json_file(scheduler, filepath: os.PathLike = "scheduler_snapsho
 
 
 def scheduler_from_json_file(filepath: os.PathLike = "scheduler.json", wrapper=None, **kwargs) -> Scheduler:
-    """Restore an `AxClient` and its state from a JSON-serialized snapshot,
+    """Restore an `Scheduler` and its state from a JSON-serialized snapshot,
     residing in a .json file by the given path.
     """
     with open(filepath, "r") as file:  # pragma: no cover
