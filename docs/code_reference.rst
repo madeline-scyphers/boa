@@ -56,6 +56,7 @@ Advanced Usage/Direct Python Access
     :template: custom_module_template_short.rst
 
     boa.controller
+    boa.scheduler
     boa.ax_instantiation_utils
     boa.runner
     boa.utils

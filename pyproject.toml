@@ -27,7 +27,7 @@ dynamic = ["version", "dependencies", "optional-dependencies"]
 Documentation = "http://pyboa.readthedocs.io"
 
 [tool.setuptools.packages.find]
-where = ["boa"]
+include = ["boa*"]
 
 [tool.setuptools_scm]
 write_to = "boa/_version.py"

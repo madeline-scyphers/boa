@@ -18,6 +18,7 @@ from ax import Experiment
 from ax.service.scheduler import Scheduler
 
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
+from boa.logger import get_formatter, get_logger
 from boa.runner import WrappedJobRunner
 from boa.storage import scheduler_to_json_file
 from boa.utils import get_dictionary_from_callable
@@ -93,15 +94,12 @@ class Controller:
         self.wrapper: BaseWrapper = self.wrapper(**load_config_kwargs)
         config = self.wrapper.config
 
-        log_format = "%(levelname)s %(asctime)s - %(message)s"
-        logging.basicConfig(
-            filename=Path(self.wrapper.experiment_dir) / "optimization.log",
-            filemode="w",
-            format=log_format,
-            level=logging.DEBUG,
-        )
-        logging.getLogger().addHandler(logging.StreamHandler())
-        logger = logging.getLogger(__file__)
+        logger = get_logger(__name__)
+        fh = logging.FileHandler(str(Path(self.wrapper.experiment_dir) / "optimization.log"))
+        formatter = get_formatter()
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+
         logger.info("Start time: %s", get_dt_now_as_str())
 
         self.experiment = get_experiment(config, WrappedJobRunner(wrapper=self.wrapper), self.wrapper)

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import logging
 import subprocess
 
 from ax.core.base_trial import BaseTrial, TrialStatus
 
+from boa.logger import get_logger
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import (
     get_trial_dir,
@@ -13,7 +13,7 @@ from boa.wrappers.wrapper_utils import (
     split_shell_command,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ScriptWrapper(BaseWrapper):

@@ -9,7 +9,6 @@ to make sure that if users do any directory changes inside a wrapper function,
 the original directory is returned to afterwards.
 
 """
-import logging
 from abc import ABCMeta
 from functools import wraps
 
@@ -17,10 +16,11 @@ from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_R
 from ax.storage.metric_registry import CORE_METRIC_REGISTRY
 from ax.storage.runner_registry import CORE_RUNNER_REGISTRY
 
+from boa.logger import get_logger
 from boa.registry import _add_common_encodes_and_decodes
 from boa.wrappers.wrapper_utils import cd_and_cd_back_dec
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def write_exception_to_log(func):

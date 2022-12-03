@@ -1,10 +1,8 @@
-import datetime as dt
 import logging
 import shutil
 import tempfile
 import time
 from pathlib import Path
-from pprint import pformat
 
 import click
 from ax.service.utils.report_utils import exp_to_df
@@ -14,7 +12,8 @@ try:
 except ImportError:
     from .script_wrappers import Wrapper
 
-from boa import WrappedJobRunner, get_experiment, get_scheduler
+from boa import WrappedJobRunner, get_dt_now_as_str, get_experiment, get_scheduler
+from boa.logger import get_formatter, get_logger
 
 
 @click.command()
@@ -34,16 +33,13 @@ def run_opt(output_dir):
     experiment_dir = wrapper.experiment_dir
     # Copy the experiment config to the experiment directory
     shutil.copyfile(config_file, experiment_dir / Path(config_file).name)
-    log_format = "%(levelname)s %(asctime)s - %(message)s"
-    logging.basicConfig(
-        filename=Path(experiment_dir) / "optimization.log",
-        filemode="w",
-        format=log_format,
-        level=logging.DEBUG,
-    )
-    logging.getLogger().addHandler(logging.StreamHandler())
-    logger = logging.getLogger(__file__)
-    logger.info("Start time: %s", dt.datetime.now().strftime("%Y%m%dT%H%M%S"))
+    logger = get_logger(__name__)
+    fh = logging.FileHandler(str(Path(wrapper.experiment_dir) / "optimization.log"))
+    formatter = get_formatter()
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    logger.info("Start time: %s", get_dt_now_as_str())
 
     experiment = get_experiment(config, WrappedJobRunner(wrapper=wrapper), wrapper)
     scheduler = get_scheduler(experiment, config=config)
@@ -52,10 +48,7 @@ def run_opt(output_dir):
     scheduler.run_n_trials(total_trials - 5)
 
     # We output a bunch of stuff to the log for easier debugging
-    logger.info(pformat(scheduler.get_best_trial()))
     logger.info(scheduler.experiment.fetch_data().df)
-    logging.info(pformat(scheduler.get_best_trial()))
-    logging.info(scheduler.experiment.fetch_data().df)
     logging.info(exp_to_df(scheduler.experiment))
 
     logger.info("\nTrials completed! Total run time: %d", time.time() - start)
