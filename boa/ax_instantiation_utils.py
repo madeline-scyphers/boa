@@ -37,11 +37,11 @@ def instantiate_search_space_from_json(
     return BoaInstantiationBase.make_search_space(parameters, parameter_constraints)
 
 
-def get_generation_strategy(config: dict, experiment: Experiment = None):
+def get_generation_strategy(config: dict, experiment: Experiment = None, **kwargs):
     if config.get("steps"):  # if they are explicitly defining the steps, use those to make gen strat
         return generation_strategy_from_config(config=config, experiment=experiment)
     # else auto generate the gen strat
-    return choose_generation_strategy_from_experiment(experiment=experiment, config=config)
+    return choose_generation_strategy_from_experiment(experiment=experiment, config=config, **kwargs)
 
 
 def generation_strategy_from_config(config: dict, experiment: Experiment = None):
@@ -59,12 +59,12 @@ def generation_strategy_from_config(config: dict, experiment: Experiment = None)
     return gs
 
 
-def choose_generation_strategy_from_experiment(experiment: Experiment, config: dict) -> GenerationStrategy:
+def choose_generation_strategy_from_experiment(experiment: Experiment, config: dict, **kwargs) -> GenerationStrategy:
     return choose_generation_strategy(
         search_space=experiment.search_space,
         experiment=experiment,
         optimization_config=experiment.optimization_config,
-        **get_dictionary_from_callable(choose_generation_strategy, config),
+        **{**get_dictionary_from_callable(choose_generation_strategy, config), **kwargs},
     )
 
 
@@ -73,6 +73,7 @@ def get_scheduler(
     generation_strategy: GenerationStrategy = None,
     scheduler_options: SchedulerOptions = None,
     config: dict = None,
+    **kwargs,
 ) -> Scheduler:
     scheduler_options = scheduler_options or SchedulerOptions(**config["optimization_options"]["scheduler"])
     if generation_strategy is None:
@@ -106,11 +107,7 @@ def get_scheduler(
     )
 
 
-def get_experiment(
-    config: dict,
-    runner: Runner,
-    wrapper: BaseWrapper = None,
-):
+def get_experiment(config: dict, runner: Runner, wrapper: BaseWrapper = None, **kwargs):
     opt_options = config["optimization_options"]
 
     search_space = instantiate_search_space_from_json(config.get("parameters"), config.get("parameter_constraints"))

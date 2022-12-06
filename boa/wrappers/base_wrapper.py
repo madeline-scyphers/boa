@@ -7,11 +7,12 @@ Base Wrapper
 
 from __future__ import annotations
 
-import os
 import pathlib
 
 from ax.core.base_trial import BaseTrial
+from ax.storage.json_store.encoder import object_to_json
 
+from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metaclasses import WrapperRegister
 from boa.wrappers.wrapper_utils import (
@@ -24,6 +25,7 @@ logger = get_logger(__name__)
 
 
 class BaseWrapper(metaclass=WrapperRegister):
+    _path: PathLike
     """
 
     Parameters
@@ -33,7 +35,7 @@ class BaseWrapper(metaclass=WrapperRegister):
     kwargs
     """
 
-    def __init__(self, config_path: os.PathLike = None, config: dict = None, *args, **kwargs):
+    def __init__(self, config_path: PathLike = None, config: dict = None, *args, **kwargs):
         self.experiment_dir = None
         self.working_dir = None
         self.ex_settings = {}
@@ -73,7 +75,10 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     @metric_names.setter
     def metric_names(self, metric_names):
-        self._metric_names = metric_names
+        if metric_names:
+            self._metric_names = metric_names
+        else:
+            self._metric_names = []
 
     @property
     def config(self):
@@ -81,7 +86,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     @config.setter
     def config(self, config):
-        self._config = config
+        self._config = config or {}
         if self._config:
             self.ex_settings = self.config["optimization_options"]
             self.model_settings = self.config.get("model_options", {})
@@ -105,7 +110,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         return self._experiment_dir
 
     @experiment_dir.setter
-    def experiment_dir(self, experiment_dir: os.PathLike | str):
+    def experiment_dir(self, experiment_dir: PathLike):
         if experiment_dir:
             self._experiment_dir = pathlib.Path(experiment_dir).resolve()
         else:
@@ -116,13 +121,13 @@ class BaseWrapper(metaclass=WrapperRegister):
         return self._working_dir
 
     @working_dir.setter
-    def working_dir(self, working_dir: os.PathLike | str):
+    def working_dir(self, working_dir: PathLike):
         if working_dir:
             self._working_dir = pathlib.Path(working_dir).resolve()
         else:
             self._working_dir = working_dir
 
-    def load_config(self, config_path: os.PathLike | str, *args, **kwargs) -> dict:
+    def load_config(self, config_path: PathLike, *args, **kwargs) -> dict:
         """
         Load config takes a configuration path of either a JSON file or a YAML file and returns
         your configuration dictionary.
@@ -158,8 +163,8 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     def mk_experiment_dir(
         self,
-        experiment_dir: os.PathLike | str = None,
-        working_dir: os.PathLike | str = None,
+        experiment_dir: PathLike = None,
+        working_dir: PathLike = None,
         experiment_name: str = None,
         append_timestamp: bool = True,
         **kwargs,
@@ -178,7 +183,7 @@ class BaseWrapper(metaclass=WrapperRegister):
             Path to the directory for the output of the experiment
             You may specify this or working_dir in your configuration file instead.
             (Defaults to your configuration file and then None)
-        working_dir: os.PathLike
+        working_dir: PathLike
             Working directory of project, experiment_dir will be placed inside
             working dir based on experiment name.
             Because of this only either experiment_dir or working_dir may be specified.
@@ -420,3 +425,19 @@ class BaseWrapper(metaclass=WrapperRegister):
         ...     # and look them up at run time
         ...     return {"a": funcs[metric_properties[metric_name]["function"]](trial.arm.parameters)}
         """
+
+    def to_dict(self) -> dict:
+        """Convert runner to a dictionary."""
+
+        properties = object_to_json(
+            dict(
+                path=str(self._path),
+                experiment_dir=self.experiment_dir,
+                working_dir=self.working_dir,
+                metric_names=self.metric_names,
+                config=self.config,
+                name=self.__class__.__name__,
+            )
+        )
+
+        return properties

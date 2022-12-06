@@ -9,7 +9,6 @@ stop and restart.
 """
 
 import json
-import os
 from typing import Any, Callable, Dict, Optional, Type
 
 from ax.service.scheduler import Scheduler, SchedulerOptions
@@ -25,29 +24,50 @@ from ax.storage.json_store.registry import (
     CORE_ENCODER_REGISTRY,
 )
 
+from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metrics.modular_metric import ModularMetric
 from boa.runner import WrappedJobRunner
+from boa.wrappers.wrapper_utils import initialize_wrapper
 
 logger = get_logger(__name__)
 
 
-def scheduler_to_json_file(scheduler, filepath: os.PathLike = "scheduler_snapshot.json") -> None:
-    """Save a JSON-serialized snapshot of this `AxClient`'s settings and state
+def scheduler_to_json_file(scheduler, filepath: PathLike = "scheduler_snapshot.json") -> None:
+    """Save a JSON-serialized snapshot of this `Scheduler`'s settings and state
     to a .json file by the given path.
     """
     with open(filepath, "w+") as file:  # pragma: no cover
         file.write(json.dumps(scheduler_to_json_snapshot(scheduler)))
         logger.info(f"Saved JSON-serialized state of optimization to `{filepath}`.")
+        print(f"Saved JSON-serialized state of optimization to `{filepath}`.")
 
 
-def scheduler_from_json_file(filepath: os.PathLike = "scheduler.json", wrapper=None, **kwargs) -> Scheduler:
+def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None, **kwargs) -> Scheduler:
     """Restore an `Scheduler` and its state from a JSON-serialized snapshot,
     residing in a .json file by the given path.
     """
     with open(filepath, "r") as file:  # pragma: no cover
         serialized = json.loads(file.read())
         scheduler = scheduler_from_json_snapshot(serialized=serialized, **kwargs)
+    wrapper_dict = serialized.pop("wrapper", {})
+    wrapper_dict = object_from_json(wrapper_dict)
+    if not wrapper and "path" in wrapper_dict:
+        wrapper = initialize_wrapper(wrapper=wrapper_dict["path"], wrapper_name=wrapper_dict["name"])
+        wrapper.config = wrapper_dict.get("config", {})
+        wrapper.experiment_dir = wrapper_dict.get("experiment_dir")
+        wrapper.working_dir = wrapper_dict.get("working_dir")
+        wrapper.metric_names = wrapper_dict.get("metric_names")
+
+    if "config" in kwargs:
+        wrapper
+
+    for trial in scheduler.running_trials:
+        wrapper.set_trial_status(trial)  # try and complete or fail and leftover trials
+
+    for trial in scheduler.running_trials:  # any trial that was marked above is no longer here
+        trial.mark_failed()  # fail anything leftover from above
+
     if wrapper is not None:
         if isinstance(scheduler.experiment.runner, WrappedJobRunner):
             scheduler.experiment.runner.wrapper = wrapper
@@ -62,11 +82,11 @@ def scheduler_to_json_snapshot(
     encoder_registry: Optional[Dict[Type, Callable[[Any], Dict[str, Any]]]] = None,
     class_encoder_registry: Optional[Dict[Type, Callable[[Any], Dict[str, Any]]]] = None,
 ) -> Dict[str, Any]:
-    """Serialize this `AxClient` to JSON to be able to interrupt and restart
+    """Serialize this `Scheduler` to JSON to be able to interrupt and restart
     optimization and save it to file by the provided path.
 
     Returns:
-        A JSON-safe dict representation of this `AxClient`.
+        A JSON-safe dict representation of this `Scheduler`.
     """
     if encoder_registry is None:
         encoder_registry = CORE_ENCODER_REGISTRY
@@ -91,6 +111,7 @@ def scheduler_to_json_snapshot(
             encoder_registry=encoder_registry,
             class_encoder_registry=class_encoder_registry,
         ),
+        "wrapper": scheduler.experiment.runner.wrapper.to_dict(),
     }
 
 
@@ -100,7 +121,7 @@ def scheduler_from_json_snapshot(
     class_decoder_registry: Optional[Dict[str, Callable[[Dict[str, Any]], Any]]] = None,
     **kwargs,
 ) -> Scheduler:
-    """Recreate an `AxClient` from a JSON snapshot."""
+    """Recreate an `Scheduler` from a JSON snapshot."""
     if decoder_registry is None:
         decoder_registry = CORE_DECODER_REGISTRY
 
@@ -127,6 +148,6 @@ def scheduler_from_json_snapshot(
         generation_strategy_json=serialized_generation_strategy, experiment=experiment
     )
 
-    ax_client = Scheduler(generation_strategy=generation_strategy, experiment=experiment, options=options, **kwargs)
-    ax_client._experiment = experiment
-    return ax_client
+    scheduler = Scheduler(generation_strategy=generation_strategy, experiment=experiment, options=options, **kwargs)
+    scheduler._experiment = experiment
+    return scheduler

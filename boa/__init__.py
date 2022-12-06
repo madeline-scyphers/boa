@@ -11,6 +11,7 @@ except ImportError:
 
 from boa.ax_instantiation_utils import *  # noqa
 from boa.controller import *  # noqa
+from boa.definitions import PathLike
 from boa.instantiation_base import *  # noqa
 from boa.metrics.metric_funcs import *  # noqa
 from boa.metrics.metrics import *  # noqa

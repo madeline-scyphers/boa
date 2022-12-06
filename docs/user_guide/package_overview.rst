@@ -43,7 +43,7 @@ Creating a run script (sometimes needed)
 Most of the time you won't need to write a run script because BOA has an built-in run script in
 its :mod:`.controller`. But if you do need more control over your run script than the default
 provides, you can either subclass :class:`.Controller` or write your own run script. Subclassing
-:class:`.Controller` might be easier if you just need to modify :meth:`.Controller.run` or :meth:`.Controller.setup`
+:class:`.Controller` might be easier if you just need to modify :meth:`.Controller.run` or :meth:`.Controller.initialize_wrapper` or :meth:`.Controller.initialize_scheduler`
 but can utilize the rest of the functions. If you need a lot of customization, writing your own run script might be
 easier. Some Custom run scripts are included in the link below.
 

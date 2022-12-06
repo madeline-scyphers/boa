@@ -9,9 +9,7 @@ The Controller class controls the optimization.
 from __future__ import annotations
 
 import logging
-import os
 import time
-from inspect import isclass
 from pathlib import Path
 from typing import Type
 
@@ -19,12 +17,12 @@ from ax import Experiment
 from ax.service.scheduler import Scheduler
 
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
+from boa.definitions import PathLike
 from boa.logger import get_formatter, get_logger
 from boa.runner import WrappedJobRunner
-from boa.storage import scheduler_to_json_file, scheduler_from_json_file
-from boa.utils import get_dictionary_from_callable
+from boa.storage import scheduler_from_json_file
 from boa.wrappers.base_wrapper import BaseWrapper
-from boa.wrappers.wrapper_utils import get_dt_now_as_str
+from boa.wrappers.wrapper_utils import get_dt_now_as_str, initialize_wrapper
 
 
 class Controller:
@@ -48,44 +46,61 @@ class Controller:
 
     """
 
-    def __init__(self, wrapper: Type[BaseWrapper] | BaseWrapper, config_path: os.PathLike | str = None, config: dict = None):
-        if not (config or config_path or not isclass(wrapper)):
-            raise TypeError("Controller __init__() requires either config_path or config or a instantiated wrapper")
-        self.config_path = config_path
-        if not isclass(wrapper):
-            self.config = wrapper.config
-        else:
-            self.config = config
+    def __init__(
+        self,
+        wrapper: Type[BaseWrapper] | BaseWrapper | PathLike,
+        config_path: PathLike = None,
+        config: dict = None,
+        **kwargs,
+    ):
+        if not (config or config_path or isinstance(wrapper, BaseWrapper)):
+            raise TypeError("Controller __init__() requires either config_path or config or an instantiated wrapper")
+        if not isinstance(wrapper, BaseWrapper):
+            wrapper = self.initialize_wrapper(wrapper=wrapper, config=config, config_path=config_path, **kwargs)
         self.wrapper = wrapper
+        self.config = self.wrapper.config
 
         self.experiment: Experiment = None
         self.scheduler: Scheduler = None
+        self.logger = self.start_logger()
 
     @classmethod
-    def from_scheduler_path(cls, scheduler_path, wrapper: BaseWrapper | Type[BaseWrapper] | str | os.PathLike = None):
-        scheduler = scheduler_from_json_file(scheduler_path, wrapper=wrapper)
-        inst = cls(wrapper=wrapper)
+    def from_scheduler_path(cls, scheduler_path, wrapper: BaseWrapper | Type[BaseWrapper] | PathLike = None, **kwargs):
+        if wrapper:
+            wrapper = cls.initialize_wrapper(wrapper, **kwargs)
+            scheduler = scheduler_from_json_file(scheduler_path, wrapper=wrapper)
+        else:
+            scheduler = scheduler_from_json_file(scheduler_path, **kwargs)
+            wrapper = scheduler.experiment.runner.wrapper
+            if "config_path" in kwargs:
+                config = wrapper.load_config(kwargs["config_path"])
+                wrapper.config = config
+
+        inst = cls(wrapper=wrapper, **kwargs)
         inst.scheduler = scheduler
         inst.experiment = scheduler.experiment
         return inst
 
-    def setup(
-        self, append_timestamp: bool = None, experiment_dir: os.PathLike = None, **kwargs
-    ) -> tuple[Scheduler, BaseWrapper]:
+    @staticmethod
+    def initialize_wrapper(*args, **kwargs):
+        return initialize_wrapper(*args, **kwargs)
+
+    def start_logger(self):
+        self.logger = get_logger(__name__)
+        fh = logging.FileHandler(str(Path(self.wrapper.experiment_dir) / "optimization.log"))
+        formatter = get_formatter()
+        fh.setFormatter(formatter)
+        self.logger.addHandler(fh)
+        return self.logger
+
+    def initialize_scheduler(self, **kwargs) -> tuple[Scheduler, BaseWrapper]:
         """
-        Sets up all the classes and objects needed to create the Ax Scheduler
+        Sets experiment and scheduler
 
         Parameters
         ----------
-        append_timestamp
-            Whether to append the output experiment directory with a timestamp or not
-            (default True)
-        experiment_dir
-            Output experiment directory to which the experiment and trials will be saved
-            (defaults to experiment_dir specified in the config script options
-            or working_dir/experiment_name [if working_dir specified in config]
-            or current_dir/experiment_name [if working_dir and experiment_dir and
-            not specified])
+        kwargs
+            kwargs to pass to get_experiment and get_scheduler
 
         Returns
         -------
@@ -93,29 +108,9 @@ class Controller:
         and the second element being your wrapper (both initialized
         and ready to go)
         """
-        if self.config:
-            kwargs["config"] = self.config
-        if self.config_path:
-            kwargs["config_path"] = self.config_path
-        if experiment_dir:
-            kwargs["experiment_dir"] = experiment_dir
-        if append_timestamp is not None:
-            kwargs["append_timestamp"] = append_timestamp
 
-        load_config_kwargs = get_dictionary_from_callable(self.wrapper.__init__, kwargs)
-        self.wrapper: BaseWrapper = self.wrapper(**load_config_kwargs)
-        config = self.wrapper.config
-
-        logger = get_logger(__name__)
-        fh = logging.FileHandler(str(Path(self.wrapper.experiment_dir) / "optimization.log"))
-        formatter = get_formatter()
-        fh.setFormatter(formatter)
-        logger.addHandler(fh)
-
-        logger.info("Start time: %s", get_dt_now_as_str())
-
-        self.experiment = get_experiment(config, WrappedJobRunner(wrapper=self.wrapper), self.wrapper)
-        self.scheduler = get_scheduler(self.experiment, config=config)
+        self.experiment = get_experiment(self.config, WrappedJobRunner(wrapper=self.wrapper), self.wrapper, **kwargs)
+        self.scheduler = get_scheduler(self.experiment, config=self.config, **kwargs)
         return self.scheduler, self.wrapper
 
     def run(self, scheduler: Scheduler = None, wrapper: BaseWrapper = None) -> Scheduler:
@@ -126,20 +121,18 @@ class Controller:
         ----------
         scheduler
             initialed scheduler or None, if None, defaults to
-            ``self.scheduler`` (the scheduler set up in :meth:`.Controller.setup`
+            ``self.scheduler`` (the scheduler set up in :meth:`.Controller.initialize_scheduler`
         wrapper
             initialed wrapper or None, if None, defaults to
-            ``self.wrapper`` (the wrapper set up in :meth:`.Controller.setup`
+            ``self.wrapper`` (the wrapper set up in :meth:`.Controller.initialize_wrapper`
 
         Returns
         -------
         The scheduler after all trials have been run or the
         experiment has been stopped for another reason.
         """
-        if isclass(self.wrapper):
-            raise
-
         start = time.time()
+        self.logger.info("Start time: %s", get_dt_now_as_str())
 
         scheduler = scheduler or self.scheduler
         wrapper = wrapper or self.wrapper
@@ -149,10 +142,10 @@ class Controller:
         try:
             scheduler.run_all_trials()
         finally:
-            logging.info("\nTrials completed! Total run time: %d", time.time() - start)
-        try:
-            experiment_dir = wrapper.experiment_dir
-            scheduler_to_json_file(scheduler, experiment_dir / "scheduler.json")
-        except Exception as e:
-            logging.exception("failed to save scheduler to json! Reason: %s" % repr(e))
+            self.logger.info("\nTrials completed! Total run time: %d", time.time() - start)
+        # try:
+        #     experiment_dir = wrapper.experiment_dir
+        #     scheduler_to_json_file(scheduler, experiment_dir / "scheduler.json")
+        # except Exception as e:
+        #     self.logger.exception("failed to save scheduler to json! Reason: %s" % repr(e))
         return scheduler

@@ -24,7 +24,6 @@ This is where you will find information about :doc:`BOA's </index>` Wrapper clas
     boa.wrappers.script_wrapper
     boa.wrappers.wrapper_utils
 
-
 :doc:`Metrics <api/boa.metrics>`:
 =================================
 

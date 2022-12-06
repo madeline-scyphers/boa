@@ -108,7 +108,7 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
     else:
         config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.yaml"
 
-    yield dunder_main.main(split_shell_command(f"--config_path {config_path} -td"), standalone_mode=False)
+    yield dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
 
 
 @pytest.fixture(scope="session")
@@ -116,4 +116,4 @@ def r_scripts_run(request, tmp_path_factory, cd_to_root_and_back_session):
     full_or_light = request.param
     config_path = TEST_DIR / f"scripts/other_langs/r_package_{full_or_light}/config.yaml"
 
-    yield dunder_main.main(split_shell_command(f"--config_path {config_path} -td"), standalone_mode=False)
+    yield dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)

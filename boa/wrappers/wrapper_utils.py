@@ -17,7 +17,7 @@ import shlex
 from contextlib import contextmanager
 from copy import deepcopy
 from functools import wraps
-from typing import Union
+from typing import TYPE_CHECKING, Type, Union
 
 import yaml
 from ax.core.base_trial import BaseTrial
@@ -26,8 +26,16 @@ from ax.exceptions.core import AxError
 from ax.storage.json_store.encoder import object_to_json
 from ax.utils.common.docutils import copy_doc
 
-from boa.definitions import IS_WINDOWS
+from boa.definitions import IS_WINDOWS, PathLike, PathLike_tup
 from boa.logger import get_logger
+from boa.utils import (
+    _load_attr_from_module,
+    _load_module_from_path,
+    get_dictionary_from_callable,
+)
+
+if TYPE_CHECKING:
+    from boa import BaseWrapper
 
 logger = get_logger(__name__)
 
@@ -40,7 +48,7 @@ PARAM_CLASSES = {
 
 
 @contextmanager
-def cd_and_cd_back(path: os.PathLike | str = None):
+def cd_and_cd_back(path: PathLike = None):
     """Context manager that will return to the starting directory
     when the context manager exits, regardless of what directory
     changes happen between start and end.
@@ -81,7 +89,7 @@ def cd_and_cd_back(path: os.PathLike | str = None):
         os.chdir(cwd)
 
 
-def cd_and_cd_back_dec(path: os.PathLike | str = None):
+def cd_and_cd_back_dec(path: PathLike = None):
     """Same as :func:`cd_and_cd_back` except as a function decorator instead of
     a context manager.
 
@@ -124,6 +132,27 @@ def cd_and_cd_back_dec(path: os.PathLike | str = None):
     return _cd_and_cd_back_dec
 
 
+def initialize_wrapper(
+    wrapper: Type[BaseWrapper] | PathLike,
+    append_timestamp: bool = None,
+    experiment_dir: PathLike = None,
+    wrapper_name: str = "Wrapper",
+    **kwargs,
+):
+    if isinstance(wrapper, PathLike_tup):
+        module = _load_module_from_path(wrapper, "user_wrapper")
+        wrapper: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_name)
+
+    if experiment_dir:
+        kwargs["experiment_dir"] = experiment_dir
+    if append_timestamp is not None:
+        kwargs["append_timestamp"] = append_timestamp
+
+    load_config_kwargs = get_dictionary_from_callable(wrapper.__init__, kwargs)
+    wrapper = wrapper(**load_config_kwargs)
+    return wrapper
+
+
 def split_shell_command(cmd: str):
     """
     split shell command for passing to python subproccess.
@@ -135,7 +164,7 @@ def split_shell_command(cmd: str):
     return shlex.split(cmd, posix=not IS_WINDOWS)
 
 
-def load_json(file: os.PathLike | str, normalize: bool = True, *args, **kwargs) -> dict:
+def load_json(file: PathLike, normalize: bool = True, *args, **kwargs) -> dict:
     """
     Read experiment configuration file for setting up the optimization.
     The configuration file contains the list of parameters, and whether each parameter is a fixed
@@ -177,7 +206,7 @@ def load_json(file: os.PathLike | str, normalize: bool = True, *args, **kwargs) 
 
 
 @copy_doc(load_json)
-def load_yaml(file: os.PathLike, normalize: bool = True, *args, **kwargs) -> dict:
+def load_yaml(file: PathLike, normalize: bool = True, *args, **kwargs) -> dict:
     file = pathlib.Path(file).expanduser()
     with open(file, "r") as f:
         config: dict = yaml.safe_load(f)
@@ -188,7 +217,7 @@ def load_yaml(file: os.PathLike, normalize: bool = True, *args, **kwargs) -> dic
 
 
 @copy_doc(load_json)
-def load_jsonlike(file: os.PathLike, *args, **kwargs):
+def load_jsonlike(file: PathLike, *args, **kwargs):
     file = pathlib.Path(file)
     if file.suffix.lstrip(".").lower() in {"yaml", "yml"}:
         return load_yaml(file, *args, **kwargs)
@@ -342,7 +371,9 @@ def normalize_config(
     return config
 
 
-def wpr_params_to_boa(params: dict, parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]]) -> dict:
+def wpr_params_to_boa(
+    params: dict, parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]]
+) -> tuple[dict, dict]:
     """
 
     Parameters
@@ -445,8 +476,8 @@ def get_dt_now_as_str(fmt: str = "%Y%m%dT%H%M%S") -> str:
 
 
 def make_experiment_dir(
-    working_dir: os.PathLike | str = None,
-    experiment_dir: os.PathLike | str = None,
+    working_dir: PathLike = None,
+    experiment_dir: PathLike = None,
     experiment_name: str = "",
     append_timestamp: bool = True,
     exist_ok: bool = False,
@@ -490,7 +521,7 @@ def make_experiment_dir(
 
 
 def _mk_exp_dir_from_working_dir(
-    working_dir: os.PathLike, experiment_name: str = "", append_timestamp: bool = True, exist_ok: bool = False
+    working_dir: PathLike, experiment_name: str = "", append_timestamp: bool = True, exist_ok: bool = False
 ):
     ts = get_dt_now_as_str() if append_timestamp else ""
     exp_name = "_".join(name for name in [experiment_name, ts] if name)
@@ -499,7 +530,7 @@ def _mk_exp_dir_from_working_dir(
     return ex_dir
 
 
-def _mk_exp_dir_from_exp_dir(exp_dir: os.PathLike, append_timestamp: bool = True, exist_ok: bool = False):
+def _mk_exp_dir_from_exp_dir(exp_dir: PathLike, append_timestamp: bool = True, exist_ok: bool = False):
     exp_dir = pathlib.Path(exp_dir)
     working_dir = exp_dir.parent
     experiment_name = exp_dir.name
@@ -513,7 +544,7 @@ def zfilled_trial_index(trial_index: int, fill_size: int = 6) -> str:
     return str(trial_index).zfill(fill_size)
 
 
-def get_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs):
+def get_trial_dir(experiment_dir: PathLike, trial_index: int, **kwargs):
     """
     Return a directory for a trial,
     Trial directory is named with the trial index (0 padded to 6 decimal)
@@ -536,7 +567,7 @@ def get_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs)
     return trial_dir
 
 
-def make_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs):
+def make_trial_dir(experiment_dir: PathLike, trial_index: int, exist_ok=True, **kwargs):
     """
     Create a directory for a trial, and return the path to the directory.
     Trial directory is created inside the experiment directory,
@@ -549,6 +580,11 @@ def make_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs
         Directory for the experiment
     trial_index
         Trial index from the Ax client
+    exist_ok
+        Whether it is ok if the directory already exists. Errors if set to False
+        and the directory already exists. Sometimes the directory
+        already exists if reusing experiment directory of continueing
+        stopped experiments that were interrupted and have to restart trials
     **kwargs
         keyword args passed to ``get_trial_dir``
 
@@ -560,13 +596,11 @@ def make_trial_dir(experiment_dir: os.PathLike | str, trial_index: int, **kwargs
     print(experiment_dir)
     trial_dir = get_trial_dir(experiment_dir, trial_index, **kwargs)
     print(trial_dir)
-    trial_dir.mkdir()
+    trial_dir.mkdir(exist_ok=exist_ok)
     return trial_dir
 
 
-def save_trial_data(
-    trial: BaseTrial, trial_dir: pathlib.Path = None, experiment_dir: os.PathLike | str = None, **kwargs
-):
+def save_trial_data(trial: BaseTrial, trial_dir: pathlib.Path = None, experiment_dir: PathLike = None, **kwargs):
     """Save trial data (trial.json, parameters.json and data.json) to
     either: supplied trial_dir or supplied experiment_dir / trial.index
     """

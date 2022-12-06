@@ -12,12 +12,13 @@ from __future__ import annotations
 
 import importlib
 import inspect
-import os
 import sys
 import types
 from collections.abc import Iterable, Mapping
 from types import ModuleType
 from typing import Any, Callable, Optional, Type
+
+from boa.definitions import PathLike
 
 
 def get_callable_signature(callable: Callable) -> inspect.Signature:
@@ -65,7 +66,7 @@ def serialize_init_args(class_, *, parents: list[Type] = None, match_private: bo
     return extract_init_args(args, class_=class_, parents=parents, match_private=match_private, **kwargs)
 
 
-def _load_module_from_path(module_path: os.PathLike | str, module_name: str = "foo") -> types.ModuleType:
+def _load_module_from_path(module_path: PathLike, module_name: str = "foo") -> types.ModuleType:
     """Load a module dynamically from a path"""
     # create a module spec from a file location, so we can then load that module
     spec = importlib.util.spec_from_file_location(module_name, module_path)
@@ -81,6 +82,7 @@ def _load_module_from_path(module_path: os.PathLike | str, module_name: str = "f
 
 def _load_attr_from_module(module: ModuleType, to_load: str) -> Type | Callable | Any:
     return getattr(module, to_load)
+
 
 def extract_init_args(
     args: dict[str, Any], class_: Type, *, parents: list[Type] = None, match_private: bool = False, **kwargs
