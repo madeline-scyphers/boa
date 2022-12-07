@@ -1,11 +1,11 @@
 import sys
 import tempfile
-import time
 from pathlib import Path
 
 import click
 
 from boa.controller import Controller
+from boa.wrappers.script_wrapper import ScriptWrapper
 from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
 
 
@@ -60,7 +60,6 @@ def main(config_path, scheduler_path, temporary_dir, rel_to_here):
 
 
 def _main(config_path, scheduler_path, rel_to_here, experiment_dir=None):
-    s = time.time()
     if config_path:
         config_path = Path(config_path).resolve()
     if scheduler_path:
@@ -101,9 +100,7 @@ def _main(config_path, scheduler_path, rel_to_here, experiment_dir=None):
             if wrapper_path.exists():
                 kw = dict(wrapper=wrapper_path, wrapper_name=wrapper_name)
             else:
-                from boa.wrappers.script_wrapper import ScriptWrapper as WrapperCls
-
-                kw = dict(wrapper=WrapperCls)
+                kw = dict(wrapper=ScriptWrapper)
             controller = Controller(
                 config_path=config_path,
                 append_timestamp=append_timestamp,
@@ -112,7 +109,6 @@ def _main(config_path, scheduler_path, rel_to_here, experiment_dir=None):
             )
             controller.initialize_scheduler()
         scheduler = controller.run()
-        print(f"total time = {time.time() - s}")
         return scheduler
 
 

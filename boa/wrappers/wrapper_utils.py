@@ -593,10 +593,9 @@ def make_trial_dir(experiment_dir: PathLike, trial_index: int, exist_ok=True, **
     pathlib.Path
         Directory for the trial
     """
-    print(experiment_dir)
     trial_dir = get_trial_dir(experiment_dir, trial_index, **kwargs)
-    print(trial_dir)
     trial_dir.mkdir(exist_ok=exist_ok)
+    logger.info(f"Trial directory made: {trial_dir}")
     return trial_dir
 
 

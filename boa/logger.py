@@ -1,6 +1,6 @@
 import logging
 
-DEFAULT_LOG_LEVEL: int = logging.WARNING
+DEFAULT_LOG_LEVEL: int = logging.INFO
 
 
 def get_logger(name: str, level: int = DEFAULT_LOG_LEVEL) -> logging.Logger:
@@ -23,17 +23,37 @@ def get_logger(name: str, level: int = DEFAULT_LOG_LEVEL) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
-    ch = logging.StreamHandler()
-    ch.setLevel(level)
+    stream_handle: logging.StreamHandler = build_stream_handler()
+    logger.addHandler(stream_handle)
+
+    # ch = logging.StreamHandler()
+    # ch.setLevel(level)
     # create formatter and add it to the handlers
-    formatter = get_formatter()
-    ch.setFormatter(formatter)
+    # formatter = get_formatter()
+    # ch.setFormatter(formatter)
     # add the handlers to the logger
-    logger.addHandler(ch)
+    # logger.addHandler(ch)
     return logger
 
 
 def get_formatter():
-    fmt = "[%(levelname)s %(asctime)s] %(output_name)s %(processName)s %(threadName)s: %(message)s"
+    fmt = "[%(levelname)s %(asctime)s %(processName)s] %(name)s: %(message)s"
     formatter = logging.Formatter(fmt=fmt)
     return formatter
+
+
+def build_stream_handler(level: int = DEFAULT_LOG_LEVEL) -> logging.StreamHandler:
+    """Build the default stream handler used for most Ax logging. Sets
+    default level to INFO, instead of WARNING.
+
+    Args:
+        level: The log level. By default, sets level to INFO
+
+    Returns:
+        A logging.StreamHandler instance
+    """
+    console = logging.StreamHandler()
+    console.setLevel(level=level)
+    formatter = get_formatter()
+    console.setFormatter(formatter)
+    return console

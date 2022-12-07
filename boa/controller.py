@@ -142,10 +142,5 @@ class Controller:
         try:
             scheduler.run_all_trials()
         finally:
-            self.logger.info("\nTrials completed! Total run time: %d", time.time() - start)
-        # try:
-        #     experiment_dir = wrapper.experiment_dir
-        #     scheduler_to_json_file(scheduler, experiment_dir / "scheduler.json")
-        # except Exception as e:
-        #     self.logger.exception("failed to save scheduler to json! Reason: %s" % repr(e))
+            self.logger.info("Trials completed! Total run time: %d", time.time() - start)
         return scheduler
