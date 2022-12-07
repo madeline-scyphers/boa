@@ -5,12 +5,13 @@ channels:
 - conda-forge
 - defaults
 dependencies:
-  - pytest
   - myst-nb
   - jupyter
   - pip
   - pip:
     # we use external role, which is from v4.4. in conda this causes conflicts
+    - pytest
+    - pytest-cov
     - invoke
     - isort
     - flake8
