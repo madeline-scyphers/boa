@@ -24,6 +24,13 @@ from boa.storage import scheduler_from_json_file
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import get_dt_now_as_str, initialize_wrapper
 
+HEADER_BAR = """
+##############################################
+"""
+LOG_INFO = """BOA Experiment Run
+Output Experiment Dir: {exp_dir}
+Start Time {start_time}"""
+
 
 class Controller:
     """
@@ -132,7 +139,12 @@ class Controller:
         experiment has been stopped for another reason.
         """
         start = time.time()
-        self.logger.info("Start time: %s", get_dt_now_as_str())
+        start_tm = get_dt_now_as_str()
+        self.logger.info(
+            f"\n{HEADER_BAR}"
+            f"\n\n{LOG_INFO.format(exp_dir=self.wrapper.experiment_dir, start_time=start_tm)}"
+            f"\n{HEADER_BAR}"
+        )
 
         scheduler = scheduler or self.scheduler
         wrapper = wrapper or self.wrapper
@@ -140,7 +152,18 @@ class Controller:
             raise ValueError("Scheduler and wrapper must be defined, or setup in setup method!")
 
         try:
+            final_msg = "Trials Completed!"
             scheduler.run_all_trials()
+        except BaseException as e:
+            final_msg = f"Error Completing because of {repr(e)}"
+            raise
         finally:
-            self.logger.info("Trials completed! Total run time: %d", time.time() - start)
+            self.logger.info(
+                f"\n{HEADER_BAR}"
+                f"\n{final_msg}"
+                f"\n{LOG_INFO.format(exp_dir=self.wrapper.experiment_dir, start_time=start_tm)}"
+                f"\nEnd Time: {get_dt_now_as_str()}"
+                f"\nTotal Run Time: {time.time() - start}"
+                f"\n{HEADER_BAR}"
+            )
         return scheduler

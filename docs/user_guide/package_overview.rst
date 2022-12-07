@@ -57,17 +57,26 @@ Starting From Command Line
 If you are using :doc:`BOA's </index>` in built :mod:`.controller` for your run script,
 you can start your run easily from the command line.
 
-With your conda environment for boa activated, run:
+With your conda environment for boa activated, run::
 
     python -m boa --config_path path/to/your/config/file
 
-For a list of options and descriptions, type:
+or::
+
+    python -m boa -c path/to/your/config/file
+
+:doc:`BOA's </index>` will save the its current state automatically to a `scheduler.json` file in your output experiment directory every 1-few trials (depending on parallelism settings). The console will output the Output directory at the start and end of your runs to the console, it will also throughout the run, whenever it saves the `scheduler.json` file, output to the console the location where the file is being saved. You can resume a stopped run from a scheduler file::
+
+    python -m boa --scheduler-path path/to/your/scheduler.json
+
+or::
+
+    python -m boa -sp path/to/your/scheduler.json
+
+
+For a list of options and descriptions, type::
 
     python -m boa --help
-
-
-.. todo::
-    Add more information here when other language feature is fully merged in
 
 A fuller example using the command line interface can be found  :doc:`here </examples/example_py_run>`
 

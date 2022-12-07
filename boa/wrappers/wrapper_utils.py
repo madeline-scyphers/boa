@@ -481,6 +481,7 @@ def make_experiment_dir(
     experiment_name: str = "",
     append_timestamp: bool = True,
     exist_ok: bool = False,
+    **kwargs,
 ):
     """
     Creates directory for the experiment and returns the path.

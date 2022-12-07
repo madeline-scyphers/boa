@@ -22,4 +22,3 @@ link to source: https://github.com/jemissik/fetch3_nhl/blob/develop/fetch3/optim
     :language: python
 
 link to source: https://github.com/madeline-scyphers/palm_wrapper/blob/main/palm_wrapper/optimize/run.py
-

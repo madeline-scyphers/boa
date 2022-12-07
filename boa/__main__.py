@@ -74,12 +74,35 @@ def _main(config_path, scheduler_path, rel_to_here, experiment_dir=None):
         rel_path = Path.cwd()
         config = {}
 
-    script_options = config.get("script_options", {})
+    if config:
+        script_options = config.get("script_options", {})
+        options = get_config_options(experiment_dir, rel_path, script_options)
+
+    else:
+        scheduler_path = _prepend_rel_path(rel_path, scheduler_path)
+        options = dict(scheduler_path=scheduler_path, working_dir=Path.cwd())
+
+    sys.path.append(str(rel_path))
+    with cd_and_cd_back(options["working_dir"]):
+        if scheduler_path:
+            controller = Controller.from_scheduler_path(scheduler_path=scheduler_path)
+        else:
+            if options["wrapper_path"] and Path(options["wrapper_path"]).exists():
+                options["wrapper"] = options["wrapper_path"]
+            else:
+                options["wrapper"] = ScriptWrapper
+            controller = Controller(
+                config_path=config_path,
+                **options,
+            )
+            controller.initialize_scheduler()
+        scheduler = controller.run()
+        return scheduler
+
+
+def get_config_options(experiment_dir, rel_path, script_options):
     wrapper_name = script_options.get("wrapper_name", "Wrapper")
     append_timestamp = script_options.get("append_timestamp", True)
-
-    scheduler_path = scheduler_path or script_options.get("scheduler_path")
-    scheduler_path = scheduler_path or _prepend_rel_path(rel_path, scheduler_path)
 
     wrapper_path = script_options.get("wrapper_path", "wrapper.py")
     wrapper_path = _prepend_rel_path(rel_path, wrapper_path) if wrapper_path else wrapper_path
@@ -92,24 +115,14 @@ def _main(config_path, scheduler_path, rel_to_here, experiment_dir=None):
 
     if working_dir:
         sys.path.append(str(working_dir))
-    sys.path.append(str(rel_path))
-    with cd_and_cd_back(working_dir):
-        if scheduler_path:
-            controller = Controller.from_scheduler_path(scheduler_path=scheduler_path)
-        else:
-            if wrapper_path.exists():
-                kw = dict(wrapper=wrapper_path, wrapper_name=wrapper_name)
-            else:
-                kw = dict(wrapper=ScriptWrapper)
-            controller = Controller(
-                config_path=config_path,
-                append_timestamp=append_timestamp,
-                experiment_dir=experiment_dir,
-                **kw,
-            )
-            controller.initialize_scheduler()
-        scheduler = controller.run()
-        return scheduler
+
+    return dict(
+        append_timestamp=append_timestamp,
+        experiment_dir=experiment_dir,
+        working_dir=working_dir,
+        wrapper_name=wrapper_name,
+        wrapper_path=wrapper_path,
+    )
 
 
 def _prepend_rel_path(rel_path, path):
