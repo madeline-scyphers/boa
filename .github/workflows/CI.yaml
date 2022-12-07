@@ -55,7 +55,15 @@ jobs:
 
       - name: Run tests
         shell: bash -l {0}
-        run: invoke tests --options '-s -v'
+        run: invoke tests --options '-s -v --cov=boa --cov-report=xml'
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: ./coverage.xml
 
       - name: Test package builds successfully
         run: |
