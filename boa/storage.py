@@ -58,9 +58,6 @@ def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None
         wrapper.working_dir = wrapper_dict.get("working_dir")
         wrapper.metric_names = wrapper_dict.get("metric_names")
 
-    if "config" in kwargs:
-        wrapper
-
     for trial in scheduler.running_trials:
         wrapper.set_trial_status(trial)  # try and complete or fail and leftover trials
 
