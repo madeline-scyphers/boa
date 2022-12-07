@@ -69,8 +69,7 @@ nitpick_ignore_regex = [
     (r".*", r".*ax.*"),
     (r".*", r".*botorch.*"),
     (r".*", r"array.*like"),
-    ("py:class", ".*PathLike")  # TODO, why can't we use type aliases?
-
+    ("py:class", ".*PathLike"),  # TODO, why can't we use type aliases?
 ]
 
 
