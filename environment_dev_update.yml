@@ -7,4 +7,5 @@ channels:
 dependencies:
   - pip
   - pip:
+    - pytest-cov
     - -e .[dev,docs,examples]
