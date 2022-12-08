@@ -1,13 +1,12 @@
 import json
 import logging
-import sys
 from pathlib import Path
 
 import pytest
 
 import boa.__main__ as dunder_main
-import boa.test_scripts.run_branin as run_branin
-from boa import cd_and_cd_back, load_yaml
+import boa.scripts.run_branin as run_branin
+from boa import cd_and_cd_back, load_yaml, split_shell_command
 from boa.definitions import ROOT
 
 logger = logging.getLogger(__file__)
@@ -80,7 +79,7 @@ def cd_to_root_and_back_session():
 @pytest.fixture(scope="session")
 def script_main_run(tmp_path_factory, cd_to_root_and_back_session):
     output_dir = tmp_path_factory.mktemp("output")
-    yield run_branin.main.callback(output_dir)
+    yield run_branin.main(split_shell_command(f"--output_dir {output_dir}"), standalone_mode=False)
 
 
 @pytest.fixture(scope="session")
@@ -109,5 +108,12 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
     else:
         config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.yaml"
 
-    args = f"--config_path {config_path} -td"
-    yield dunder_main.main(args.split(), standalone_mode=False)
+    yield dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+
+
+@pytest.fixture(scope="session")
+def r_scripts_run(request, tmp_path_factory, cd_to_root_and_back_session):
+    full_or_light = request.param
+    config_path = TEST_DIR / f"scripts/other_langs/r_package_{full_or_light}/config.yaml"
+
+    yield dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)

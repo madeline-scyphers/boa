@@ -1,4 +1,4 @@
-name: boa2
+name: boa
 channels:
 #- pytorch-nightly
 - pytorch

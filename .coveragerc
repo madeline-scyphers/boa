@@ -1,0 +1,21 @@
+[run]
+omit =
+    # omit anything that looks like a virtual env anywhere
+    */*env*/*
+
+    # omit test directory
+    */tests/*
+
+    # omit versioning tools
+    ./boa/_version.py
+
+    # omit inits
+    __init__.py
+
+    # omit doc utils file
+    _doc_utils.py
+
+    # omit
+
+include =
+    boa/*

@@ -67,6 +67,6 @@ def setup_synthetic_metric(synthetic_metric, instantiate=True, **kw):
         metric = from_botorch(botorch_synthetic_function=metric())
 
     def modular_synthetic_metric(**kwargs):
-        return ModularMetric(**{**kw, **kwargs, "metric_to_eval": metric})
+        return ModularMetric(**{"name": synthetic_metric, **kw, **kwargs, "metric_to_eval": metric})
 
     return modular_synthetic_metric(**kw) if instantiate else modular_synthetic_metric

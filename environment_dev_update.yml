@@ -1,11 +1,22 @@
 name: boa
 channels:
 - pytorch
-- conda-forge
 - anaconda
+- conda-forge
 - defaults
 dependencies:
+  - myst-nb
+  - jupyter
   - pip
   - pip:
+    # we use external role, which is from v4.4. in conda this causes conflicts
+    - pytest
     - pytest-cov
-    - -e .[dev,docs,examples]
+    - invoke
+    - isort
+    - flake8
+    - flakeheaven>=3.0.0
+    - black==22.6.0
+    - sphinx>=4.4
+    - pydata-sphinx-theme
+    - sphinxext-remoteliteralinclude

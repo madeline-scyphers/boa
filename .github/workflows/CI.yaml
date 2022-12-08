@@ -2,10 +2,6 @@ name: ci
 
 on:
   push:
-  pull_request:
-    branches:
-      - 'develop'
-      - 'main'
 
 
 env:
@@ -23,7 +19,7 @@ jobs:
     name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Setup Mambaforge
         uses: conda-incubator/setup-miniconda@v2
@@ -36,7 +32,7 @@ jobs:
       - name: Set cache date
         run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ${{ matrix.prefix }}
           key: ${{ matrix.label }}-conda-${{ hashFiles('environment.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
@@ -47,7 +43,9 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Update environment with development env
-        run: mamba env update -n boa -f environment_dev_update.yml
+        run: |
+          mamba env update -n boa -f environment_dev_update.yml
+          mamba env update -n boa -f environment_language_updates.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Lint
@@ -57,7 +55,7 @@ jobs:
 
       - name: Run tests
         shell: bash -l {0}
-        run: invoke tests --options '-s -v --cov=boa --cov-report=xml'
+        run: invoke tests --options '-s -v --cov=boa --cov-branch --cov-report=xml'
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -67,9 +65,11 @@ jobs:
         with:
           pytest-xml-coverage-path: ./coverage.xml
 
-      - name: Test docs build with no errors
-        shell: bash -l {0}
-        run:  invoke docs -w
+      - name: Test package builds successfully
+        run: |
+          python -m pip install build
+          python -m build
+
   mac:
 
     strategy:
@@ -82,7 +82,7 @@ jobs:
     name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Setup Mambaforge
         uses: conda-incubator/setup-miniconda@v2
@@ -95,7 +95,7 @@ jobs:
       - name: Set cache date
         run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ${{ matrix.prefix }}
           key: ${{ matrix.label }}-conda-${{ hashFiles('environment_mac_x86.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
@@ -106,12 +106,14 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Update environment with development env
-        run: mamba env update -n boa -f environment_dev_update.yml
+        run: |
+          mamba env update -n boa -f environment_dev_update.yml
+          mamba env update -n boa -f environment_language_updates.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Run tests
         shell: bash -l {0}
-        run: pytest -s
+        run: invoke tests --options '-s -v'
 
 #  win:
 #    strategy:
@@ -125,7 +127,7 @@ jobs:
 #    runs-on: ${{ matrix.os }}
 #
 #    steps:
-#      - uses: actions/checkout@v2
+#      - uses: actions/checkout@v3
 #      - uses: conda-incubator/setup-miniconda@v2
 #        with:
 #          # windows has a problem where sometimes if conda installs a version of a package
@@ -139,8 +141,9 @@ jobs:
 #
 #      - name: Update env with env req
 #        shell: pwsh
-#        run: conda env update -n boa -f environment_dev_update.yml
-#
+#        run: |
+#          conda env update -n boa -f environment_dev_update.yml
+#          conda env update -n boa -f environment_language_updates.yml
 #      - name: Run tests
 #        shell: pwsh
 #        run: pytest -s

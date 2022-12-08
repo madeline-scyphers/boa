@@ -20,9 +20,9 @@ This is where you will find information about :doc:`BOA's </index>` Wrapper clas
     :template: custom_module_template_short.rst
 
     boa.wrappers
-    boa.wrappers.wrapper
+    boa.wrappers.base_wrapper
+    boa.wrappers.script_wrapper
     boa.wrappers.wrapper_utils
-
 
 :doc:`Metrics <api/boa.metrics>`:
 =================================
@@ -55,6 +55,7 @@ Advanced Usage/Direct Python Access
     :template: custom_module_template_short.rst
 
     boa.controller
+    boa.scheduler
     boa.ax_instantiation_utils
     boa.runner
     boa.utils

@@ -28,8 +28,8 @@ See :doc:`FETCH3 <fetch3:user_guide/optimization>`'s
 Example wrapper functions
 *************************
 
-The :meth:`.write_configs` function
-=====================================
+The :meth:`.BaseWrapper.write_configs` function
+====================================================================
 
 This function is used to write out the configuration files used in an individual optimization trial run,
 (i.e. your model's configuration files) or to dynamically write a run script to start an optimization trial run.
@@ -50,7 +50,7 @@ optimization trial run.
    :pyobject: Wrapper.write_configs
 
 
-The :meth:`.run_model` function
+The :meth:`.BaseWrapper.run_model` function
 ===============================================================
 
 This function defines how to start a run of your model. In most cases,
@@ -121,7 +121,7 @@ link to source: https://github.com/madeline-scyphers/palm_wrapper/blob/main/palm
 
 .. toctree::
 
-    /api/boa.wrappers.wrapper
+    /api/boa.wrappers.base_wrapper
     /api/boa.wrappers.wrapper_utils
 
 """

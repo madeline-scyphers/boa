@@ -25,7 +25,6 @@ project = "boa"
 copyright = "2022, Madeline Scyphers, Justine Missik"
 author = "Madeline Scyphers, Justine Missik"
 
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -59,16 +58,18 @@ source_suffix = {
 
 nitpicky = True
 nitpick_ignore = [
-    ('py:class', 'SearchSpace'),
-    ('py:class', 'Objective'),
-    ('py:class', 'BaseTrial'),
-    ('py:class', 'BaseTrial'),
+    ("py:class", "SearchSpace"),
+    ("py:class", "Objective"),
+    ("py:class", "BaseTrial"),
+    ("py:class", "DBSettings"),
+    # ("py:class", "PathLike"),  # TODO, why can't we use type aliases?
 ]
 
 nitpick_ignore_regex = [
-    (r'.*', r'.*ax.*'),
-    (r'.*', r'.*botorch.*'),
-    (r'.*', r'array.*like'),
+    (r".*", r".*ax.*"),
+    (r".*", r".*botorch.*"),
+    (r".*", r"array.*like"),
+    ("py:class", ".*PathLike"),  # TODO, why can't we use type aliases?
 ]
 
 
@@ -93,6 +94,10 @@ autoclass_content = "both"  # Add __init__ doc (ie. params) to class summaries
 autodoc_inherit_docstrings = True  # If no docstring, inherit from base class
 autodoc_member_order = "bysource"
 autodoc_typehints = "both"
+
+# autodoc_type_aliases = {
+#     "PathLike": "boa.definitions.PathLike"
+# }
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -115,7 +120,8 @@ html_theme_options = {
             # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
             "icon": "fab fa-github-square",
             # Whether icon should be a FontAwesome class, or a local file
-        }]
+        }
+    ]
 }
 
 

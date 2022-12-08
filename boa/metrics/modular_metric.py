@@ -11,10 +11,11 @@ import logging
 from functools import partial
 from typing import Any, Callable, Optional
 
-from ax import Metric
+from ax import Data, Metric
 from ax.core.base_trial import BaseTrial
 from ax.core.types import TParameterization
 from ax.metrics.noisy_function import NoisyFunctionMetric
+from ax.utils.common.result import Err, Ok
 from ax.utils.measurement.synthetic_functions import FromBotorch
 
 from boa.metaclasses import MetricRegister
@@ -23,9 +24,9 @@ from boa.utils import (
     get_dictionary_from_callable,
     serialize_init_args,
 )
-from boa.wrappers.wrapper import BaseWrapper
+from boa.wrappers.base_wrapper import BaseWrapper
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__file__)
 
 
 def _get_func_by_name(metric: str):
@@ -155,9 +156,8 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def fetch_trial_data(self, trial: BaseTrial, **kwargs):
         wrapper_kwargs = (
-            self.wrapper.fetch_trial_data(
+            self.wrapper._fetch_trial_data(
                 trial=trial,
-                metric_properties=self.properties,
                 metric_name=self.name,
                 **kwargs,
             )
@@ -171,7 +171,6 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         for arm in trial.arms_by_name.values():
             arm._parameters["kwargs"] = safe_kwargs
         try:
-            # if isinstance(self.metric_to_eval.func, Metric):
             if isinstance(self.metric_to_eval, Metric):
                 trial_data = self.metric_to_eval.fetch_trial_data(
                     trial=trial,
@@ -179,6 +178,10 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
                 )
             else:
                 trial_data = super().fetch_trial_data(trial=trial, **safe_kwargs)
+            if "sem" in safe_kwargs and not isinstance(trial_data, Err):
+                trial_df = trial_data.unwrap().df
+                trial_df["sem"] = safe_kwargs["sem"]
+                trial_data = Ok(Data(df=trial_df))
         finally:
             # We remove the extra parameters from the arms for json serialization
             [arm._parameters.pop("kwargs") for arm in trial.arms_by_name.values()]
@@ -186,6 +189,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def _evaluate(self, params: TParameterization, **kwargs) -> float:
         kwargs.update(params.pop("kwargs"))
+
         return self.f(**get_dictionary_from_callable(self.metric_to_eval, kwargs))
 
     def f(self, *args, **kwargs):
@@ -244,14 +248,3 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         return extract_init_args(
             args=args, class_=cls, parents=parents_b4_metric, match_private=True, exclude_fields=["wrapper"]
         )
-
-    #
-    # def __repr__(self) -> str:
-    #     init_dict = serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True)
-    #     init_dict = {k: v for k, v in init_dict.items() if v}
-    #
-    #     if isinstance(init_dict["metric_to_eval"], partial):
-    #         init_dict["metric_to_eval"] = init_dict["metric_to_eval"]
-    #
-    #     arg_str = " ".join(f"{k}={v}" for k, v in init_dict.items())
-    #     return f"{self.__class__.__name__}({arg_str})"

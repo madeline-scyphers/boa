@@ -8,17 +8,16 @@ Functions used for Metrics
 """
 from __future__ import annotations
 
-import logging
-
 import numpy as np
 import scipy.stats as stats
 import sklearn.metrics
 from sklearn.metrics import __all__ as sklearn_all
 from sklearn.metrics import mean_squared_error
 
+from boa.logger import get_logger
 from boa.utils import get_dictionary_from_callable
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def normalized_root_mean_squared_error(y_true, y_pred, normalizer="iqr", **kwargs):
@@ -66,7 +65,9 @@ def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
     import boa.metrics.metrics
 
     def modular_sklearn_metric(**kwargs):
-        return boa.metrics.metrics.SklearnMetric(**{**kw, **kwargs, "metric_to_eval": metric_to_eval})
+        return boa.metrics.metrics.SklearnMetric(
+            **{"name": metric_to_eval, **kw, **kwargs, "metric_to_eval": metric_to_eval}
+        )
 
     return modular_sklearn_metric(**kw) if instantiate else modular_sklearn_metric
 

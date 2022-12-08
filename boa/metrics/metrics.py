@@ -218,12 +218,22 @@ class NormalizedRootMeanSquaredError(ModularMetric):
 NRMSE = NormalizedRootMeanSquaredError
 normalized_root_mean_squared_error = NormalizedRootMeanSquaredError
 
+success = []
+
 
 def get_metric_from_config(config, instantiate=True, **kwargs):
-    if config.get("metric"):
+    if config.get("metric") and isinstance(config["metric"], dict):  # backwards compatibility format
         config = config["metric"]
-    if config.get("boa_metric"):
-        kwargs["metric_name"] = config["boa_metric"]
+    # If no name is defined, parse out the name to whatever metric they are defining
+    if "name" not in config and "name" not in kwargs:
+        kwargs["name"] = (
+            config.get("metric")
+            or config.get("boa_metric")
+            or config.get("sklearn_metric")
+            or config.get("synthetic_metric")
+        )
+    if config.get("boa_metric") or config.get("metric"):
+        kwargs["metric_name"] = config.get("boa_metric") or config.get("metric")
         metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
     elif config.get("sklearn_metric"):
         kwargs["metric_name"] = config["sklearn_metric"]
@@ -240,7 +250,9 @@ def get_metric_from_config(config, instantiate=True, **kwargs):
 def get_metric_by_class_name(metric_name, instantiate=True, sklearn_=False, **kwargs):
     if sklearn_:
         return setup_sklearn_metric(metric_name, instantiate=True, **kwargs)
-    return get_boa_metric(metric_name)(**kwargs) if instantiate else get_boa_metric(metric_name)
+    return (
+        get_boa_metric(metric_name)(**{"name": metric_name, **kwargs}) if instantiate else get_boa_metric(metric_name)
+    )
 
 
 def get_boa_metric(name) -> Type[ModularMetric]:
@@ -251,3 +263,11 @@ def get_boa_metric(name) -> Type[ModularMetric]:
         raise KeyError
     except KeyError:
         raise ValueError(f"Invalid Metric Name specified: {name}")
+
+
+def _get_boa_metric_any_case(name: str):
+    try:
+        metric_name = [metric for metric in globals() if metric.lower() == name.lower()][0]
+    except IndexError:
+        get_boa_metric("THIS WILL RAISE THE RIGHT ERROR IN GET BOA METRIC")
+    return get_boa_metric(metric_name)

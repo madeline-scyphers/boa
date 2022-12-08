@@ -16,10 +16,17 @@ from ax import Experiment, Runner, SearchSpace
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
-from ax.service.scheduler import Scheduler, SchedulerOptions
+from ax.modelbridge.torch import TorchModelBridge
+from ax.models.torch.botorch_moo import MultiObjectiveBotorchModel
+from ax.service.scheduler import SchedulerOptions
 
 from boa.instantiation_base import BoaInstantiationBase
+from boa.logger import get_logger
+from boa.scheduler import Scheduler
 from boa.utils import get_dictionary_from_callable
+from boa.wrappers.base_wrapper import BaseWrapper
+
+logger = get_logger(__name__)
 
 
 def instantiate_search_space_from_json(
@@ -30,11 +37,11 @@ def instantiate_search_space_from_json(
     return BoaInstantiationBase.make_search_space(parameters, parameter_constraints)
 
 
-def get_generation_strategy(config: dict, experiment: Experiment = None):
+def get_generation_strategy(config: dict, experiment: Experiment = None, **kwargs):
     if config.get("steps"):  # if they are explicitly defining the steps, use those to make gen strat
         return generation_strategy_from_config(config=config, experiment=experiment)
     # else auto generate the gen strat
-    return choose_generation_strategy_from_experiment(experiment=experiment, config=config)
+    return choose_generation_strategy_from_experiment(experiment=experiment, config=config, **kwargs)
 
 
 def generation_strategy_from_config(config: dict, experiment: Experiment = None):
@@ -52,10 +59,12 @@ def generation_strategy_from_config(config: dict, experiment: Experiment = None)
     return gs
 
 
-def choose_generation_strategy_from_experiment(experiment: Experiment, config: dict) -> GenerationStrategy:
+def choose_generation_strategy_from_experiment(experiment: Experiment, config: dict, **kwargs) -> GenerationStrategy:
     return choose_generation_strategy(
         search_space=experiment.search_space,
-        **get_dictionary_from_callable(choose_generation_strategy, config),
+        experiment=experiment,
+        optimization_config=experiment.optimization_config,
+        **{**get_dictionary_from_callable(choose_generation_strategy, config), **kwargs},
     )
 
 
@@ -64,6 +73,7 @@ def get_scheduler(
     generation_strategy: GenerationStrategy = None,
     scheduler_options: SchedulerOptions = None,
     config: dict = None,
+    **kwargs,
 ) -> Scheduler:
     scheduler_options = scheduler_options or SchedulerOptions(**config["optimization_options"]["scheduler"])
     if generation_strategy is None:
@@ -77,6 +87,8 @@ def get_scheduler(
         generation_strategy = get_generation_strategy(
             config=config["optimization_options"]["generation_strategy"], experiment=experiment
         )
+
+        _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy)
     # db_settings = DBSettings(
     #     url="sqlite:///foo.db",
     #     decoder=Decoder(config=SQAConfig()),
@@ -95,11 +107,7 @@ def get_scheduler(
     )
 
 
-def get_experiment(
-    config: dict,
-    runner: Runner,
-    wrapper=None,
-):
+def get_experiment(config: dict, runner: Runner, wrapper: BaseWrapper = None, **kwargs):
     opt_options = config["optimization_options"]
 
     search_space = instantiate_search_space_from_json(config.get("parameters"), config.get("parameter_constraints"))
@@ -115,9 +123,27 @@ def get_experiment(
         else:
             opt_options["experiment"]["name"] = time.time()
 
-    return Experiment(
+    exp = Experiment(
         search_space=search_space,
         optimization_config=optimization_config,
         runner=runner,
         **get_dictionary_from_callable(Experiment.__init__, opt_options["experiment"]),
     )
+    if not wrapper.metric_names:
+        wrapper.metric_names = list(exp.metrics.keys())
+    return exp
+
+
+def _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy):
+    if experiment.is_moo_problem:
+        for step in generation_strategy._steps:
+            model_bridge = step.model.model_bridge_class
+            is_moo_modelbridge = (
+                model_bridge and issubclass(model_bridge, TorchModelBridge) and experiment.is_moo_problem
+            )
+            if is_moo_modelbridge and not isinstance(model_bridge, MultiObjectiveBotorchModel):
+                logger.warning(
+                    "Multi Objective Optimization was specified,"
+                    f"\nbut generation steps used step: {step}, which is not"
+                    f" a MOO generation step."
+                )

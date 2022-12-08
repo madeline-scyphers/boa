@@ -114,7 +114,7 @@ def all(
     if not command.config.run.warn:
         print(
             """
-All Style Checks Tests Passed Successfully
+All Checks Passed Successfully
 ==========================================
 """
         )

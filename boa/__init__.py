@@ -16,7 +16,14 @@ from boa.metrics.metric_funcs import *  # noqa
 from boa.metrics.metrics import *  # noqa
 from boa.metrics.modular_metric import *  # noqa
 from boa.metrics.synthetic_funcs import *  # noqa
+from boa.registry import _add_common_encodes_and_decodes
 from boa.runner import *  # noqa
+from boa.scheduler import *  # noqa
 from boa.storage import *  # noqa
-from boa.wrappers.wrapper import *  # noqa
+from boa.wrappers.base_wrapper import *  # noqa
+from boa.wrappers.script_wrapper import *  # noqa
 from boa.wrappers.wrapper_utils import *  # noqa
+
+_add_common_encodes_and_decodes()
+
+del _add_common_encodes_and_decodes

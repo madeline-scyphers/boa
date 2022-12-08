@@ -76,13 +76,17 @@ x86 macs (or a mac with python running through rosetta), run::
 
 This will install boa in editable mode.
 
+If you plan on running any of the tests in other languages, run::
+
+    conda env update --name boa -f environment_language_updates.yml
+
 ********
 Test run
 ********
 
 Once everything is installed, run the test script to ensure everything is install properly::
 
-    python -m boa.test_scripts.run_branin
+    python -m boa.scripts.run_branin
 
 If this test case runs successfully, you can move on to the next steps.
 
