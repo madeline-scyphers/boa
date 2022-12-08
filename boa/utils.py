@@ -10,9 +10,15 @@ getting the signature matching
 
 from __future__ import annotations
 
+import importlib
 import inspect
+import sys
+import types
 from collections.abc import Iterable, Mapping
+from types import ModuleType
 from typing import Any, Callable, Optional, Type
+
+from boa.definitions import PathLike
 
 
 def get_callable_signature(callable: Callable) -> inspect.Signature:
@@ -58,6 +64,24 @@ def serialize_init_args(class_, *, parents: list[Type] = None, match_private: bo
     """
     args = vars(class_)  # TODO don't use vars? maybe?
     return extract_init_args(args, class_=class_, parents=parents, match_private=match_private, **kwargs)
+
+
+def _load_module_from_path(module_path: PathLike, module_name: str = "foo") -> types.ModuleType:
+    """Load a module dynamically from a path"""
+    # create a module spec from a file location, so we can then load that module
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    # create that module from that spec from above
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    # execute the loading and importing of the module
+    spec.loader.exec_module(module)
+
+    # return loaded module
+    return module
+
+
+def _load_attr_from_module(module: ModuleType, to_load: str) -> Type | Callable | Any:
+    return getattr(module, to_load)
 
 
 def extract_init_args(

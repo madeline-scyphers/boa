@@ -1,25 +1,31 @@
-import importlib.util
 import sys
 import tempfile
-import time
 from pathlib import Path
 
 import click
 
 from boa.controller import Controller
+from boa.wrappers.script_wrapper import ScriptWrapper
 from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
 
 
 @click.command()
 @click.option(
     "-c",
-    "--config_path",
+    "--config-path",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help="Path to configuration YAML file.",
 )
 @click.option(
+    "-sp",
+    "--scheduler-path",
+    type=click.Path(),
+    default="",
+    help="Path to scheduler json file.",
+)
+@click.option(
     "-td",
-    "--temporary_dir",
+    "--temporary-dir",
     is_flag=True,
     show_default=True,
     default=False,
@@ -30,7 +36,7 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
 )
 @click.option(
     "-rel",
-    "--rel_to_here",
+    "--rel-to-here",
     is_flag=True,
     show_default=True,
     default=False,
@@ -41,24 +47,60 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     " if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is"
     " if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from",
 )
-def main(config_path, temporary_dir, rel_to_here):
+def main(config_path, scheduler_path, temporary_dir, rel_to_here):
+    # config_path = config_path if config_path else None
+    # scheduler_path = scheduler_path if scheduler_path else None
     if temporary_dir:
         with tempfile.TemporaryDirectory() as temp_dir:
             experiment_dir = Path(temp_dir) / "temp"
-            return _main(config_path, rel_to_here, experiment_dir)
-    return _main(config_path, rel_to_here=rel_to_here)
+            return _main(
+                config_path, scheduler_path=scheduler_path, rel_to_here=rel_to_here, experiment_dir=experiment_dir
+            )
+    return _main(config_path, scheduler_path=scheduler_path, rel_to_here=rel_to_here)
 
 
-def _main(config_path, rel_to_here, experiment_dir=None):
-    s = time.time()
-    config_path = Path(config_path).resolve()
-    rel_path = config_path.parent
-    if rel_to_here:
+def _main(config_path, scheduler_path, rel_to_here, experiment_dir=None):
+    if config_path:
+        config_path = Path(config_path).resolve()
+    if scheduler_path:
+        scheduler_path = Path(scheduler_path).resolve()
+    if experiment_dir:
+        experiment_dir = Path(experiment_dir).resolve()
+
+    if config_path and not rel_to_here:
+        rel_path = config_path.parent
+        config = load_jsonlike(config_path, normalize=False)
+    else:
         rel_path = Path.cwd()
+        config = {}
 
-    config = load_jsonlike(config_path, normalize=False)
+    if config:
+        script_options = config.get("script_options", {})
+        options = get_config_options(experiment_dir, rel_path, script_options)
 
-    script_options = config.get("script_options", {})
+    else:
+        scheduler_path = _prepend_rel_path(rel_path, scheduler_path)
+        options = dict(scheduler_path=scheduler_path, working_dir=Path.cwd())
+
+    sys.path.append(str(rel_path))
+    with cd_and_cd_back(options["working_dir"]):
+        if scheduler_path:
+            controller = Controller.from_scheduler_path(scheduler_path=scheduler_path)
+        else:
+            if options["wrapper_path"] and Path(options["wrapper_path"]).exists():
+                options["wrapper"] = options["wrapper_path"]
+            else:
+                options["wrapper"] = ScriptWrapper
+            controller = Controller(
+                config_path=config_path,
+                **options,
+            )
+            controller.initialize_scheduler()
+        scheduler = controller.run()
+        return scheduler
+
+
+def get_config_options(experiment_dir, rel_path, script_options):
     wrapper_name = script_options.get("wrapper_name", "Wrapper")
     append_timestamp = script_options.get("append_timestamp", True)
 
@@ -73,31 +115,19 @@ def _main(config_path, rel_to_here, experiment_dir=None):
 
     if working_dir:
         sys.path.append(str(working_dir))
-    sys.path.append(str(rel_path))
-    with cd_and_cd_back(working_dir):
-        if wrapper_path.exists():
-            # create a module spec from a file location so we can then load that module
-            module_name = "user_wrapper"
-            spec = importlib.util.spec_from_file_location(module_name, wrapper_path)
-            # create that module from that spec from above
-            user_wrapper = importlib.util.module_from_spec(spec)
-            sys.modules[module_name] = user_wrapper
-            # execute the loading and importing of the module
-            spec.loader.exec_module(user_wrapper)
 
-            # since we just loaded the module where the wrapper class is, we can now load it
-            WrapperCls = getattr(user_wrapper, wrapper_name)
-        else:
-            from boa.wrappers.script_wrapper import ScriptWrapper as WrapperCls
-
-        controller = Controller(config_path=config_path, wrapper=WrapperCls)
-        controller.setup(append_timestamp=append_timestamp, experiment_dir=experiment_dir)
-        scheduler = controller.run()
-        print(f"total time = {time.time() - s}")
-        return scheduler
+    return dict(
+        append_timestamp=append_timestamp,
+        experiment_dir=experiment_dir,
+        working_dir=working_dir,
+        wrapper_name=wrapper_name,
+        wrapper_path=wrapper_path,
+    )
 
 
 def _prepend_rel_path(rel_path, path):
+    if not path:
+        return path
     path = Path(path)
     if not path.is_absolute():
         path = rel_path / path

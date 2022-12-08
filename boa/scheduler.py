@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import logging
-import os
 from pprint import pformat
 from typing import Iterable, Optional
 
 from ax.core.optimization_config import OptimizationConfig
 from ax.service.scheduler import Scheduler as AxScheduler
 
+from boa.definitions import PathLike
 from boa.runner import WrappedJobRunner
 from boa.storage import scheduler_to_json_file
 
@@ -126,7 +126,7 @@ class Scheduler(AxScheduler):
                 trials = {int(best_trial): dict(params=best_params, means=means_dict, cov_matrix=cov_matrix)}
         return trials
 
-    def save_to_json(self, filepath: os.PathLike | str = None):
+    def save_to_json(self, filepath: PathLike = None):
         """Save Scheduler to json file. Defaults to `wrapper.experiment_dir` / `filepath`"""
         filepath = filepath or "scheduler.json"
         try:

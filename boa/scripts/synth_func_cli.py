@@ -5,6 +5,9 @@ import click
 import numpy as np
 
 import boa
+from boa.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 @click.command()
@@ -37,7 +40,6 @@ def main(output_dir: Path, input_size, standard_dev, xs):
     results = dict(input=X.tolist(), output=synthetic_func(X).tolist(), metric_name="branin")
     with open(output_dir / "output.json", "w") as outfile:
         json.dump(results, outfile, indent=4)
-    print(f"saved results: {results} to {output_dir / 'output.json'}")
 
 
 if __name__ == "__main__":

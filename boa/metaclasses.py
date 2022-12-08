@@ -9,8 +9,10 @@ to make sure that if users do any directory changes inside a wrapper function,
 the original directory is returned to afterwards.
 
 """
+import sys
 from abc import ABCMeta
 from functools import wraps
+from pathlib import Path
 
 from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_REGISTRY
 from ax.storage.metric_registry import CORE_METRIC_REGISTRY
@@ -37,8 +39,6 @@ def write_exception_to_log(func):
 
 class WrapperRegister(ABCMeta):
     def __init__(cls, *args, **kwargs):
-        # CORE_ENCODER_REGISTRY[cls] = cls.wrapper_to_dict
-        # CORE_DECODER_REGISTRY[cls.__name__] = cls
         _add_common_encodes_and_decodes()
         cls.load_config = write_exception_to_log(cd_and_cd_back_dec()(cls.load_config))
         cls.mk_experiment_dir = write_exception_to_log(cd_and_cd_back_dec()(cls.mk_experiment_dir))
@@ -47,6 +47,7 @@ class WrapperRegister(ABCMeta):
         cls.set_trial_status = write_exception_to_log(cd_and_cd_back_dec()(cls.set_trial_status))
         cls.fetch_trial_data = write_exception_to_log(cd_and_cd_back_dec()(cls.fetch_trial_data))
         cls._fetch_trial_data = write_exception_to_log(cd_and_cd_back_dec()(cls._fetch_trial_data))
+        cls._path = Path(sys.modules[cls.__module__].__file__)
         super().__init__(*args, **kwargs)
 
 
