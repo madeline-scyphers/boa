@@ -26,13 +26,6 @@ def get_logger(name: str, level: int = DEFAULT_LOG_LEVEL) -> logging.Logger:
     stream_handle: logging.StreamHandler = build_stream_handler()
     logger.addHandler(stream_handle)
 
-    # ch = logging.StreamHandler()
-    # ch.setLevel(level)
-    # create formatter and add it to the handlers
-    # formatter = get_formatter()
-    # ch.setFormatter(formatter)
-    # add the handlers to the logger
-    # logger.addHandler(ch)
     return logger
 
 
@@ -43,7 +36,7 @@ def get_formatter():
 
 
 def build_stream_handler(level: int = DEFAULT_LOG_LEVEL) -> logging.StreamHandler:
-    """Build the default stream handler used for most Ax logging. Sets
+    """Build the default stream handler used for most BOA logging. Sets
     default level to INFO, instead of WARNING.
 
     Args:
