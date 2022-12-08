@@ -9,10 +9,12 @@ The Controller class controls the optimization.
 from __future__ import annotations
 
 import logging
+import shutil
 import time
 from pathlib import Path
 from typing import Type
 
+import yaml
 from ax import Experiment
 from ax.service.scheduler import Scheduler
 
@@ -64,6 +66,14 @@ class Controller:
             raise TypeError("Controller __init__() requires either config_path or config or an instantiated wrapper")
         if not isinstance(wrapper, BaseWrapper):
             wrapper = self.initialize_wrapper(wrapper=wrapper, config=config, config_path=config_path, **kwargs)
+        if config_path:
+            # Copy the experiment config to the experiment directory
+            shutil.copyfile(wrapper.config_path, wrapper.experiment_dir / Path(config_path).name)
+        else:
+            with open(wrapper.experiment_dir / "config.yaml", "w") as f:
+                # Write out config as yaml since we don't know what file format it came from
+                yaml.dump(wrapper.config, f)
+
         self.wrapper = wrapper
         self.config = self.wrapper.config
 
@@ -93,11 +103,15 @@ class Controller:
         return initialize_wrapper(*args, **kwargs)
 
     def start_logger(self):
-        self.logger = get_logger(__name__)
+        self.logger = get_logger("boa")
+        self.logger_ax = get_logger("ax")
+        self.logger_self = get_logger(__name__)
         fh = logging.FileHandler(str(Path(self.wrapper.experiment_dir) / "optimization.log"))
         formatter = get_formatter()
         fh.setFormatter(formatter)
         self.logger.addHandler(fh)
+        self.logger_ax.addHandler(fh)
+        self.logger_self.addHandler(fh)
         return self.logger
 
     def initialize_scheduler(self, **kwargs) -> tuple[Scheduler, BaseWrapper]:
