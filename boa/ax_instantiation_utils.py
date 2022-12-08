@@ -129,7 +129,8 @@ def get_experiment(config: dict, runner: Runner, wrapper: BaseWrapper = None, **
         runner=runner,
         **get_dictionary_from_callable(Experiment.__init__, opt_options["experiment"]),
     )
-    if not wrapper.metric_names:
+    # we use getattr here in case someone subclassed without the proper super calls
+    if not getattr(wrapper, "metric_names", None):
         wrapper.metric_names = list(exp.metrics.keys())
     return exp
 

@@ -1,6 +1,7 @@
 import logging
 
 DEFAULT_LOG_LEVEL: int = logging.INFO
+ROOT_LOGGER_NAME = "boa"
 
 
 def get_logger(name: str, level: int = DEFAULT_LOG_LEVEL) -> logging.Logger:
@@ -23,8 +24,17 @@ def get_logger(name: str, level: int = DEFAULT_LOG_LEVEL) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
-    stream_handle: logging.StreamHandler = build_stream_handler()
-    logger.addHandler(stream_handle)
+    if len(logger.handlers) > 0:
+        for handler in logger.handlers:
+            # add the handlers to the logger
+            # makes sure no duplicate handlers are added
+
+            if not isinstance(handler, logging.StreamHandler):
+                stream_handle: logging.StreamHandler = build_stream_handler()
+                logger.addHandler(stream_handle)
+    else:
+        stream_handle: logging.StreamHandler = build_stream_handler()
+        logger.addHandler(stream_handle)
 
     return logger
 

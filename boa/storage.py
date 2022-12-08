@@ -52,7 +52,7 @@ def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None
     wrapper_dict = serialized.pop("wrapper", {})
     wrapper_dict = object_from_json(wrapper_dict)
     if not wrapper and "path" in wrapper_dict:
-        wrapper = initialize_wrapper(wrapper=wrapper_dict["path"], wrapper_name=wrapper_dict["name"])
+        wrapper = initialize_wrapper(wrapper=wrapper_dict["path"], wrapper_name=wrapper_dict["name"], **wrapper_dict)
         wrapper.config = wrapper_dict.get("config", {})
         wrapper.experiment_dir = wrapper_dict.get("experiment_dir")
         wrapper.working_dir = wrapper_dict.get("working_dir")

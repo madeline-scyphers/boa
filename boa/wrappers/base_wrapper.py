@@ -36,6 +36,7 @@ class BaseWrapper(metaclass=WrapperRegister):
     """
 
     def __init__(self, config_path: PathLike = None, config: dict = None, *args, **kwargs):
+        self.config_path = config_path
         self.experiment_dir = None
         self.working_dir = None
         self.ex_settings = {}
@@ -71,7 +72,11 @@ class BaseWrapper(metaclass=WrapperRegister):
     @property
     def metric_names(self):
         """list of metric names names associated with this experiment"""
-        return self._metric_names
+        # in case users subclass without super
+        if hasattr(self, "_metric_names"):
+            return self._metric_names
+        else:
+            return None
 
     @metric_names.setter
     def metric_names(self, metric_names):
@@ -300,6 +305,9 @@ class BaseWrapper(metaclass=WrapperRegister):
         """
 
     def _fetch_trial_data(self, trial: BaseTrial, metric_name: str, *args, **kwargs):
+        # in case users don't subclass with super
+        if not hasattr(self, "_metric_cache"):
+            self._metric_cache = {}
         if trial.index not in self._metric_cache:
             self._metric_cache[trial.index] = {}
         if metric_name in self._metric_cache[trial.index]:
@@ -436,6 +444,7 @@ class BaseWrapper(metaclass=WrapperRegister):
                 working_dir=self.working_dir,
                 metric_names=self.metric_names,
                 config=self.config,
+                config_path=self.config_path,
                 name=self.__class__.__name__,
             )
         )
