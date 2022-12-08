@@ -73,10 +73,9 @@ class BaseWrapper(metaclass=WrapperRegister):
     def metric_names(self):
         """list of metric names names associated with this experiment"""
         # in case users subclass without super
-        if hasattr(self, "_metric_names"):
-            return self._metric_names
-        else:
-            return None
+        if not hasattr(self, "_metric_names"):
+            self._metric_names = []
+        return self._metric_names
 
     @metric_names.setter
     def metric_names(self, metric_names):

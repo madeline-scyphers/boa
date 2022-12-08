@@ -31,9 +31,9 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     show_default=True,
     default=False,
     help="Modify/add to the config file a temporary directory as the experiment_dir that will get deleted after running"
-         " (useful for testing)."
-         " This requires your Wrapper to have the ability to take experiment_dir as an argument"
-         " to ``load_config``. The default ``load_config`` does support this.",
+    " (useful for testing)."
+    " This requires your Wrapper to have the ability to take experiment_dir as an argument"
+    " to ``load_config``. The default ``load_config`` does support this.",
 )
 @click.option(
     "-rel",
@@ -42,11 +42,11 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     show_default=True,
     default=False,
     help="Define all path and dir options in your config file relative to where boa is launch from"
-         " instead of relative to the config file location (the default)"
-         " ex:"
-         " given working_dir=path/to/dir"
-         " if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is"
-         " if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from",
+    " instead of relative to the config file location (the default)"
+    " ex:"
+    " given working_dir=path/to/dir"
+    " if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is"
+    " if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from",
 )
 def main(config_path, scheduler_path, temporary_dir, rel_to_here):
     # config_path = config_path if config_path else None
@@ -65,7 +65,7 @@ def _main(config_path, scheduler_path, rel_to_here, experiment_dir=None):
         config_path = Path(config_path).resolve()
         config = load_jsonlike(config_path, normalize=False)
         script_options = config.get("script_options", {})
-        rel_to_here = script_options.get("rel_to_launch", rel_to_here)
+        rel_to_here = not script_options.get("rel_to_config") or script_options.get("rel_to_launch", rel_to_here)
     else:
         config = {}
         script_options = {}
