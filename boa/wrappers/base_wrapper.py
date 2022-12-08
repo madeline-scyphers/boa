@@ -427,7 +427,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         """
 
     def to_dict(self) -> dict:
-        """Convert runner to a dictionary."""
+        """Convert BaseWrapper to a dictionary."""
 
         properties = object_to_json(
             dict(
