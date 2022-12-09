@@ -16,12 +16,12 @@ from typing import Type
 
 import yaml
 from ax import Experiment
-from ax.service.scheduler import Scheduler
 
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.definitions import PathLike
 from boa.logger import get_formatter, get_logger
 from boa.runner import WrappedJobRunner
+from boa.scheduler import Scheduler
 from boa.storage import scheduler_from_json_file
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import get_dt_now_as_str, initialize_wrapper
@@ -38,7 +38,7 @@ class Controller:
     """
     Controls the instantiation of your :class:`.BaseWrapper` and the
     necessary Ax objects to start your Experiment and control
-    the Ax scheduler. Once the Controller sets up your Experiment, it starts
+    the BOA scheduler. Once the Controller sets up your Experiment, it starts
     the scheduler, which runs your trials. It then
     saves the scheduler to a json file.
 

@@ -11,7 +11,7 @@ stop and restart.
 import json
 from typing import Any, Callable, Dict, Optional, Type
 
-from ax.service.scheduler import Scheduler, SchedulerOptions
+from ax.service.scheduler import SchedulerOptions
 from ax.storage.json_store.decoder import (
     generation_strategy_from_json,
     object_from_json,
@@ -28,6 +28,7 @@ from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metrics.modular_metric import ModularMetric
 from boa.runner import WrappedJobRunner
+from boa.scheduler import Scheduler
 from boa.wrappers.wrapper_utils import initialize_wrapper
 
 logger = get_logger(__name__)

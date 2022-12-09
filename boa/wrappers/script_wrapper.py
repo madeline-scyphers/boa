@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import subprocess
-import time
-from functools import wraps
 
 from ax.core.base_trial import BaseTrial, TrialStatus
 
@@ -16,22 +14,6 @@ from boa.wrappers.wrapper_utils import (
 )
 
 logger = get_logger(__name__)
-
-
-def retry_on_no_data(timeout=20):
-    def inner(func):
-        @wraps(func)
-        def tru_dec(*args, **kwargs):
-            start = time.time()
-            while not (data := func(*args, **kwargs)):
-                time.sleep(0.25)
-                if time.time() - start > timeout:
-                    break
-            return data
-
-        return tru_dec
-
-    return inner
 
 
 class ScriptWrapper(BaseWrapper):
@@ -239,7 +221,8 @@ class ScriptWrapper(BaseWrapper):
         data = self._read_subprocess_script_output(
             trial, file_names=["output", "outputs", "result", "results", "metric", "metrics"]
         )
-        return data
+        if data:
+            return data
 
     def _run_subprocess_script_cmd_if_exists(
         self, trial: BaseTrial, func_names: list[str] | str, block: bool = False, **kwargs
@@ -301,7 +284,6 @@ class ScriptWrapper(BaseWrapper):
                 #     logger.info(l)
         return ran_cmds
 
-    @retry_on_no_data()
     def _read_subprocess_script_output(self, trial: BaseTrial, file_names: list[str] | str):
         trial_dir = get_trial_dir(self.experiment_dir, trial.index)
         if isinstance(file_names, str):

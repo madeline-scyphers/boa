@@ -54,18 +54,40 @@ def main(config_path, scheduler_path, temporary_dir, rel_to_here):
     if temporary_dir:
         with tempfile.TemporaryDirectory() as temp_dir:
             experiment_dir = Path(temp_dir) / "temp"
-            return _main(
+            return run(
                 config_path, scheduler_path=scheduler_path, rel_to_here=rel_to_here, experiment_dir=experiment_dir
             )
-    return _main(config_path, scheduler_path=scheduler_path, rel_to_here=rel_to_here)
+    return run(config_path, scheduler_path=scheduler_path, rel_to_here=rel_to_here)
 
 
-def _main(config_path, scheduler_path, rel_to_here, experiment_dir=None):
+def run(config_path, scheduler_path, rel_to_here, experiment_dir=None):
+    """Run experiment run from config path or scheduler path
+
+    Parameters
+    ----------
+    config_path
+        Path to configuration YAML file.
+    scheduler_path
+        Path to scheduler json file.
+    rel_to_here
+        Define all path and dir options in your config file relative to where boa is launch from"
+        instead of relative to the config file location (the default)"
+        ex:
+        given working_dir=path/to/dir
+        if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is
+        if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from
+    experiment_dir
+        experiment output directory to save BOA run to
+
+    Returns
+    -------
+        Scheduler
+    """
     if config_path:
         config_path = Path(config_path).resolve()
         config = load_jsonlike(config_path, normalize=False)
         script_options = config.get("script_options", {})
-        rel_to_here = not script_options.get("rel_to_config") or script_options.get("rel_to_launch", rel_to_here)
+        rel_to_here = script_options.get("rel_to_config", False) or script_options.get("rel_to_launch", rel_to_here)
     else:
         config = {}
         script_options = {}
