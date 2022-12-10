@@ -96,6 +96,8 @@ def scheduler_to_json_snapshot(
     options = asdict(scheduler.options)
     options.pop("global_stopping_strategy", None)
 
+    options = SchedulerOptions(**options)
+
     return {
         "_type": scheduler.__class__.__name__,
         "experiment": object_to_json(
