@@ -83,14 +83,15 @@ def run(config_path, scheduler_path, rel_to_here, experiment_dir=None):
     -------
         Scheduler
     """
+    config = {}
+    script_options = {}
+    ex_options = {}
     if config_path:
         config_path = Path(config_path).resolve()
         config = load_jsonlike(config_path, normalize=False)
         script_options = config.get("script_options", {})
+        ex_options = config.get("optimization_options", {})
         rel_to_here = script_options.get("rel_to_config", False) or script_options.get("rel_to_launch", rel_to_here)
-    else:
-        config = {}
-        script_options = {}
     if scheduler_path:
         scheduler_path = Path(scheduler_path).resolve()
     if experiment_dir:
@@ -102,7 +103,9 @@ def run(config_path, scheduler_path, rel_to_here, experiment_dir=None):
         rel_path = os.getcwd()
 
     if config:
-        options = get_config_options(experiment_dir, rel_path, script_options)
+        options = get_config_options(
+            experiment_dir=experiment_dir, rel_path=rel_path, script_options=script_options, ex_options=ex_options
+        )
     else:
         options = dict(scheduler_path=scheduler_path, working_dir=Path.cwd())
 
@@ -124,17 +127,17 @@ def run(config_path, scheduler_path, rel_to_here, experiment_dir=None):
         return scheduler
 
 
-def get_config_options(experiment_dir, rel_path, script_options):
+def get_config_options(experiment_dir, rel_path, script_options, ex_options):
     wrapper_name = script_options.get("wrapper_name", "Wrapper")
-    append_timestamp = script_options.get("append_timestamp", True)
+    append_timestamp = ex_options.get("append_timestamp") or script_options.get("append_timestamp", True)
 
     wrapper_path = script_options.get("wrapper_path", "wrapper.py")
     wrapper_path = _prepend_rel_path(rel_path, wrapper_path) if wrapper_path else wrapper_path
 
-    working_dir = script_options.get("working_dir", ".")
+    working_dir = ex_options.get("working_dir") or script_options.get("working_dir", ".")
     working_dir = _prepend_rel_path(rel_path, working_dir)
 
-    experiment_dir = experiment_dir or script_options.get("experiment_dir")
+    experiment_dir = experiment_dir or ex_options.get("experiment_dir") or script_options.get("experiment_dir")
     experiment_dir = _prepend_rel_path(rel_path, experiment_dir) if experiment_dir else experiment_dir
 
     if working_dir:

@@ -476,7 +476,7 @@ def get_dt_now_as_str(fmt: str = "%Y%m%dT%H%M%S") -> str:
 
 
 def make_experiment_dir(
-    working_dir: PathLike = None,
+    output_dir: PathLike = None,
     experiment_dir: PathLike = None,
     experiment_name: str = "",
     append_timestamp: bool = True,
@@ -489,12 +489,12 @@ def make_experiment_dir(
 
     Parameters
     ----------
-    working_dir
-        Working directory, the parent directory where the experiment directory will be written.
-        Specify either a working directory and an experiment name or an experiment_dir
+    output_dir
+        Output directory, the parent directory where the experiment directory will be written.
+        Specify either an output directory and an experiment name or an experiment_dir
     experiment_dir
         The exact dir the experiment directory boa will use to write the runs to.
-        Specify either a working directory and an experiment name or an experiment_dir
+        Specify either a output directory and an experiment name or an experiment_dir
     experiment_name
         Name of the experiment
     append_timestamp
@@ -509,34 +509,34 @@ def make_experiment_dir(
     pathlib.Path
         Path to the directory for the experiment
     """
-    if (working_dir and experiment_dir) or (not working_dir and not experiment_dir):
+    if (output_dir and experiment_dir) or (not output_dir and not experiment_dir):
         raise ValueError(
-            "`make_experiment_dir` must take either a `working_dir` and `experiment_name` "
+            "`make_experiment_dir` must take either a `output_dir` and `experiment_name` "
             "or an `experiment_dir`, not both and not neither."
         )
     if experiment_dir:
         return _mk_exp_dir_from_exp_dir(exp_dir=experiment_dir, append_timestamp=append_timestamp, exist_ok=exist_ok)
-    return _mk_exp_dir_from_working_dir(
-        working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, exist_ok=exist_ok
+    return _mk_exp_dir_from_output_dir(
+        output_dir=output_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, exist_ok=exist_ok
     )
 
 
-def _mk_exp_dir_from_working_dir(
-    working_dir: PathLike, experiment_name: str = "", append_timestamp: bool = True, exist_ok: bool = False
+def _mk_exp_dir_from_output_dir(
+    output_dir: PathLike, experiment_name: str = "", append_timestamp: bool = True, exist_ok: bool = False
 ):
     ts = get_dt_now_as_str() if append_timestamp else ""
     exp_name = "_".join(name for name in [experiment_name, ts] if name)
-    ex_dir = pathlib.Path(working_dir).expanduser() / exp_name
+    ex_dir = pathlib.Path(output_dir).expanduser() / exp_name
     ex_dir.mkdir(exist_ok=exist_ok)
     return ex_dir
 
 
 def _mk_exp_dir_from_exp_dir(exp_dir: PathLike, append_timestamp: bool = True, exist_ok: bool = False):
     exp_dir = pathlib.Path(exp_dir)
-    working_dir = exp_dir.parent
+    output_dir = exp_dir.parent
     experiment_name = exp_dir.name
-    return _mk_exp_dir_from_working_dir(
-        working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, exist_ok=exist_ok
+    return _mk_exp_dir_from_output_dir(
+        output_dir=output_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, exist_ok=exist_ok
     )
 
 

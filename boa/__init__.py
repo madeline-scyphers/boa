@@ -9,7 +9,6 @@ except ImportError:
     # package not installed
     __version__ = "0.0.0"
 
-from boa.__main__ import run  # noqa
 from boa.ax_instantiation_utils import *  # noqa
 from boa.controller import *  # noqa
 from boa.instantiation_base import *  # noqa

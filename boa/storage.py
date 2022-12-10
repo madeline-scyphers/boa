@@ -57,6 +57,7 @@ def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None
         wrapper.config = wrapper_dict.get("config", {})
         wrapper.experiment_dir = wrapper_dict.get("experiment_dir")
         wrapper.working_dir = wrapper_dict.get("working_dir")
+        wrapper.output_dir = wrapper_dict.get("output_dir")
         wrapper.metric_names = wrapper_dict.get("metric_names")
 
     for trial in scheduler.running_trials:
