@@ -28,6 +28,10 @@ from boa.wrappers.base_wrapper import BaseWrapper
 
 logger = get_logger(__name__)
 
+from ax.service.ax_client import AxClient
+
+AxClient.make_experiment()
+
 
 def instantiate_search_space_from_json(
     parameters: list | None = None, parameter_constraints: list | None = None

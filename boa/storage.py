@@ -9,6 +9,7 @@ stop and restart.
 """
 
 import json
+from dataclasses import asdict
 from typing import Any, Callable, Dict, Optional, Type
 
 from ax.service.scheduler import SchedulerOptions
@@ -92,6 +93,9 @@ def scheduler_to_json_snapshot(
     if class_encoder_registry is None:
         class_encoder_registry = CORE_CLASS_ENCODER_REGISTRY
 
+    options = asdict(scheduler.options)
+    options.pop("global_stopping_strategy", None)
+
     return {
         "_type": scheduler.__class__.__name__,
         "experiment": object_to_json(
@@ -105,7 +109,7 @@ def scheduler_to_json_snapshot(
             class_encoder_registry=class_encoder_registry,
         ),
         "options": object_to_json(
-            scheduler.options,
+            options,
             encoder_registry=encoder_registry,
             class_encoder_registry=class_encoder_registry,
         ),
