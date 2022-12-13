@@ -30,6 +30,7 @@ from boa.logger import get_logger
 from boa.metrics.modular_metric import ModularMetric
 from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
+from boa.wrappers.script_wrapper import ScriptWrapper
 from boa.wrappers.wrapper_utils import initialize_wrapper
 
 logger = get_logger(__name__)
@@ -61,13 +62,12 @@ def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None
         wrapper.output_dir = wrapper_dict.get("output_dir")
         wrapper.metric_names = wrapper_dict.get("metric_names")
 
-    for trial in scheduler.running_trials:
-        wrapper.set_trial_status(trial)  # try and complete or fail and leftover trials
-
-    for trial in scheduler.running_trials:  # any trial that was marked above is no longer here
-        trial.mark_failed()  # fail anything leftover from above
-
     if wrapper is not None:
+        for trial in scheduler.running_trials:
+            wrapper.set_trial_status(trial)  # try and complete or fail and leftover trials
+
+        for trial in scheduler.running_trials:  # any trial that was marked above is no longer here
+            trial.mark_failed()  # fail anything leftover from above
         if isinstance(scheduler.experiment.runner, WrappedJobRunner):
             scheduler.experiment.runner.wrapper = wrapper
         for metric in scheduler.experiment.metrics.values():
