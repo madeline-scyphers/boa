@@ -30,7 +30,6 @@ from boa.logger import get_logger
 from boa.metrics.modular_metric import ModularMetric
 from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
-from boa.wrappers.script_wrapper import ScriptWrapper
 from boa.wrappers.wrapper_utils import initialize_wrapper
 
 logger = get_logger(__name__)
