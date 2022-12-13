@@ -9,9 +9,10 @@ stop and restart.
 """
 
 import json
+from dataclasses import asdict
 from typing import Any, Callable, Dict, Optional, Type
 
-from ax.service.scheduler import Scheduler, SchedulerOptions
+from ax.service.scheduler import SchedulerOptions
 from ax.storage.json_store.decoder import (
     generation_strategy_from_json,
     object_from_json,
@@ -28,6 +29,7 @@ from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metrics.modular_metric import ModularMetric
 from boa.runner import WrappedJobRunner
+from boa.scheduler import Scheduler
 from boa.wrappers.wrapper_utils import initialize_wrapper
 
 logger = get_logger(__name__)
@@ -56,15 +58,15 @@ def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None
         wrapper.config = wrapper_dict.get("config", {})
         wrapper.experiment_dir = wrapper_dict.get("experiment_dir")
         wrapper.working_dir = wrapper_dict.get("working_dir")
+        wrapper.output_dir = wrapper_dict.get("output_dir")
         wrapper.metric_names = wrapper_dict.get("metric_names")
 
-    for trial in scheduler.running_trials:
-        wrapper.set_trial_status(trial)  # try and complete or fail and leftover trials
-
-    for trial in scheduler.running_trials:  # any trial that was marked above is no longer here
-        trial.mark_failed()  # fail anything leftover from above
-
     if wrapper is not None:
+        for trial in scheduler.running_trials:
+            wrapper.set_trial_status(trial)  # try and complete or fail and leftover trials
+
+        for trial in scheduler.running_trials:  # any trial that was marked above is no longer here
+            trial.mark_failed()  # fail anything leftover from above
         if isinstance(scheduler.experiment.runner, WrappedJobRunner):
             scheduler.experiment.runner.wrapper = wrapper
         for metric in scheduler.experiment.metrics.values():
@@ -90,6 +92,11 @@ def scheduler_to_json_snapshot(
     if class_encoder_registry is None:
         class_encoder_registry = CORE_CLASS_ENCODER_REGISTRY
 
+    options = asdict(scheduler.options)
+    options.pop("global_stopping_strategy", None)
+
+    options = SchedulerOptions(**options)
+
     return {
         "_type": scheduler.__class__.__name__,
         "experiment": object_to_json(
@@ -103,7 +110,7 @@ def scheduler_to_json_snapshot(
             class_encoder_registry=class_encoder_registry,
         ),
         "options": object_to_json(
-            scheduler.options,
+            options,
             encoder_registry=encoder_registry,
             class_encoder_registry=class_encoder_registry,
         ),

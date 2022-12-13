@@ -9,7 +9,7 @@ Key features
 - **Model agnostic**
 
     - Can be used for models in any language (not just python)
-    - Can be used for Wrappers in any language (You don't even need to write any python! See :mod:`Script Wrapper <.script_wrapper>` for details on how to do that.
+    - Can be used for Wrappers in any language (You don't even need to write any python!) See :mod:`Script Wrapper <.script_wrapper>` for details on how to do that.
     - Simple to implement for new models, with minimal coding required
 
 - **Scalable**

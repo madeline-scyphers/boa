@@ -37,8 +37,9 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     def __init__(self, config_path: PathLike = None, config: dict = None, *args, **kwargs):
         self.config_path = config_path
-        self.experiment_dir = None
-        self.working_dir = None
+        self._experiment_dir = None
+        self._working_dir = None
+        self._output_dir = None
         self.ex_settings = {}
         self.model_settings = {}
         self.script_options = {}
@@ -73,10 +74,9 @@ class BaseWrapper(metaclass=WrapperRegister):
     def metric_names(self):
         """list of metric names names associated with this experiment"""
         # in case users subclass without super
-        if hasattr(self, "_metric_names"):
-            return self._metric_names
-        else:
-            return None
+        if not hasattr(self, "_metric_names"):
+            self._metric_names = []
+        return self._metric_names
 
     @metric_names.setter
     def metric_names(self, metric_names):
@@ -132,6 +132,17 @@ class BaseWrapper(metaclass=WrapperRegister):
         else:
             self._working_dir = working_dir
 
+    @property
+    def output_dir(self):
+        return self._output_dir
+
+    @output_dir.setter
+    def output_dir(self, output_dir: PathLike):
+        if output_dir:
+            self._output_dir = pathlib.Path(output_dir).resolve()
+        else:
+            self._output_dir = output_dir
+
     def load_config(self, config_path: PathLike, *args, **kwargs) -> dict:
         """
         Load config takes a configuration path of either a JSON file or a YAML file and returns
@@ -169,9 +180,9 @@ class BaseWrapper(metaclass=WrapperRegister):
     def mk_experiment_dir(
         self,
         experiment_dir: PathLike = None,
-        working_dir: PathLike = None,
+        output_dir: PathLike = None,
         experiment_name: str = None,
-        append_timestamp: bool = True,
+        append_timestamp: bool = None,
         **kwargs,
     ) -> pathlib.Path:
         """
@@ -186,18 +197,18 @@ class BaseWrapper(metaclass=WrapperRegister):
         ----------
         experiment_dir
             Path to the directory for the output of the experiment
-            You may specify this or working_dir in your configuration file instead.
+            You may specify this or output_dir in your configuration file instead.
             (Defaults to your configuration file and then None)
-        working_dir: PathLike
-            Working directory of project, experiment_dir will be placed inside
-            working dir based on experiment name.
-            Because of this only either experiment_dir or working_dir may be specified.
+        output_dir: PathLike
+            Output directory of project, experiment_dir will be placed inside
+            output dir based on experiment name.
+            Because of this only either experiment_dir or output_dir may be specified.
             You may specify this or experiment_dir in your configuration file instead.
             (Defaults to your configuration file and then None, if neither
-            experiment_dir nor working_dir are specified, working_dir defaults
+            experiment_dir nor output_dir are specified, output_dir defaults
             to whatever pwd returns (and equivalent on windows))
         experiment_name: str
-            Name of experiment, used for creating path to experiment dir with the working dir
+            Name of experiment, used for creating path to experiment dir with the output dir
             (Defaults to your configuration file and then boa_runs)
         append_timestamp : bool
             Whether to append a timestamp to the end of the experiment directory
@@ -206,23 +217,27 @@ class BaseWrapper(metaclass=WrapperRegister):
         """
         # grab exp dir from config file or if passed in
         experiment_dir = experiment_dir or self.ex_settings.get("experiment_dir")
-        working_dir = working_dir or self.ex_settings.get("working_dir")
+        output_dir = output_dir or self.ex_settings.get("output_dir")
         experiment_name = experiment_name or self.ex_settings.get("experiment", {}).get("name", "boa_runs")
-        append_timestamp = append_timestamp or self.script_options.get("append_timestamp")
+        append_timestamp = (
+            append_timestamp
+            or self.ex_settings.get("append_timestamp")
+            or self.script_options.get("append_timestamp", True)
+        )
         if experiment_dir:
             mk_exp_dir_kw = dict(experiment_dir=experiment_dir, append_timestamp=append_timestamp, **kwargs)
-        else:  # if no exp dir, instead grab working dir from config or passed in
-            if not working_dir:
-                # if no working dir (or exp dir) set to cwd
-                working_dir = pathlib.Path.cwd()
+        else:  # if no exp dir, instead grab output dir from config or passed in
+            if not output_dir:
+                # if no output dir (or exp dir) set to cwd
+                output_dir = pathlib.Path.cwd()
 
             mk_exp_dir_kw = dict(
-                working_dir=working_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, **kwargs
+                output_dir=output_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, **kwargs
             )
 
             # We use str() because make_experiment_dir returns a Path object (json serialization)
-            self.ex_settings["working_dir"] = str(working_dir)
-            self.working_dir = working_dir
+            self.ex_settings["output_dir"] = str(output_dir)
+            self.output_dir = output_dir
 
         experiment_dir = make_experiment_dir(**mk_exp_dir_kw)
 
@@ -315,6 +330,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         res = self.fetch_trial_data(
             trial=trial, metric_properties=self._metric_properties, metric_name=metric_name, *args, **kwargs
         )
+        res = res or {}
         if metric_name not in res:
             res = {metric_name: res}
         self._metric_cache[trial.index].update(res)
@@ -326,9 +342,7 @@ class BaseWrapper(metaclass=WrapperRegister):
                 )
         return self._metric_cache[trial.index][metric_name]
 
-    def fetch_trial_data(
-        self, trial: BaseTrial, metric_properties: dict, metric_name: str, fetch_all=True, *args, **kwargs
-    ) -> dict:
+    def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
         """
         Retrieves the trial data for either the one metric that is specified in metric_name or all
         metrics at once.
@@ -442,6 +456,7 @@ class BaseWrapper(metaclass=WrapperRegister):
                 path=str(self._path),
                 experiment_dir=self.experiment_dir,
                 working_dir=self.working_dir,
+                output_dir=self.output_dir,
                 metric_names=self.metric_names,
                 config=self.config,
                 config_path=self.config_path,

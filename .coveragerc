@@ -7,13 +7,13 @@ omit =
     */tests/*
 
     # omit versioning tools
-    ./boa/_version.py
+    boa/_version.py
 
     # omit inits
-    __init__.py
+    */*__init__.py
 
     # omit doc utils file
-    _doc_utils.py
+    boa/_doc_utils.py
 
     # omit
 

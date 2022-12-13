@@ -9,7 +9,6 @@ from ax.service.scheduler import Scheduler as AxScheduler
 
 from boa.definitions import PathLike
 from boa.runner import WrappedJobRunner
-from boa.storage import scheduler_to_json_file
 
 logger = logging.getLogger(__file__)
 
@@ -128,6 +127,8 @@ class Scheduler(AxScheduler):
 
     def save_to_json(self, filepath: PathLike = None):
         """Save Scheduler to json file. Defaults to `wrapper.experiment_dir` / `filepath`"""
+        from boa.storage import scheduler_to_json_file
+
         filepath = filepath or "scheduler.json"
         try:
             experiment_dir = self.runner.wrapper.experiment_dir
