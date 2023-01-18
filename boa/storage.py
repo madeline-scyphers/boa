@@ -9,6 +9,7 @@ stop and restart.
 """
 
 import json
+import pathlib
 from dataclasses import asdict
 from typing import Any, Callable, Dict, Optional, Type
 
@@ -31,8 +32,9 @@ from boa.metrics.modular_metric import ModularMetric
 from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
 from boa.wrappers.wrapper_utils import initialize_wrapper
+from boa.__version__ import __version__
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 def scheduler_to_json_file(scheduler, filepath: PathLike = "scheduler_snapshot.json") -> None:
@@ -53,7 +55,7 @@ def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None
         scheduler = scheduler_from_json_snapshot(serialized=serialized, **kwargs)
     wrapper_dict = serialized.pop("wrapper", {})
     wrapper_dict = object_from_json(wrapper_dict)
-    if not wrapper and "path" in wrapper_dict:
+    if not wrapper and "path" in wrapper_dict and pathlib.Path(wrapper_dict["path"]).exists():
         wrapper = initialize_wrapper(wrapper=wrapper_dict["path"], wrapper_name=wrapper_dict["name"], **wrapper_dict)
         wrapper.config = wrapper_dict.get("config", {})
         wrapper.experiment_dir = wrapper_dict.get("experiment_dir")
@@ -61,17 +63,13 @@ def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None
         wrapper.output_dir = wrapper_dict.get("output_dir")
         wrapper.metric_names = wrapper_dict.get("metric_names")
 
+
     if wrapper is not None:
         for trial in scheduler.running_trials:
             wrapper.set_trial_status(trial)  # try and complete or fail and leftover trials
 
         for trial in scheduler.running_trials:  # any trial that was marked above is no longer here
             trial.mark_failed()  # fail anything leftover from above
-        if isinstance(scheduler.experiment.runner, WrappedJobRunner):
-            scheduler.experiment.runner.wrapper = wrapper
-        for metric in scheduler.experiment.metrics.values():
-            if isinstance(metric, ModularMetric):
-                metric.wrapper = wrapper
     return scheduler
 
 
@@ -114,7 +112,12 @@ def scheduler_to_json_snapshot(
             encoder_registry=encoder_registry,
             class_encoder_registry=class_encoder_registry,
         ),
-        "wrapper": scheduler.experiment.runner.wrapper.to_dict(),
+        "wrapper": object_to_json(
+            scheduler.experiment.runner.wrapper,
+            encoder_registry=encoder_registry,
+            class_encoder_registry=class_encoder_registry,
+        ),
+        "boa_version": __version__
     }
 
 
@@ -122,6 +125,7 @@ def scheduler_from_json_snapshot(
     serialized: Dict[str, Any],
     decoder_registry: Optional[Dict[str, Type]] = None,
     class_decoder_registry: Optional[Dict[str, Callable[[Dict[str, Any]], Any]]] = None,
+    wrapper_path=None,
     **kwargs,
 ) -> Scheduler:
     """Recreate an `Scheduler` from a JSON snapshot."""
@@ -146,6 +150,36 @@ def scheduler_from_json_snapshot(
         class_decoder_registry=class_decoder_registry,
     )
 
+    wrapper = None
+    # if "wrapper" in serialized:
+    #     wrapper_dict = serialized.pop("wrapper", {})
+    #     try:
+    #         wrapper = object_from_json(
+    #             wrapper_dict,
+    #             decoder_registry=decoder_registry,
+    #             class_decoder_registry=class_decoder_registry,
+    #         )
+    #     except Exception as e:
+    #         print()
+    #         print()
+    #         print()
+    #         print(e)
+    #         if pathlib.Path(wrapper_dict["path"]).exists() or pathlib.Path(wrapper_path).exists():
+    #             path = pathlib.Path(wrapper_dict["path"]) or pathlib.Path(wrapper_path)
+    #             wrapper = initialize_wrapper(
+    #                 wrapper=path,
+    #                 wrapper_name=wrapper_dict["name"],
+    #                 post_init_attrs=dict(
+    #                     experiment_dir=wrapper_dict.get("experiment_dir"),
+    #                     working_dir=wrapper_dict.get("working_dir"),
+    #                     output_dir=wrapper_dict.get("output_dir"),
+    #                     metric_names=wrapper_dict.get("metric_names"),
+    #                     config=wrapper_dict.get("config", {})
+    #                 ),
+    #                 mk_experiment_dir=False,
+    #                 **wrapper_dict
+    #                 )
+
     serialized_generation_strategy = serialized.pop("generation_strategy")
     generation_strategy = generation_strategy_from_json(
         generation_strategy_json=serialized_generation_strategy, experiment=experiment
@@ -153,4 +187,10 @@ def scheduler_from_json_snapshot(
 
     scheduler = Scheduler(generation_strategy=generation_strategy, experiment=experiment, options=options, **kwargs)
     scheduler._experiment = experiment
+    if wrapper:
+        if isinstance(scheduler.experiment.runner, WrappedJobRunner):
+            scheduler.experiment.runner.wrapper = wrapper
+        for metric in scheduler.experiment.metrics.values():
+            if isinstance(metric, ModularMetric):
+                metric.wrapper = wrapper
     return scheduler
