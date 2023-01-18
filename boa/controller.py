@@ -18,7 +18,7 @@ from ax import Experiment
 
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.definitions import PathLike
-from boa.logger import get_logger, set_handlers
+from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
 from boa.storage import scheduler_from_json_file
