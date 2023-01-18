@@ -37,7 +37,7 @@ from boa.utils import (
 if TYPE_CHECKING:
     from boa import BaseWrapper
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 PARAM_CLASSES = {

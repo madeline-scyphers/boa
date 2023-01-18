@@ -13,32 +13,24 @@ except ImportError:
     from .script_wrappers import Wrapper
 
 from boa import WrappedJobRunner, get_dt_now_as_str, get_experiment, get_scheduler
-from boa.logger import get_formatter, get_logger
+from boa.logger import get_logger
 
 
 @click.command()
-@click.option("-o", "--output_dir", type=click.Path(), default="")
-def main(output_dir):
-    if output_dir:
-        return run_opt(output_dir)
-    with tempfile.TemporaryDirectory() as output_dir:
-        return run_opt(output_dir)
+def main():
+    with tempfile.TemporaryDirectory() as exp_dir:
+        return run_opt(exp_dir)
 
 
-def run_opt(output_dir):
+def run_opt(exp_dir):
     config_file = Path(__file__).parent / "synth_func_config.yaml"
     start = time.time()
-    wrapper = Wrapper(config_path=config_file, working_dir=output_dir)
+    wrapper = Wrapper(config_path=config_file, experiment_dir=exp_dir)
     config = wrapper.config
     experiment_dir = wrapper.experiment_dir
     # Copy the experiment config to the experiment directory
     shutil.copyfile(config_file, experiment_dir / Path(config_file).name)
-    logger = get_logger(__name__)
-    fh = logging.FileHandler(str(Path(wrapper.experiment_dir) / "optimization.log"))
-    formatter = get_formatter()
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
+    logger = get_logger(filename=str(Path(wrapper.experiment_dir) / "optimization.log"))
     logger.info("Start time: %s", get_dt_now_as_str())
 
     experiment = get_experiment(config, WrappedJobRunner(wrapper=wrapper), wrapper)

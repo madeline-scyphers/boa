@@ -78,8 +78,7 @@ def cd_to_root_and_back_session():
 
 @pytest.fixture(scope="session")
 def script_main_run(tmp_path_factory, cd_to_root_and_back_session):
-    output_dir = tmp_path_factory.mktemp("output")
-    yield run_branin.main(split_shell_command(f"--output_dir {output_dir}"), standalone_mode=False)
+    yield run_branin.main("", standalone_mode=False)
 
 
 @pytest.fixture(scope="session")

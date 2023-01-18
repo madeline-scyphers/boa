@@ -22,7 +22,7 @@ from boa.logger import get_logger
 from boa.registry import _add_common_encodes_and_decodes
 from boa.wrappers.wrapper_utils import cd_and_cd_back_dec
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 def write_exception_to_log(func):

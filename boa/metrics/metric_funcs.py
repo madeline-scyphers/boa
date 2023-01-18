@@ -17,7 +17,7 @@ from sklearn.metrics import mean_squared_error
 from boa.logger import get_logger
 from boa.utils import get_dictionary_from_callable
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 def normalized_root_mean_squared_error(y_true, y_pred, normalizer="iqr", **kwargs):
