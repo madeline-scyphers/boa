@@ -4,7 +4,7 @@ coverage:
     project:
       default:
         target: auto
-        threshold: 0.5%
+        threshold: 0.75%
 
 comment:
   require_changes: yes

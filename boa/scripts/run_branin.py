@@ -8,7 +8,7 @@ import click
 from ax.service.utils.report_utils import exp_to_df
 
 try:
-    from script_wrappers import Wrapper
+    from script_wrappers import Wrapper  # pragma: no cover
 except ImportError:
     from .script_wrappers import Wrapper
 
