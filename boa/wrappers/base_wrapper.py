@@ -35,9 +35,7 @@ class BaseWrapper(metaclass=WrapperRegister):
     kwargs
     """
 
-    def __init__(
-        self, config_path: PathLike = None, config: dict = None, *args, mk_experiment_dir: bool = True, **kwargs
-    ):
+    def __init__(self, config_path: PathLike = None, config: dict = None, *args, **kwargs):
         self.config_path = config_path
         self._experiment_dir = None
         self._working_dir = None
@@ -62,7 +60,7 @@ class BaseWrapper(metaclass=WrapperRegister):
             if config is not None:
                 self.config = config
 
-        if self.config and mk_experiment_dir:
+        if self.config:
             experiment_dir = self.mk_experiment_dir(*args, **kwargs)
             if not self.experiment_dir:
                 if experiment_dir:
@@ -467,12 +465,3 @@ class BaseWrapper(metaclass=WrapperRegister):
         )
 
         return properties
-
-    @classmethod
-    def from_dict(cls, properties: dict) -> dict:
-        inst = cls(**properties, mk_experiment_dir=False)
-        inst.experiment_dir = properties.get("experiment_dir")
-        inst.working_dir = properties.get("working_dir")
-        inst.output_dir = properties.get("output_dir")
-        inst.metric_names = properties.get("metric_names")
-        return inst
