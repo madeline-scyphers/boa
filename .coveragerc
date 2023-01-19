@@ -8,6 +8,7 @@ omit =
 
     # omit versioning tools
     boa/_version.py
+    boa/__version__.py
 
     # omit inits
     */*__init__.py
@@ -15,7 +16,8 @@ omit =
     # omit doc utils file
     boa/_doc_utils.py
 
-    # omit
+    # omit logging functions
+    boa/logger.py
 
 include =
     boa/*
