@@ -34,10 +34,10 @@ from boa.utils import (
     get_dictionary_from_callable,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from boa import BaseWrapper
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 PARAM_CLASSES = {

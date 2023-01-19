@@ -21,7 +21,7 @@ from boa.wrappers.wrapper_utils import (
     normalize_config,
 )
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 class BaseWrapper(metaclass=WrapperRegister):

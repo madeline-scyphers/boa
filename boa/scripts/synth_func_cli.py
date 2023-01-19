@@ -7,7 +7,7 @@ import numpy as np
 import boa
 from boa.logger import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 @click.command()

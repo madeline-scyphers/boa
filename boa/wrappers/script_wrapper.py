@@ -13,7 +13,7 @@ from boa.wrappers.wrapper_utils import (
     split_shell_command,
 )
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 class ScriptWrapper(BaseWrapper):

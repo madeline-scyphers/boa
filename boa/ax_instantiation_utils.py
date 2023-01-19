@@ -26,7 +26,7 @@ from boa.scheduler import Scheduler
 from boa.utils import get_dictionary_from_callable
 from boa.wrappers.base_wrapper import BaseWrapper
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 def instantiate_search_space_from_json(

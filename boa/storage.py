@@ -32,7 +32,7 @@ from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
 from boa.wrappers.wrapper_utils import initialize_wrapper
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 
 def scheduler_to_json_file(scheduler, filepath: PathLike = "scheduler_snapshot.json") -> None:

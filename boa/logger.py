@@ -1,10 +1,28 @@
 import logging
+import logging.config
+import logging.handlers
+import random
+
+from boa.definitions import PathLike
 
 DEFAULT_LOG_LEVEL: int = logging.INFO
 ROOT_LOGGER_NAME = "boa"
 
 
-def get_logger(name: str, level: int = DEFAULT_LOG_LEVEL) -> logging.Logger:
+def worker_process(q):
+    qh = logging.handlers.QueueHandler(q)
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    root.addHandler(qh)
+    levels = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
+    loggers = ["foo", "foo.bar", "foo.bar.baz", "spam", "spam.ham", "spam.ham.eggs"]
+    for i in range(100):
+        lvl = random.choice(levels)
+        logger = logging.getLogger(random.choice(loggers))
+        logger.log(lvl, "Message no. %d", i)
+
+
+def get_logger(name: str = ROOT_LOGGER_NAME, level: int = DEFAULT_LOG_LEVEL, filename=None) -> logging.Logger:
     """Get a logger.
 
     To set a human-readable "output_name" that appears in logger outputs,
@@ -22,19 +40,20 @@ def get_logger(name: str, level: int = DEFAULT_LOG_LEVEL) -> logging.Logger:
         The logging.Logger object.
     """
     logger = logging.getLogger(name)
+    logger = set_handlers(logger=logger, level=level, filename=filename)
     logger.setLevel(level)
 
-    if len(logger.handlers) > 0:
-        for handler in logger.handlers:
-            # add the handlers to the logger
-            # makes sure no duplicate handlers are added
+    return logger
 
-            if not isinstance(handler, logging.StreamHandler):
-                stream_handle: logging.StreamHandler = build_stream_handler()
-                logger.addHandler(stream_handle)
-    else:
-        stream_handle: logging.StreamHandler = build_stream_handler()
-        logger.addHandler(stream_handle)
+
+def set_handlers(logger, level=DEFAULT_LOG_LEVEL, filename=None):
+    if not any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
+        sh: logging.StreamHandler = build_stream_handler(level=level)
+        logger.addHandler(sh)
+
+    if filename is not None:
+        fh = build_file_handler(level=level, filename=filename)
+        logger.addHandler(fh)
 
     return logger
 
@@ -55,8 +74,16 @@ def build_stream_handler(level: int = DEFAULT_LOG_LEVEL) -> logging.StreamHandle
     Returns:
         A logging.StreamHandler instance
     """
-    console = logging.StreamHandler()
-    console.setLevel(level=level)
+    handler = logging.StreamHandler()
+    handler.setLevel(level=level)
     formatter = get_formatter()
-    console.setFormatter(formatter)
-    return console
+    handler.setFormatter(formatter)
+    return handler
+
+
+def build_file_handler(filename: PathLike, level: int = DEFAULT_LOG_LEVEL) -> logging.handlers.QueueHandler:
+    handler = logging.FileHandler(filename)
+    handler.setLevel(level=level)
+    formatter = get_formatter()
+    handler.setFormatter(formatter)
+    return handler
