@@ -7,9 +7,10 @@ build:
   jobs:
     post_install:
       - conda env update --name ${READTHEDOCS_VERSION} --file environment_dev_update.yml
+      - conda list
 
 conda:
   environment: environment.yml
-  
+
 sphinx:
   fail_on_warning: true
