@@ -17,6 +17,6 @@ dependencies:
     - flake8
     - flakeheaven>=3.0.0
     - black==22.6.0
-    - sphinx<6
-    - pydata-sphinx-theme==0.12.0
+    - sphinx>=4.4,<6  # <6 b/c pydata (<=0.12) doesn't work with sphinx 6, 4.4 is when certain sphinx options were introduced that we use
+    - pydata-sphinx-theme<0.12.0  # pydata 0.12 has a flyout menu bug
     - sphinxext-remoteliteralinclude
