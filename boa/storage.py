@@ -10,9 +10,12 @@ stop and restart.
 
 import json
 import pathlib
+from copy import deepcopy
 from dataclasses import asdict
 from typing import Any, Callable, Dict, Optional, Type
 
+from ax.exceptions.storage import JSONDecodeError as AXJSONDecodeError
+from ax.exceptions.storage import JSONEncodeError as AXJSONEncodeError
 from ax.service.scheduler import SchedulerOptions
 from ax.storage.json_store.decoder import (
     generation_strategy_from_json,
@@ -26,13 +29,14 @@ from ax.storage.json_store.registry import (
     CORE_ENCODER_REGISTRY,
 )
 
+from boa.__version__ import __version__
 from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metrics.modular_metric import ModularMetric
 from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
-from boa.wrappers.wrapper_utils import initialize_wrapper
-from boa.__version__ import __version__
+from boa.utils import _load_attr_from_module, _load_module_from_path
+from boa.wrappers.base_wrapper import BaseWrapper
 
 logger = get_logger()
 
@@ -53,20 +57,12 @@ def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None
     with open(filepath, "r") as file:  # pragma: no cover
         serialized = json.loads(file.read())
         scheduler = scheduler_from_json_snapshot(serialized=serialized, **kwargs)
-    wrapper_dict = serialized.pop("wrapper", {})
-    wrapper_dict = object_from_json(wrapper_dict)
-    if not wrapper and "path" in wrapper_dict and pathlib.Path(wrapper_dict["path"]).exists():
-        wrapper = initialize_wrapper(wrapper=wrapper_dict["path"], wrapper_name=wrapper_dict["name"], **wrapper_dict)
-        wrapper.config = wrapper_dict.get("config", {})
-        wrapper.experiment_dir = wrapper_dict.get("experiment_dir")
-        wrapper.working_dir = wrapper_dict.get("working_dir")
-        wrapper.output_dir = wrapper_dict.get("output_dir")
-        wrapper.metric_names = wrapper_dict.get("metric_names")
 
+    wrapper = scheduler.experiment.runner.wrapper
 
     if wrapper is not None:
         for trial in scheduler.running_trials:
-            wrapper.set_trial_status(trial)  # try and complete or fail and leftover trials
+            wrapper.set_trial_status(trial)  # try and complete or fail any leftover trials
 
         for trial in scheduler.running_trials:  # any trial that was marked above is no longer here
             trial.mark_failed()  # fail anything leftover from above
@@ -95,7 +91,19 @@ def scheduler_to_json_snapshot(
 
     options = SchedulerOptions(**options)
 
-    return {
+    try:
+        wrapper_serialization = (
+            object_to_json(
+                scheduler.experiment.runner.wrapper,
+                encoder_registry=encoder_registry,
+                class_encoder_registry=class_encoder_registry,
+            ),
+        )
+    except AXJSONEncodeError as e:
+        logger.error(e)
+        wrapper_serialization = scheduler.experiment.runner.wrapper.to_dict()
+
+    serialization = {
         "_type": scheduler.__class__.__name__,
         "experiment": object_to_json(
             scheduler.experiment,
@@ -112,13 +120,11 @@ def scheduler_to_json_snapshot(
             encoder_registry=encoder_registry,
             class_encoder_registry=class_encoder_registry,
         ),
-        "wrapper": object_to_json(
-            scheduler.experiment.runner.wrapper,
-            encoder_registry=encoder_registry,
-            class_encoder_registry=class_encoder_registry,
-        ),
-        "boa_version": __version__
+        "boa_version": __version__,
     }
+    if wrapper_serialization:
+        serialization["wrapper"] = wrapper_serialization
+    return serialization
 
 
 def scheduler_from_json_snapshot(
@@ -151,34 +157,35 @@ def scheduler_from_json_snapshot(
     )
 
     wrapper = None
-    # if "wrapper" in serialized:
-    #     wrapper_dict = serialized.pop("wrapper", {})
-    #     try:
-    #         wrapper = object_from_json(
-    #             wrapper_dict,
-    #             decoder_registry=decoder_registry,
-    #             class_decoder_registry=class_decoder_registry,
-    #         )
-    #     except Exception as e:
-    #         print()
-    #         print()
-    #         print()
-    #         print(e)
-    #         if pathlib.Path(wrapper_dict["path"]).exists() or pathlib.Path(wrapper_path).exists():
-    #             path = pathlib.Path(wrapper_dict["path"]) or pathlib.Path(wrapper_path)
-    #             wrapper = initialize_wrapper(
-    #                 wrapper=path,
-    #                 wrapper_name=wrapper_dict["name"],
-    #                 post_init_attrs=dict(
-    #                     experiment_dir=wrapper_dict.get("experiment_dir"),
-    #                     working_dir=wrapper_dict.get("working_dir"),
-    #                     output_dir=wrapper_dict.get("output_dir"),
-    #                     metric_names=wrapper_dict.get("metric_names"),
-    #                     config=wrapper_dict.get("config", {})
-    #                 ),
-    #                 mk_experiment_dir=False,
-    #                 **wrapper_dict
-    #                 )
+    if "wrapper" in serialized:
+        wrapper_dict = serialized.pop("wrapper", {})
+
+        try:
+            wrapper = object_from_json(
+                deepcopy(wrapper_dict),
+                decoder_registry=decoder_registry,
+                class_decoder_registry=class_decoder_registry,
+            )
+        except Exception:
+            deserialized = recursive_deserialize(
+                wrapper_dict,
+                decoder_registry=decoder_registry,
+                class_decoder_registry=class_decoder_registry,
+            )
+
+            if ("path" in wrapper_dict and pathlib.Path(deserialized["path"]).exists()) or (
+                wrapper_path is not None and pathlib.Path(wrapper_path).exists()
+            ):
+
+                path = pathlib.Path(wrapper_path) if wrapper_path is not None else pathlib.Path(deserialized["path"])
+                module = _load_module_from_path(path, "user_wrapper")
+                WrapperCls: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_dict["name"])
+
+                wrapper = WrapperCls.from_dict(**wrapper_dict)
+
+            else:
+                logger.exception("Failed to deserialize wrapper.\n\n\n\n\n")
+                wrapper = BaseWrapper()
 
     serialized_generation_strategy = serialized.pop("generation_strategy")
     generation_strategy = generation_strategy_from_json(
@@ -194,3 +201,15 @@ def scheduler_from_json_snapshot(
             if isinstance(metric, ModularMetric):
                 metric.wrapper = wrapper
     return scheduler
+
+
+def recursive_deserialize(obj, **kwargs):
+    if isinstance(obj, dict):
+        try:
+            if "__type" not in obj:  # at least this out dict isn't serialized in AX format, let's check inners
+                raise AXJSONDecodeError("obj is not a AX JSON deserializable object")
+            obj = object_from_json(obj, **kwargs)
+        except AXJSONDecodeError:
+            for key, value in obj.items():
+                obj[key] = recursive_deserialize(value, **kwargs)
+    return obj

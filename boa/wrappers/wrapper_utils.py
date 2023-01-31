@@ -143,6 +143,8 @@ def initialize_wrapper(
     if isinstance(wrapper, PathLike_tup):
         module = _load_module_from_path(wrapper, "user_wrapper")
         WrapperCls: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_name)
+    else:
+        WrapperCls = wrapper
 
     if experiment_dir:
         kwargs["experiment_dir"] = experiment_dir
