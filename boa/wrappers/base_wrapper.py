@@ -73,7 +73,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     @property
     def metric_names(self):
-        """list of metric names names associated with this experiment"""
+        """list of metric names associated with this experiment"""
         # in case users subclass without super
         if not hasattr(self, "_metric_names"):
             self._metric_names = []
@@ -247,13 +247,14 @@ class BaseWrapper(metaclass=WrapperRegister):
         return experiment_dir
 
     def setup(self, *args, **kwargs):
-        """method to override for subclasses to run any setup code they need either on class init
+        """
+        method to override for subclasses to run any setup code they need either on class init
         (which will happen by default unless passing setup=False) or after init by
         calling this method directly
 
         By default, this method will run mk_experiment_directory, so if you override this
-        method to do more setup, either include that a call to mk_experiment_directory, (the
-        default version or your own implementation) or call super().setup(*args, **kwargs)
+        method to do more setup, either include that a call to mk_experiment_directory,
+        (the default version or your own implementation) or call ``super().setup(*args, **kwargs)``
         which will then call the original version, which will call mk_experiment_directory.
         """
         return self.mk_experiment_directory(*args, **kwargs)
