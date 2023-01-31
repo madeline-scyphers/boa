@@ -101,10 +101,12 @@ class Controller:
         inst = cls(wrapper=wrapper, **kwargs)
         inst.logger.info(f"Resuming optimization from scheduler path{scheduler_path}")
         if "experiment_dir" in kw:
-            inst.logger.info(f"Making new experiment dir here: {wrapper.experiment_dir}."
-                             f"\nOld experiment directory not found. "
-                             f"\nMost likely because it was deleted or because of reloading on a different computer than"
-                             f" originally ran on.")
+            inst.logger.info(
+                f"Making new experiment dir here: {wrapper.experiment_dir}."
+                f"\nOld experiment directory not found. "
+                f"\nMost likely because it was deleted or because of reloading on a different computer than"
+                f" originally ran on."
+            )
         inst.scheduler = scheduler
         inst.experiment = scheduler.experiment
         return inst
