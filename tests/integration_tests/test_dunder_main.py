@@ -28,7 +28,7 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
     scheduler = stand_alone_opt_package_run
     wrapper = scheduler.experiment.runner.wrapper
     config = wrapper.config
-    total_trials = config["optimization_options"]["scheduler"]["total_trials"]
+    total_trials = config["optimization_options"]["trials"]
     assert len(scheduler.experiment.trials) == total_trials
 
 

@@ -16,6 +16,7 @@ from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metaclasses import WrapperRegister
 from boa.wrappers.wrapper_utils import (
+    initialize_wrapper,
     load_jsonlike,
     make_experiment_dir,
     normalize_config,
@@ -35,7 +36,7 @@ class BaseWrapper(metaclass=WrapperRegister):
     kwargs
     """
 
-    def __init__(self, config_path: PathLike = None, config: dict = None, *args, **kwargs):
+    def __init__(self, config_path: PathLike = None, config: dict = None, setup=True, *args, **kwargs):
         self.config_path = config_path
         self._experiment_dir = None
         self._working_dir = None
@@ -60,7 +61,7 @@ class BaseWrapper(metaclass=WrapperRegister):
             if config is not None:
                 self.config = config
 
-        if self.config:
+        if setup and self.config:
             experiment_dir = self.mk_experiment_dir(*args, **kwargs)
             if not self.experiment_dir:
                 if experiment_dir:
@@ -72,7 +73,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     @property
     def metric_names(self):
-        """list of metric names names associated with this experiment"""
+        """list of metric names associated with this experiment"""
         # in case users subclass without super
         if not hasattr(self, "_metric_names"):
             self._metric_names = []
@@ -245,6 +246,19 @@ class BaseWrapper(metaclass=WrapperRegister):
         self.experiment_dir = experiment_dir
         return experiment_dir
 
+    def setup(self, *args, **kwargs):
+        """
+        method to override for subclasses to run any setup code they need either on class init
+        (which will happen by default unless passing setup=False) or after init by
+        calling this method directly
+
+        By default, this method will run mk_experiment_directory, so if you override this
+        method to do more setup, either include that a call to mk_experiment_directory,
+        (the default version or your own implementation) or call ``super().setup(*args, **kwargs)``
+        which will then call the original version, which will call mk_experiment_directory.
+        """
+        return self.mk_experiment_directory(*args, **kwargs)
+
     def write_configs(self, trial: BaseTrial) -> None:
         """
         This function is usually used to write out the configurations files used
@@ -264,6 +278,13 @@ class BaseWrapper(metaclass=WrapperRegister):
         ----------
         trial
         """
+        raise NotImplementedError(
+            "Please subclass BaseWrapper to to use the run_model features."
+            "\nOr if deserializing, check that your wrapper deserialized properly,"
+            "\nff it did not you may need to directly pass in the pass to "
+            "`scheduler_from_json_file`."
+            "\nOr an instantiated wrapper."
+        )
 
     def set_trial_status(self, trial: BaseTrial) -> None:
         """
@@ -461,7 +482,22 @@ class BaseWrapper(metaclass=WrapperRegister):
                 config=self.config,
                 config_path=self.config_path,
                 name=self.__class__.__name__,
+                __type=self.__class__.__name__,
             )
         )
-
         return properties
+
+    @classmethod
+    def from_dict(cls, **kwargs):
+        return initialize_wrapper(
+            wrapper=cls,
+            post_init_attrs=dict(
+                experiment_dir=kwargs.get("experiment_dir"),
+                working_dir=kwargs.get("working_dir"),
+                output_dir=kwargs.get("output_dir"),
+                metric_names=kwargs.get("metric_names"),
+                config=kwargs.get("config", {}),
+            ),
+            setup=False,
+            **kwargs,
+        )

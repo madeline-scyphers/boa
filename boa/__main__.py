@@ -25,6 +25,15 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     help="Path to scheduler json file.",
 )
 @click.option(
+    "-wp",
+    "--wrapper-path",
+    type=click.Path(),
+    default="",
+    help="Path to where file where your wrapper is located. Used when loaded from scheduler json file,"
+    " and the path to your wrapper has changed (such as when loading on a different computer then"
+    " originally ran from).",
+)
+@click.option(
     "-td",
     "--temporary-dir",
     is_flag=True,
@@ -48,19 +57,24 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     " if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is"
     " if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from",
 )
-def main(config_path, scheduler_path, temporary_dir, rel_to_here):
+def main(config_path, scheduler_path, wrapper_path, temporary_dir, rel_to_here):
     # config_path = config_path if config_path else None
     # scheduler_path = scheduler_path if scheduler_path else None
+
     if temporary_dir:
         with tempfile.TemporaryDirectory() as temp_dir:
             experiment_dir = Path(temp_dir) / "temp"
             return run(
-                config_path, scheduler_path=scheduler_path, rel_to_here=rel_to_here, experiment_dir=experiment_dir
+                config_path,
+                scheduler_path=scheduler_path,
+                wrapper_path=wrapper_path,
+                rel_to_here=rel_to_here,
+                experiment_dir=experiment_dir,
             )
-    return run(config_path, scheduler_path=scheduler_path, rel_to_here=rel_to_here)
+    return run(config_path, scheduler_path=scheduler_path, wrapper_path=wrapper_path, rel_to_here=rel_to_here)
 
 
-def run(config_path, scheduler_path, rel_to_here, experiment_dir=None):
+def run(config_path, scheduler_path, rel_to_here, wrapper_path=None, experiment_dir=None):
     """Run experiment run from config path or scheduler path
 
     Parameters
@@ -69,6 +83,10 @@ def run(config_path, scheduler_path, rel_to_here, experiment_dir=None):
         Path to configuration YAML file.
     scheduler_path
         Path to scheduler json file.
+    wrapper_path
+        Path to where file where your wrapper is located. Used when loaded from scheduler json file,
+         and the path to your wrapper has changed (such as when loading on a different computer then
+         originally ran from).
     rel_to_here
         Define all path and dir options in your config file relative to where boa is launch from"
         instead of relative to the config file location (the default)"
@@ -96,6 +114,7 @@ def run(config_path, scheduler_path, rel_to_here, experiment_dir=None):
         scheduler_path = Path(scheduler_path).resolve()
     if experiment_dir:
         experiment_dir = Path(experiment_dir).resolve()
+    wrapper_path = Path(wrapper_path).resolve() if wrapper_path else None
 
     if config_path and not rel_to_here:
         rel_path = config_path.parent
@@ -112,7 +131,8 @@ def run(config_path, scheduler_path, rel_to_here, experiment_dir=None):
     sys.path.append(str(rel_path))
     with cd_and_cd_back(options["working_dir"]):
         if scheduler_path:
-            controller = Controller.from_scheduler_path(scheduler_path=scheduler_path)
+
+            controller = Controller.from_scheduler_path(scheduler_path=scheduler_path, wrapper_path=wrapper_path)
         else:
             if options["wrapper_path"] and Path(options["wrapper_path"]).exists():
                 options["wrapper"] = options["wrapper_path"]
