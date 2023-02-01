@@ -112,6 +112,10 @@ def get_experiment(config: dict, runner: Runner, wrapper: BaseWrapper = None, **
 
     search_space = instantiate_search_space_from_json(config.get("parameters"), config.get("parameter_constraints"))
 
+    info_only_metrics = BoaInstantiationBase.get_metrics_from_obj_config(
+        **opt_options["objective_options"], info_only=True
+    )
+
     optimization_config = BoaInstantiationBase.make_optimization_config(
         **get_dictionary_from_callable(BoaInstantiationBase.make_optimization_config, opt_options["objective_options"]),
         wrapper=wrapper,
@@ -127,6 +131,7 @@ def get_experiment(config: dict, runner: Runner, wrapper: BaseWrapper = None, **
         search_space=search_space,
         optimization_config=optimization_config,
         runner=runner,
+        tracking_metrics=info_only_metrics,
         **get_dictionary_from_callable(Experiment.__init__, opt_options["experiment"]),
     )
     # we use getattr here in case someone subclassed without the proper super calls

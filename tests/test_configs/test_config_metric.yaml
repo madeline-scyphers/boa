@@ -11,6 +11,11 @@ optimization_options:
             # only list 1 metric for a single objective optimization
             - name: rmse
               metric: RootMeanSquaredError
+            # We can mark metrics as info only just so we can track their results later
+            # without it impacting our optimization
+            - name: Meanyyy
+              metric: Mean
+              info_only: True
         # List all outcome constraints here
         outcome_constraints: []
     # Here we explicitly define a generation strategy
