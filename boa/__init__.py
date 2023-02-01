@@ -2,9 +2,8 @@
 boa package
 """
 try:
-    from boa._version import version
+    from boa.__version__ import __version__
 
-    __version__ = version
 except ImportError:
     # package not installed
     __version__ = "0.0.0"

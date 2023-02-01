@@ -84,7 +84,7 @@ def branin_main_run(tmp_path_factory, cd_to_root_and_back_session):
 @pytest.fixture(scope="session")
 def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_session):
     # parametrize the test to pass in script options in config as relative and absolute paths
-    if request.param == "absolute":
+    if getattr(request, "param", None) == "absolute":
         wrapper_path = (TEST_DIR / "scripts/stand_alone_opt_package/wrapper.py").resolve()
         config = {
             "optimization_options": {
