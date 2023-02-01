@@ -47,8 +47,7 @@ def scheduler_to_json_file(scheduler, filepath: PathLike = "scheduler_snapshot.j
     """
     with open(filepath, "w+") as file:  # pragma: no cover
         file.write(json.dumps(scheduler_to_json_snapshot(scheduler)))
-        logger.info(f"Saved JSON-serialized state of optimization to `{filepath}`."
-                    f"\nBoa version: {__version__}")
+        logger.info(f"Saved JSON-serialized state of optimization to `{filepath}`." f"\nBoa version: {__version__}")
 
 
 def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None, **kwargs) -> Scheduler:
