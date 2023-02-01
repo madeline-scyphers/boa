@@ -94,9 +94,9 @@ class BaseWrapper(metaclass=WrapperRegister):
     def config(self, config):
         self._config = config or {}
         if self._config:
-            self.ex_settings = self.config["optimization_options"]
-            self.model_settings = self.config.get("model_options", {})
-            self.script_options = self.config.get("script_options", {})
+            self.ex_settings = self._config["optimization_options"]
+            self.model_settings = self._config.get("model_options", {}) or {}
+            self.script_options = self._config.get("script_options", {}) or {}
             metric_propertis = {}
             for metric in self.ex_settings["objective_options"]["objectives"]:
                 if "properties" in metric:
