@@ -16,6 +16,7 @@ from typing import Type
 import yaml
 from ax import Experiment
 
+from boa.__version__ import __version__ as VERSION
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.definitions import PathLike
 from boa.logger import get_logger
@@ -28,9 +29,13 @@ from boa.wrappers.wrapper_utils import get_dt_now_as_str, initialize_wrapper
 HEADER_BAR = """
 ##############################################
 """
-LOG_INFO = """BOA Experiment Run
+LOG_INFO = (
+    """BOA Experiment Run
 Output Experiment Dir: {exp_dir}
-Start Time {start_time}"""
+Start Time: {start_time}
+Version: """
+    + f"{VERSION}"
+)
 
 
 class Controller:

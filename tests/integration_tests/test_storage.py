@@ -1,3 +1,4 @@
+import json
 import sys
 
 import numpy as np
@@ -16,6 +17,7 @@ from boa import (
     scheduler_to_json_file,
     split_shell_command,
 )
+from boa.__version__ import __version__
 from boa.definitions import ROOT
 
 TEST_DIR = ROOT / "tests"
@@ -57,11 +59,6 @@ def test_can_pass_custom_wrapper_path_when_loading_scheduler(branin_main_run, tm
     assert post_num_trials > pre_num_trials
 
 
-@pytest.mark.parametrize(
-    "stand_alone_opt_package_run",
-    ["relative"],
-    indirect=True,
-)
 def test_can_pass_custom_wrapper_path_when_loading_scheduler_from_cli(stand_alone_opt_package_run, tmp_path_factory):
     scheduler = stand_alone_opt_package_run
     wrapper = scheduler.experiment.runner.wrapper
@@ -87,6 +84,20 @@ def test_can_pass_custom_wrapper_path_when_loading_scheduler_from_cli(stand_alon
 
     # assert some trials run, even if we hit max trials and not all specified trials were run
     assert post_num_trials > pre_num_trials
+
+
+def test_boa_version_in_scheduler(stand_alone_opt_package_run, tmp_path_factory):
+    scheduler = stand_alone_opt_package_run
+
+    temp_dir = tmp_path_factory.mktemp("temp_dir")
+    file_out = temp_dir / "scheduler.json"
+
+    scheduler_to_json_file(scheduler, file_out)
+    with open(file_out, "r") as f:
+        scheduler_json = json.load(f)
+
+    assert "boa_version" in scheduler_json
+    assert scheduler_json["boa_version"] == __version__
 
 
 @pytest.mark.skip(reason="Scheduler can't be saved with generic callable yet")
