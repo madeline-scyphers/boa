@@ -151,7 +151,7 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_
 
 
 def test_can_create_info_only_metrics(metric_config, tmp_path):
-    controller = Controller(config=metric_config, wrapper=Wrapper, fetch_all=False, experiment_dir=tmp_path)
+    controller = Controller(config=metric_config, wrapper=Wrapper, experiment_dir=tmp_path)
     controller.initialize_scheduler()
 
     assert isinstance(controller.scheduler.experiment.optimization_config, OptimizationConfig)

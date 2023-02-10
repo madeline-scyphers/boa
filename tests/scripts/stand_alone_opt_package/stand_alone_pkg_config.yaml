@@ -2,7 +2,10 @@
 optimization_options:
     objective_options:
         objectives:
-            - boa_metric: mean
+            - metric: mean
+              name: Mean
+            - metric: RMSE
+              info_only: True
     generation_strategy:
         steps:
             - model: SOBOL

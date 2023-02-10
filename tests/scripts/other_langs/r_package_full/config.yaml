@@ -11,6 +11,7 @@ optimization_options:
               num_trials: -1
     scheduler:
         total_trials: 15
+        tolerated_trial_failure_rate: 0.8
 
 parameters:
     x0:

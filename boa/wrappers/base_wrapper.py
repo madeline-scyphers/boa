@@ -356,10 +356,10 @@ class BaseWrapper(metaclass=WrapperRegister):
             res = {metric_name: res}
         self._metric_cache[trial.index].update(res)
 
-        for metric_name in self._metric_cache[trial.index].keys():
-            if self.metric_names and metric_name not in self.metric_names:
+        for name in self._metric_cache[trial.index].keys():
+            if self.metric_names and name not in self.metric_names:
                 logger.warning(
-                    f"found extra returned metric: {metric_name}" f" in returned metrics from fetch_trial_data"
+                    f"found extra returned metric: {name}" f" in returned metrics from fetch_trial_data"
                 )
         return self._metric_cache[trial.index][metric_name]
 

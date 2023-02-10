@@ -1,0 +1,42 @@
+# MultiObjective Optimization config
+optimization_options:
+    objective_options:
+        objectives:
+            # List all of your metrics here,
+            # only list multiple objectives for a multi objective optimization
+            - metric: RMSE  # names default to the metric itself if not specified
+            - name: Meanyyy
+              metric: Mean
+        outcome_constraints: []
+        objective_thresholds: []
+    trials: 10
+
+parameters:git
+    x1:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+
+    x2:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+
+    x3:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+
+    x4:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+
+    x5:
+        type: fixed
+        value: .5
+        value_type: float
+
+parameter_constraints:
+    - x2 + x1 >= .1
+    - x2 + x1 + .6*x1 <= .6
