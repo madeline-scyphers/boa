@@ -245,9 +245,7 @@ class ScriptWrapper(BaseWrapper):
             func_names="fetch_trial_data",
             block=True,
         )
-        data = self._read_subprocess_script_output(
-            trial, file_names=OUTPUT_FILES
-        )
+        data = self._read_subprocess_script_output(trial, file_names=OUTPUT_FILES)
         if data is not None:
             trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus" or k.lower() == "trial_status"]
             for key in trial_status_keys:

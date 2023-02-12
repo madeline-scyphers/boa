@@ -4,7 +4,6 @@ import pytest
 from ax.service.scheduler import FailureRateExceededError
 
 import boa.__main__ as dunder_main
-
 from boa import split_shell_command
 from boa.definitions import ROOT
 

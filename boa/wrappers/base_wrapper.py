@@ -358,9 +358,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         for name in self._metric_cache[trial.index].keys():
             if self.metric_names and name not in self.metric_names:
-                logger.warning(
-                    f"found extra returned metric: {name} in returned metrics from fetch_trial_data"
-                )
+                logger.warning(f"found extra returned metric: {name} in returned metrics from fetch_trial_data")
         return self._metric_cache[trial.index][metric_name]
 
     def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
