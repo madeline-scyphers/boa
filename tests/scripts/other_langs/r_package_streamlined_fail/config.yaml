@@ -1,0 +1,40 @@
+optimization_options:
+    objective_options: # can also use the key moo
+        objectives:
+            - name: mean
+              boa_metric: mean
+    generation_strategy:
+        steps:
+            - model: SOBOL
+              num_trials: 5
+            - model: GPEI
+              num_trials: -1
+    scheduler:
+        total_trials: 15
+
+parameters:
+    x0:
+        values: ["foo", "bar"]
+        'type': 'choice'
+    x1:
+        values: ["foo", "bar"]
+        'type': 'choice'
+    x2:
+        values: ["foo", "bar"]
+        'type': 'choice'
+    x3:
+        values: ["foo", "bar"]
+        'type': 'choice'
+    x4:
+        values: ["foo", "bar"]
+        'type': 'choice'
+    x5:
+        values: ["foo", "bar"]
+        'type': 'choice'
+
+script_options:
+    run_model_run_cmd: Rscript run_model.R
+
+model_options:
+    input_size: 15
+    model_dir: .

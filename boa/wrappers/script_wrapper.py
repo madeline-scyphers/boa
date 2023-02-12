@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import subprocess
+from typing import Iterable
 
 from ax.core.base_trial import BaseTrial, TrialStatus
 
@@ -14,6 +15,9 @@ from boa.wrappers.wrapper_utils import (
 )
 
 logger = get_logger()
+
+
+OUTPUT_FILES = ("output", "outputs", "result", "results", "metric", "metrics")
 
 
 class ScriptWrapper(BaseWrapper):
@@ -81,8 +85,15 @@ class ScriptWrapper(BaseWrapper):
         """
         Marks the status of a trial to reflect the status of the model run for the trial.
 
-        To mark the trial status, write out a JSON file of a key being TrialStatus
-        and the value being on of the below trial statuses. See below for the proper format.
+        To mark the trial status, first you can write out your data output to a output.json file
+        with or without marking the trial status if you are marking as success
+        as without the trial_status key as detailed below (if there is no trial_status.json
+        file and there is no trial_status key inside the output.json file,
+        which is the file that also contains the objective metrics data,
+        it will assume it passed since you wrote out data). You can also directly write
+        out a trial_status.json file, to do this write out a JSON file of a
+        key being trial_status and the value being on of the below trial statuses.
+        See below for the proper format.
 
         Each script is passed a path to the current trial directory as a command line arg,
         that is also the directory you write the json file out to, calling it trial_status.json
@@ -118,7 +129,6 @@ class ScriptWrapper(BaseWrapper):
         ==================  =====
         FAILED                2
         COMPLETED             3
-        RUNNING               4 -- you don't need to set it to running, it is already set to running
         ABANDONED             4
         EARLY_STOPPED         7
         ==================  =====
@@ -133,15 +143,32 @@ class ScriptWrapper(BaseWrapper):
                 "trial_status": "COMPLETED"
             }
 
+        format for output.json file
+
+            {
+                "obj_metric1": ..., # data for obj_metric1
+                "trial_status": "COMPLETED"
+            }
+
+        alternative format for output.json file if the trial succeeded you can skip marking it in json file
+        (existence is enough to show completion if their is no trial_status file or trial_status key)
+
+            {
+                "obj_metric1": ..., # data for obj_metric1
+            }
+
         See Also
         --------
         :meth:`~boa.wrappers.script_wrapper.ScriptWrapper.run_model`
         # TODO add sphinx link to ax trial status
         """
         self._run_subprocess_script_cmd_if_exists(trial, "set_trial_status", block=True)
-        data = self._read_subprocess_script_output(trial, file_names=["trial_status", "TrialStatus"])
-        if data:
+        data = self._read_subprocess_script_output(trial, file_names=["trial_status", "TrialStatus", *OUTPUT_FILES])
+        if data is not None:
             trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus" or k.lower() == "trial_status"]
+            if not trial_status_keys:
+                data["trial_status"] = "COMPLETED"
+                trial_status_keys = ["trial_status"]
             if trial_status_keys:
                 trial_status_key = trial_status_keys[0]
                 trial_status = data[trial_status_key]
@@ -219,9 +246,12 @@ class ScriptWrapper(BaseWrapper):
             block=True,
         )
         data = self._read_subprocess_script_output(
-            trial, file_names=["output", "outputs", "result", "results", "metric", "metrics"]
+            trial, file_names=OUTPUT_FILES
         )
-        if data:
+        if data is not None:
+            trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus" or k.lower() == "trial_status"]
+            for key in trial_status_keys:
+                data.pop(key)
             return data
 
     def _run_subprocess_script_cmd_if_exists(
@@ -284,7 +314,7 @@ class ScriptWrapper(BaseWrapper):
                 #     logger.info(l)
         return ran_cmds
 
-    def _read_subprocess_script_output(self, trial: BaseTrial, file_names: list[str] | str):
+    def _read_subprocess_script_output(self, trial: BaseTrial, file_names: Iterable[str] | str):
         trial_dir = get_trial_dir(self.experiment_dir, trial.index)
         if isinstance(file_names, str):
             file_names = [file_names]
@@ -297,4 +327,4 @@ class ScriptWrapper(BaseWrapper):
                 output_file = json_output_files[0]
                 if output_file.exists():
                     return load_jsonlike(output_file, normalize=False)
-        return {}
+        return None
