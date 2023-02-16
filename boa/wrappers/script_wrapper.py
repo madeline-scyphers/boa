@@ -143,15 +143,21 @@ class ScriptWrapper(BaseWrapper):
                 "trial_status": "COMPLETED"
             }
 
+
         format for output.json file
+
+        .. code-block:: none
 
             {
                 "obj_metric1": ..., # data for obj_metric1
                 "trial_status": "COMPLETED"
             }
 
+
         alternative format for output.json file if the trial succeeded you can skip marking it in json file
         (existence is enough to show completion if their is no trial_status file or trial_status key)
+
+        .. code-block:: none
 
             {
                 "obj_metric1": ..., # data for obj_metric1
