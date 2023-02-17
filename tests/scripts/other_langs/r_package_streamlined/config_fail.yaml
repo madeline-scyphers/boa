@@ -12,6 +12,7 @@ optimization_options:
     scheduler:
         total_trials: 15
 
+# This fails because the parameters should be floats from 0 to 1, instead of  choice parameters
 parameters:
     x0:
         values: ["foo", "bar"]
