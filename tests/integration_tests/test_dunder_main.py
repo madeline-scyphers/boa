@@ -1,8 +1,11 @@
 import subprocess
 
 import pytest
+from ax.service.scheduler import FailureRateExceededError
 
+import boa.__main__ as dunder_main
 from boa import split_shell_command
+from boa.definitions import ROOT
 
 try:
     subprocess.check_call(["R", "--version"])
@@ -33,9 +36,10 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
 
 
 # parametrize the test to use the full version (all scripts) or the light version (only run_model.R)
+# or parametrize the test to use the streamlined version (doesn't use trial_status.json, only use output.json)
 @pytest.mark.parametrize(
     "r_scripts_run",
-    ["full", "light"],
+    ["full", "light", "streamlined"],
     indirect=True,
 )
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
@@ -45,3 +49,10 @@ def test_calling_command_line_r_test_scripts(r_scripts_run):
     config = wrapper.config
     total_trials = config["optimization_options"]["scheduler"]["total_trials"]
     assert len(scheduler.experiment.trials) == total_trials
+
+
+@pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
+def test_cli_interface_with_failing_test_that_sends_back_failed_trial_status():
+    with pytest.raises(FailureRateExceededError):
+        config_path = ROOT / "tests" / f"scripts/other_langs/r_package_streamlined/config_fail.yaml"
+        dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
