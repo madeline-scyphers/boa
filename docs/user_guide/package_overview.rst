@@ -59,7 +59,7 @@ you can start your run easily from the command line.
 
 With your conda environment for boa activated, run::
 
-    python -m boa --config_path path/to/your/config/file
+    python -m boa --config-path path/to/your/config/file
 
 or::
 

@@ -38,14 +38,13 @@ If you don't need to create a new environment, activate the existing conda envir
 
 If you are not on an x86 mac (or a mac with python running through rosetta), run these commands to install the dependencies::
 
-    conda install botorch -c pytorch -c gpytorch -c conda-forge
-    pip install ax-platform
+    conda install botorch torchvision "sqlalchemy<2.0" "ax-platform==0.2.9" -c pytorch -c gpytorch -c conda-forge
 
 x86 macs (or a mac with python running through rosetta), run::
 
     conda install pytorch<1.12.0 -c pytorch
     conda install botorch -c pytorch -c gpytorch -c conda-forge
-    pip install ax-platform
+    pip install ax-platform "sqlalchemy<2.0"
 
 Install boa::
 
