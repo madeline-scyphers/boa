@@ -16,7 +16,7 @@ dependencies:
 - scipy
 - scikit-learn
 - click
-- sqlalchemy
+- sqlalchemy<2.0  # Ax breaks with sqlalchemy>2.0
 - plotly
 - notebook
 - ipywidgets
