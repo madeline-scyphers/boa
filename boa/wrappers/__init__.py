@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 ########################
 Creating model wrappers
@@ -42,10 +43,13 @@ to the following sections
 ..  code-block:: YAML
 
     script_options:
-        write_configs: whatever your write_configs run command is  # only include if you are using a `Write Configs Script`
+        # only include `write_configs` if you are using a `Write Configs Script`
+        write_configs: whatever your write_configs run command is
         run_model: whatever your run_model run command is
-        set_trial_status: whatever your set_trial_status run command is  # only include if you are using a `Set Trial Status Script`
-        fetch_trial_data: whatever your fetch_trial_data run command is  # only include if you are using a `Fetch Trial Data Script`
+        # only include `set_trial_status` if you are using a `Set Trial Status Script`
+        set_trial_status: whatever your set_trial_status run command is
+        # only include `fetch_trial_data` if you are using a `Fetch Trial Data Script`
+        fetch_trial_data: whatever your fetch_trial_data run command is
 
 Here is an example of a `Run Model Script` that handles setting the trial status and outputting
 the data back to BOA as well. So this script is all that is needed (other than the model itself,
