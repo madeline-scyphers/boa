@@ -1,8 +1,8 @@
 library(jsonlite)
 
 args <- commandArgs(trailingOnly=TRUE)
+trial_dir <- args[length(args)]
 
-trial_dir <- args[1]
 param_path <- file.path(trial_dir, "parameters.json")
 data <- read_json(path=param_path)
 

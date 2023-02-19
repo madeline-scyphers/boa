@@ -1,7 +1,7 @@
 library(jsonlite)
 
 args <- commandArgs(trailingOnly=TRUE)
-trial_dir <- args[1]
+trial_dir <- args[length(args)]
 
 is_completed <- file.exists(file.path(trial_dir, "model_data.json"))
 

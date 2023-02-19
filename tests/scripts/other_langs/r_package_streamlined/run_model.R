@@ -1,39 +1,23 @@
+# load in any libraries and modules we need
 library(jsonlite)
+source("../r_utils/hartman6.R")
 
-hartman6 <- function(X) {
-     out <- tryCatch(
-     {
-          alpha <- c(1.0, 1.2, 3.0, 3.2)
-          A <- c(10, 3, 17, 3.5, 1.7, 8,
-                 0.05, 10, 17, 0.1, 8, 14,
-                 3, 3.5, 1.7, 10, 17, 8,
-                 17, 8, 0.05, 10, 0.1, 14)
-          A <- matrix(A, 4, 6, byrow=TRUE)
-          P <- 10^(-4) * c(1312, 1696, 5569, 124, 8283, 5886,
-                           2329, 4135, 8307, 3736, 1004, 9991,
-                           2348, 1451, 3522, 2883, 3047, 6650,
-                           4047, 8828, 8732, 5743, 1091, 381)
-          P <- matrix(P, 4, 6, byrow=TRUE)
-
-          Xmat <- matrix(rep(X,times=4), 4, 6, byrow=TRUE)
-          inner_sum <- rowSums(A[,1:6]*(Xmat-P[,1:6])^2)
-          outer_sum <- sum(alpha * exp(-inner_sum))
-          y <- -outer_sum
-          return(y)
-     },
-       error=function(cond) {
-            return(NA)
-        }
-     )
-    return(out)
-}
-
+# This is where we read in from BOA the command line argument.
+# If in your script, you use any other command line arguments,
+# generally BOA's trial_dir should be the last command line arugment,
+# so taking the last one should generally be safe.
 args <- commandArgs(trailingOnly=TRUE)
+trial_dir <- args[length(args)]
 
-trial_dir <- args[1]
+# this this trial_dir folder there are 2 files supplied by BOA,
+# a parameters.json that has just the parameters, and a trial.json
+# that includes the parameters and a lot more in case you need it.
+# Most people will only need the parameters.json
 param_path <- file.path(trial_dir, "parameters.json")
 data <- read_json(path=param_path)
 
+# The parameter keys config from whatever you  named them in your
+# config file, which you are free to change.
 x0 <- data$x0
 x1 <- data$x1
 x2 <- data$x2
@@ -41,9 +25,19 @@ x3 <- data$x3
 x4 <- data$x4
 x5 <- data$x5
 X <- c(x0, x1, x2, x3, x4, x5)
-print(X)
+
+# This is where we actually run our "model".
+# Here we are using a synthetic function called hartman6
+# But you could substitute it for your own model in
+# a number of ways.
 res <- hartman6(X)
 
+# In this case, we directly ran the model, so we are getting back a number
+# or nan, so we know if it succeeded or failed. If you are submitting a job
+# to an HPC (a super computer) queue, this might work, or you might have to
+# rely on another method. Other options could be relying on log file output
+# or information from querying the queue itself,
+# though those may be better as stand alone `Set Trial Status Scripts`
 if (!is.na(res)) {
 
     # if it was a success, we don't even need to write out trial status,
@@ -52,16 +46,18 @@ if (!is.na(res)) {
     out_data <- list(
         mean=list(
             a=res
-        ),
-        trial_status=unbox("COMPLETED")
+        )
+        # trial_status=unbox("COMPLETED")  #  this is optional if it succeeds
     )
 
     json_data <- toJSON(out_data, pretty = TRUE)
     write(json_data, file.path(trial_dir, "output.json"))
 } else {
-    trial_status <- "FAILED"
+
+    # If we fail, then we do need to include a trial status, and mark it as failed.
+
     out_data <- list(
-        trial_status=unbox(trial_status)
+        trial_status=unbox("FAILED")
     )
     json_data <- toJSON(out_data, pretty = TRUE)
     write(json_data, file.path(trial_dir, "output.json"))

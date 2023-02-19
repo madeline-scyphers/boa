@@ -3,8 +3,7 @@ library(jsonlite)
 BRANIN_TRUE_MIN <- 0.397887
 
 args <- commandArgs(trailingOnly=TRUE)
-
-trial_dir <- args[1]
+trial_dir <- args[length(args)]
 
 model_data <- read_json(path=file.path(trial_dir, "model_data.json"))
 res <- model_data$output

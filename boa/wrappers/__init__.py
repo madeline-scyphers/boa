@@ -3,7 +3,63 @@
 Creating model wrappers
 ########################
 
-To create a model wrapper, you will create a child class of boa's :class:`.BaseWrapper`
+---------------------------
+Language Agnostic Interface
+---------------------------
+
+The language agnostic interface revolves around you writing 1 or more script(s) (detailed below)
+and :doc:`BOA </index>` passing a command line argument to this 1 or more script(s) which
+is the path to a folder with json files that contain optimization information, such as the
+parameters for a trial.
+
+You have a few options on the number of scripts to write. The options are listed below:
+
+* Write Configs: this script is supposed to let you write out any configurations or setup stuff
+  your model may need to run. It is called right before the `Run Model Script` to let you do
+  set up stuff.
+  (This script is optional, and much or all of this can be accomplished in your
+  Run Model script, but is provided to allow code partitioning options)
+* Run Model: This is the script that actually runs your model codel. This can be directly in
+  this script, or maybe this script kicks off another script that is your model. For example
+  maybe this script is your model script, but maybe you write a convenience wrapper in R to
+  interface with a Fortran model, this could kick off your R interface code.
+* Set Trial Status: This script writes out to BOA if your trial passed or failed.
+  (This script is optional, and much or all of this can be accomplished in your
+  `Run Model Script` or your `Fetch Trial Data Script`, but is provided to allow code
+  partitioning options)
+* Fetch Trial Data: This script writes out your data for BOA to consume.
+  (This script is optional, and much or all of this can be accomplished in your
+  `Run Model Script`, but is provided to allow code partitioning options)
+
+To run any of these scripts, in your config file, you will add command line run commands
+(as in what you would type in your terminal (bash, zsh, powershell, windows command prompt, etc.)
+to start your script. This might be something like `Rscript run_model.R` or `python run_model.py`).
+Keep in mind that BOA will run this command directly, so if you use relative paths (such as in
+the example in the previous sentence), then the working directory by default will be the directory
+that your config file is in. To add these run commands to your configuration file, add them
+to the following sections
+
+..  code-block:: YAML
+
+    script_options:
+        write_configs: whatever your write_configs run command is  # only include if you are using a `Write Configs Script`
+        run_model: whatever your run_model run command is
+        set_trial_status: whatever your set_trial_status run command is  # only include if you are using a `Set Trial Status Script`
+        fetch_trial_data: whatever your fetch_trial_data run command is  # only include if you are using a `Fetch Trial Data Script`
+
+Here is an example of a `Run Model Script` that handles setting the trial status and outputting
+the data back to BOA as well. So this script is all that is needed (other than the model itself,
+which in this case is a synthetic function called hartman6, but that is just a stand in for any
+black box model call).
+
+.. literalinclude:: ../../tests/scripts/other_langs/r_package_streamlined/run_model.R
+    :language: R
+
+-------------------------
+Python Interface
+-------------------------
+
+To create a model wrapper, you will create a child class of :doc:`BOA </index>`'s :class:`.BaseWrapper`
 class. :class:`.BaseWrapper` defines the core functions that must be defined in your model
 wrapper:
 
