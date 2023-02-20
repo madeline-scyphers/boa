@@ -4,8 +4,7 @@
 cff-version: 1.2.0
 title: Bayesian Optimization for Anything (BOA)
 message: >-
-  If you use this software, please cite it using the
-  metadata from this file.
+  If you use this software, please cite it as below.
 type: software
 authors:
   - given-names: Madeline
@@ -24,6 +23,7 @@ authors:
     orcid: 'https://orcid.org/0000-0002-9209-9540'
 repository-code: 'https://github.com/madeline-scyphers/boa'
 url: 'https://pyboa.readthedocs.io/en/latest/'
+doi: '10.5281/zenodo.7655353'
 abstract: >-
   Bayesian Optimization for Anything: A high-level Bayesian
   optimization framework and model wrapping tool. It
