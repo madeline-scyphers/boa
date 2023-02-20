@@ -15,7 +15,7 @@ import inspect
 import sys
 import types
 from collections.abc import Iterable, Mapping
-from types import ModuleType
+from pathlib import Path
 from typing import Any, Callable, Optional, Type
 
 from boa.definitions import PathLike
@@ -68,8 +68,11 @@ def serialize_init_args(class_, *, parents: list[Type] = None, match_private: bo
 
 def _load_module_from_path(module_path: PathLike, module_name: str = "foo") -> types.ModuleType:
     """Load a module dynamically from a path"""
+    sys.path.append(str(Path(module_path).parent))
     # create a module spec from a file location, so we can then load that module
     spec = importlib.util.spec_from_file_location(module_name, module_path)
+    if spec is None:
+        raise ValueError(f"Path to loading module is invalid. Check path to module{module_path}")
     # create that module from that spec from above
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
@@ -80,7 +83,7 @@ def _load_module_from_path(module_path: PathLike, module_name: str = "foo") -> t
     return module
 
 
-def _load_attr_from_module(module: ModuleType, to_load: str) -> Type | Callable | Any:
+def _load_attr_from_module(module: types.ModuleType, to_load: str) -> Type | Callable | Any:
     return getattr(module, to_load)
 
 

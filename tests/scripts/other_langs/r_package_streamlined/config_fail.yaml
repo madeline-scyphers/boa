@@ -12,31 +12,26 @@ optimization_options:
     scheduler:
         total_trials: 15
 
+# This fails because the parameters should be floats from 0 to 1, instead of  choice parameters
 parameters:
     x0:
-        'bounds': [ 0, 1 ]
-        'type': 'range'
-        'value_type': 'float'
+        values: ["foo", "bar"]
+        'type': 'choice'
     x1:
-        'bounds': [ 0, 1]
-        'type': 'range'
-        'value_type': 'float'
+        values: ["foo", "bar"]
+        'type': 'choice'
     x2:
-        'bounds': [ 0, 1 ]
-        'type': 'range'
-        'value_type': 'float'
+        values: ["foo", "bar"]
+        'type': 'choice'
     x3:
-        'bounds': [ 0, 1]
-        'type': 'range'
-        'value_type': 'float'
+        values: ["foo", "bar"]
+        'type': 'choice'
     x4:
-        'bounds': [ 0, 1 ]
-        'type': 'range'
-        'value_type': 'float'
+        values: ["foo", "bar"]
+        'type': 'choice'
     x5:
-        'bounds': [ 0, 1]
-        'type': 'range'
-        'value_type': 'float'
+        values: ["foo", "bar"]
+        'type': 'choice'
 
 script_options:
     run_model: Rscript run_model.R

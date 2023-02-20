@@ -16,6 +16,7 @@ from typing import Type
 import yaml
 from ax import Experiment
 
+from boa.__version__ import __version__ as VERSION
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.definitions import PathLike
 from boa.logger import get_logger
@@ -28,9 +29,13 @@ from boa.wrappers.wrapper_utils import get_dt_now_as_str, initialize_wrapper
 HEADER_BAR = """
 ##############################################
 """
-LOG_INFO = """BOA Experiment Run
+LOG_INFO = (
+    """BOA Experiment Run
 Output Experiment Dir: {exp_dir}
-Start Time {start_time}"""
+Start Time: {start_time}
+Version: """
+    + f"{VERSION}"
+)
 
 
 class Controller:
@@ -73,6 +78,7 @@ class Controller:
             with open(wrapper.experiment_dir / "config.yaml", "w") as f:
                 # Write out config as yaml since we don't know what file format it came from
                 yaml.dump(wrapper.config, f)
+
         self.wrapper = wrapper
         self.config = self.wrapper.config
 
@@ -82,18 +88,30 @@ class Controller:
         self.scheduler: Scheduler = None
 
     @classmethod
-    def from_scheduler_path(cls, scheduler_path, wrapper: BaseWrapper | Type[BaseWrapper] | PathLike = None, **kwargs):
-        if wrapper:
-            wrapper = cls.initialize_wrapper(wrapper, **kwargs)
-            scheduler = scheduler_from_json_file(scheduler_path, wrapper=wrapper)
-        else:
-            scheduler = scheduler_from_json_file(scheduler_path, **kwargs)
-            wrapper = scheduler.experiment.runner.wrapper
-            if "config_path" in kwargs:
-                config = wrapper.load_config(kwargs["config_path"])
-                wrapper.config = config
+    def from_scheduler_path(cls, scheduler_path, **kwargs):
+        scheduler = scheduler_from_json_file(scheduler_path, **kwargs)
+        wrapper = scheduler.experiment.runner.wrapper
 
+        # experiment dir doesn't exist anymore, etierh bc it was deleted or bc we changed computers
+        kw = {}
+        if not wrapper.experiment_dir or (
+            isinstance(wrapper.experiment_dir, Path) and not wrapper.experiment_dir.exists()
+        ):
+            kw["experiment_dir"] = Path(scheduler_path).parent
+            if wrapper.experiment_dir:  # copy old name over
+
+                kw["experiment_name"] = Path(wrapper.experiment_dir).name
+                kw["append_timestamp"] = False
+            wrapper.mk_experiment_dir(**kw)
         inst = cls(wrapper=wrapper, **kwargs)
+        inst.logger.info(f"Resuming optimization from scheduler path{scheduler_path}")
+        if "experiment_dir" in kw:
+            inst.logger.info(
+                f"Making new experiment dir here: {wrapper.experiment_dir}."
+                f"\nOld experiment directory not found. "
+                f"\nMost likely because it was deleted or because of reloading on a different computer than"
+                f" originally ran on."
+            )
         inst.scheduler = scheduler
         inst.experiment = scheduler.experiment
         return inst
@@ -161,7 +179,11 @@ class Controller:
 
         try:
             final_msg = "Trials Completed!"
-            scheduler.run_all_trials()
+            if "trials" in self.config["optimization_options"]:
+                n_trials = self.config["optimization_options"]["trials"]
+                scheduler.run_n_trials(n_trials)
+            else:
+                scheduler.run_all_trials()
         except BaseException as e:
             final_msg = f"Error Completing because of {repr(e)}"
             raise

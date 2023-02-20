@@ -39,10 +39,10 @@ parameters:
         'value_type': 'float'
 
 script_options:
-    write_configs_run_cmd: Rscript write_configs.R
-    run_model_run_cmd: Rscript run_model.R
-    set_trial_status_run_cmd: Rscript set_trial_status.R
-    fetch_trial_data_run_cmd: Rscript fetch_trial_data.R
+    write_configs: Rscript write_configs.R
+    run_model: Rscript run_model.R
+    set_trial_status: Rscript set_trial_status.R
+    fetch_trial_data: Rscript fetch_trial_data.R
 
 model_options:
     input_size: 15

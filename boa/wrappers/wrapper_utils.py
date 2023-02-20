@@ -137,19 +137,26 @@ def initialize_wrapper(
     append_timestamp: bool = None,
     experiment_dir: PathLike = None,
     wrapper_name: str = "Wrapper",
+    post_init_attrs: dict = None,
     **kwargs,
 ):
     if isinstance(wrapper, PathLike_tup):
         module = _load_module_from_path(wrapper, "user_wrapper")
-        wrapper: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_name)
+        WrapperCls: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_name)
+    else:
+        WrapperCls = wrapper
 
     if experiment_dir:
         kwargs["experiment_dir"] = experiment_dir
     if append_timestamp is not None:
         kwargs["append_timestamp"] = append_timestamp
 
-    load_config_kwargs = get_dictionary_from_callable(wrapper.__init__, kwargs)
-    wrapper = wrapper(**load_config_kwargs)
+    load_config_kwargs = get_dictionary_from_callable(WrapperCls.__init__, kwargs)
+    wrapper = WrapperCls(**load_config_kwargs)
+
+    if post_init_attrs:
+        for attr_name, value in post_init_attrs.items():
+            setattr(wrapper, attr_name, value)
     return wrapper
 
 
@@ -193,7 +200,7 @@ def load_json(file: PathLike, normalize: bool = True, *args, **kwargs) -> dict:
     loaded_configs: dict
 
     See Also
-    --------
+    -------- jmn nmn
     :func:`.normalize_config` for information on ``parameter_keys`` option
     """
     file = pathlib.Path(file).expanduser()

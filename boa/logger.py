@@ -1,25 +1,11 @@
 import logging
 import logging.config
 import logging.handlers
-import random
 
 from boa.definitions import PathLike
 
 DEFAULT_LOG_LEVEL: int = logging.INFO
 ROOT_LOGGER_NAME = "boa"
-
-
-def worker_process(q):
-    qh = logging.handlers.QueueHandler(q)
-    root = logging.getLogger()
-    root.setLevel(logging.DEBUG)
-    root.addHandler(qh)
-    levels = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
-    loggers = ["foo", "foo.bar", "foo.bar.baz", "spam", "spam.ham", "spam.ham.eggs"]
-    for i in range(100):
-        lvl = random.choice(levels)
-        logger = logging.getLogger(random.choice(loggers))
-        logger.log(lvl, "Message no. %d", i)
 
 
 def get_logger(name: str = ROOT_LOGGER_NAME, level: int = DEFAULT_LOG_LEVEL, filename=None) -> logging.Logger:

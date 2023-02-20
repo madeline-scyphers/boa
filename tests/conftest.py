@@ -77,14 +77,14 @@ def cd_to_root_and_back_session():
 
 
 @pytest.fixture(scope="session")
-def script_main_run(tmp_path_factory, cd_to_root_and_back_session):
+def branin_main_run(tmp_path_factory, cd_to_root_and_back_session):
     yield run_branin.main("", standalone_mode=False)
 
 
 @pytest.fixture(scope="session")
 def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_session):
     # parametrize the test to pass in script options in config as relative and absolute paths
-    if request.param == "absolute":
+    if getattr(request, "param", None) == "absolute":
         wrapper_path = (TEST_DIR / "scripts/stand_alone_opt_package/wrapper.py").resolve()
         config = {
             "optimization_options": {
@@ -92,7 +92,7 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
                     "steps": [{"model": "SOBOL", "num_trials": 2}, {"model": "GPEI", "num_trials": -1}]
                 },
                 "objective_options": {"objectives": [{"boa_metric": "mean", "name": "mean"}]},
-                "scheduler": {"total_trials": 5},
+                "trials": 5,
             },
             "parameters": [
                 {"bounds": [-5.0, 10.0], "name": "x0", "type": "range"},
@@ -112,7 +112,7 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
 
 @pytest.fixture(scope="session")
 def r_scripts_run(request, tmp_path_factory, cd_to_root_and_back_session):
-    full_or_light = request.param
-    config_path = TEST_DIR / f"scripts/other_langs/r_package_{full_or_light}/config.yaml"
+    sub_dir = request.param
+    config_path = TEST_DIR / f"scripts/other_langs/r_package_{sub_dir}/config.yaml"
 
     yield dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)

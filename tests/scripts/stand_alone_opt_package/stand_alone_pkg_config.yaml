@@ -9,8 +9,7 @@ optimization_options:
               num_trials: 2
             - model: GPEI
               num_trials: -1
-    scheduler:
-        total_trials: 5
+    trials: 5
 #    working_dir: .
 #    experiment_dir: ...
 #    append_timestamp: True

@@ -1,6 +1,14 @@
 import tempfile
 
 import numpy as np
+from ax import (
+    Metric,
+    MultiObjective,
+    MultiObjectiveOptimizationConfig,
+    Objective,
+    OptimizationConfig,
+    OutcomeConstraint,
+)
 
 from boa import (
     BaseWrapper,
@@ -67,9 +75,10 @@ def test_load_metric_from_config(synth_config, metric_config):
 
     objectives = metric_config["optimization_options"]["objective_options"]["objectives"]
     for objective in objectives:
-        metric = get_metric_from_config(objective)
-        assert metric.name == "rmse"
-        assert metric.metric_to_eval.__name__ == "mean_squared_error"
+        if "info_only" not in objective or objective["info_only"] is False:
+            metric = get_metric_from_config(objective)
+            assert metric.name == "rmse"
+            assert metric.metric_to_eval.__name__ == "mean_squared_error"
 
 
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_and_test_sem_passing(moo_config, tmp_path):
@@ -139,3 +148,13 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_
 
             assert f_ret != prev_f_ret
             prev_f_ret = f_ret
+
+
+def test_can_create_info_only_metrics(metric_config, tmp_path):
+    controller = Controller(config=metric_config, wrapper=Wrapper, fetch_all=False, experiment_dir=tmp_path)
+    controller.initialize_scheduler()
+
+    assert isinstance(controller.scheduler.experiment.optimization_config, OptimizationConfig)
+    assert not isinstance(controller.scheduler.experiment.optimization_config, MultiObjectiveOptimizationConfig)
+
+    assert len(controller.scheduler.experiment.tracking_metrics) > 0

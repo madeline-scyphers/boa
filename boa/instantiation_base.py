@@ -35,11 +35,18 @@ class BoaInstantiationBase(InstantiationBase):
         return metric
 
     @classmethod
-    def get_metrics_from_obj_config(cls, objectives, **kwargs):
+    def get_metrics_from_obj_config(cls, objectives, info_only=False, **kwargs):
+        """"""
         metrics = []
         for metric_opts in objectives:
+            tracker = metric_opts.get("info_only", False)
             metric = cls.get_metric_from_obj_config(metric_opts, **kwargs)
-            metrics.append(metric)
+            if info_only is None:  # get all metrics
+                metrics.append(metric)
+            elif info_only is True and tracker:  # only get tracking metrics
+                metrics.append(metric)
+            elif info_only is False and not tracker:  # only get not tracking metrics
+                metrics.append(metric)
         return metrics
 
     @classmethod

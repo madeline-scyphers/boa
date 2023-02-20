@@ -2,9 +2,6 @@ import pathlib
 
 from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_REGISTRY
 
-# from boa.wrappers.base_wrapper import BaseWrapper
-# from boa.wrappers.script_wrapper import ScriptWrapper
-
 
 class _ConstructPathlib:
     """
@@ -20,6 +17,9 @@ class _ConstructPathlib:
 
 def _add_common_encodes_and_decodes():
     """Add common encodes and decodes all at once when function is ran"""
+    from boa.wrappers.base_wrapper import BaseWrapper
+    from boa.wrappers.script_wrapper import ScriptWrapper
+
     for obj in [
         pathlib.Path,
         pathlib.PurePath,
@@ -31,7 +31,7 @@ def _add_common_encodes_and_decodes():
         CORE_ENCODER_REGISTRY[obj] = lambda p: dict(__type=obj.__name__, pathsegments=[str(p)])
     CORE_DECODER_REGISTRY[obj.__name__] = _ConstructPathlib
 
-    # CORE_ENCODER_REGISTRY[BaseWrapper] = BaseWrapper.to_dict
-    # CORE_DECODER_REGISTRY[BaseWrapper.__name__] = BaseWrapper.from_dict
-    # CORE_ENCODER_REGISTRY[ScriptWrapper] = ScriptWrapper.to_dict
-    # CORE_DECODER_REGISTRY[ScriptWrapper.__name__] = ScriptWrapper.from_dict
+    CORE_ENCODER_REGISTRY[BaseWrapper] = BaseWrapper.to_dict
+    CORE_DECODER_REGISTRY[BaseWrapper.__name__] = BaseWrapper.from_dict
+    CORE_ENCODER_REGISTRY[ScriptWrapper] = ScriptWrapper.to_dict
+    CORE_DECODER_REGISTRY[ScriptWrapper.__name__] = ScriptWrapper.from_dict

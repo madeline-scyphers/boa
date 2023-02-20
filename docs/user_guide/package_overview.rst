@@ -24,9 +24,9 @@ When specifying your objective function to minimize or maximize, :doc:`BOA </ind
 
 
 
-************************
-Creating a model wrapper
-************************
+************************************************************************
+Creating a model wrapper (Language Agnostic or Python API)
+************************************************************************
 
 Using a model with :doc:`BOA </index>` requires writing a minimal wrapper to define the essential functions needed for
 :doc:`BOA </index>` to interact with the model (i.e. reading and writing configurations for the model, running the
@@ -37,7 +37,7 @@ and there is a standard interface to follow.
 See the :mod:`instructions for creating a model wrapper <.boa.wrappers>` for details.
 
 *********************************************
-Creating a run script (sometimes needed)
+Creating a run script (Usually Not Needed)
 *********************************************
 
 Most of the time you won't need to write a run script because BOA has an built-in run script in
