@@ -1,0 +1,51 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Bayesian Optimization for Anything (BOA)
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Madeline
+    family-names: Scyphers
+    email: scyphers.3@osu.edu
+    orcid: 'https://orcid.org/0000-0003-3733-4330'
+  - given-names: Justine
+    family-names: Missik
+    email: missik.2@osu.edu
+    orcid: 'https://orcid.org/0000-0002-6448-0694'
+repository-code: 'https://github.com/madeline-scyphers/boa'
+url: 'https://pyboa.readthedocs.io/en/latest/'
+abstract: >-
+  Bayesian Optimization for Anything: A high-level Bayesian
+  optimization framework and model wrapping tool. It
+  provides an easy-to-use interface between models and the
+  python libraries Ax and BoTorch.
+keywords:
+  - Bayesian optimization
+  - modeling
+  - informatics
+license: MIT
+references:
+  - authors:
+    - family-names: Balandat
+      given-names: Maximilian
+    - family-names: Karrer
+      given-names: Brian
+    - family-names: Jiang
+      given-names: Daniel R.
+    - family-names: Daulton
+      given-names: Samuel
+    - family-names: Letham
+      given-names: Benjamin
+    - family-names: Wilson
+      given-names: Andrew Gordon
+    - family-names: Bakshy
+      given-names: Eytan
+    type: article
+    title: "BoTorch: A Framework for Efficient Monte-Carlo Bayesian Optimization"
+    journal: "Advances in Neural Information Processing Systems 33"
+    year: 2020
+    url: "http://arxiv.org/abs/1910.06403"
