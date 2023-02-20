@@ -43,13 +43,13 @@ to the following sections
 ..  code-block:: YAML
 
     script_options:
-        # only include `write_configs` if you are using a `Write Configs Script`
-        write_configs: whatever your write_configs run command is
+        write_configs: whatever your write_configs run command is  # only include `write_configs` if you are using a `Write Configs Script`
         run_model: whatever your run_model run command is
-        # only include `set_trial_status` if you are using a `Set Trial Status Script`
-        set_trial_status: whatever your set_trial_status run command is
-        # only include `fetch_trial_data` if you are using a `Fetch Trial Data Script`
-        fetch_trial_data: whatever your fetch_trial_data run command is
+        set_trial_status: whatever your set_trial_status run command is  # only include `set_trial_status` if you are using a `Set Trial Status Script`
+        fetch_trial_data: whatever your fetch_trial_data run command is  # only include `fetch_trial_data` if you are using a `Fetch Trial Data Script`
+
+For examples on the formatting of the json files you will output back to BOA, see :meth:`.ScriptWrapper.fetch_trial_data`
+and :meth:`.ScriptWrapper.set_trial_status`
 
 Here is an example of a `Run Model Script` that handles setting the trial status and outputting
 the data back to BOA as well. So this script is all that is needed (other than the model itself,
@@ -57,6 +57,29 @@ which in this case is a synthetic function called hartman6, but that is just a s
 black box model call).
 
 .. literalinclude:: ../../tests/scripts/other_langs/r_package_streamlined/run_model.R
+    :language: R
+
+You can also partition the logic of your code into different steps if that is more appropriate for you project.
+Below is an example that does that
+
+First we see the `Write Configs Script`
+
+.. literalinclude:: ../../tests/scripts/other_langs/r_package_full/write_configs.R
+    :language: R
+
+Then the `Run Model Script`
+
+.. literalinclude:: ../../tests/scripts/other_langs/r_package_full/run_model.R
+    :language: R
+
+Then the `Set Trial Status Script`
+
+.. literalinclude:: ../../tests/scripts/other_langs/r_package_full/set_trial_status.R
+    :language: R
+
+Finally, the `Fetch Trial Status Script`
+
+.. literalinclude:: ../../tests/scripts/other_langs/r_package_full/fetch_trial_data.R
     :language: R
 
 -------------------------
@@ -100,7 +123,7 @@ FETCH3's wrapper provides a simple example of this function for a case where the
 be written to a yaml file:
 
 .. rli:: https://raw.githubusercontent.com/jemissik/fetch3_nhl/develop/fetch3/optimize/fetch_wrapper.py
-   :pyobject: write_configs
+   :pyobject: Fetch3Wrapper.write_configs
 
 The palm_wrapper used to wrap PALM provides an example of a model with more complicated configuration requirements.
 Here, the parameters are written to a YAML file, but then a batch job script must also be written for each

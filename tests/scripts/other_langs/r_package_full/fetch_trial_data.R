@@ -5,9 +5,11 @@ BRANIN_TRUE_MIN <- 0.397887
 args <- commandArgs(trailingOnly=TRUE)
 trial_dir <- args[length(args)]
 
+# Read in our data
 model_data <- read_json(path=file.path(trial_dir, "model_data.json"))
 res <- model_data$output
 
+# format and save our data to a format that BOA is expecting
 out_data <- list(
     mean=list(
         a=res

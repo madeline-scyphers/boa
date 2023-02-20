@@ -42,7 +42,6 @@ if (!is.na(res)) {
 
     # if it was a success, we don't even need to write out trial status,
     # it is assumed a success if we write out data and don't fail
-
     out_data <- list(
         mean=list(
             a=res
@@ -50,15 +49,13 @@ if (!is.na(res)) {
         # trial_status=unbox("COMPLETED")  #  this is optional if it succeeds
     )
 
-    json_data <- toJSON(out_data, pretty = TRUE)
-    write(json_data, file.path(trial_dir, "output.json"))
 } else {
 
     # If we fail, then we do need to include a trial status, and mark it as failed.
-
     out_data <- list(
         trial_status=unbox("FAILED")
     )
-    json_data <- toJSON(out_data, pretty = TRUE)
-    write(json_data, file.path(trial_dir, "output.json"))
 }
+
+json_data <- toJSON(out_data, pretty = TRUE)
+write(json_data, file.path(trial_dir, "output.json"))
