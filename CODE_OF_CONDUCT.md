@@ -69,7 +69,6 @@ The main administration group currently consists of:
 - Justine Missik
 
 ## Attribution
-## Attribution
 
 This Code of Conduct is adapted from the [Contributor Covenant][homepage],
 version 2.1, available at
