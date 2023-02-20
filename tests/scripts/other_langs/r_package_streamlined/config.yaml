@@ -39,7 +39,7 @@ parameters:
         'value_type': 'float'
 
 script_options:
-    run_model_run_cmd: Rscript run_model.R
+    run_model: Rscript run_model.R
 
 model_options:
     input_size: 15
