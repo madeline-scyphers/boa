@@ -16,6 +16,12 @@ authors:
     family-names: Missik
     email: missik.2@osu.edu
     orcid: 'https://orcid.org/0000-0002-6448-0694'
+  - given-names: Joel
+    family-names: Paulson
+    orcid: 'https://orcid.org/0000-0002-1518-7985'
+  - given-names: Gil
+    family-names: Bohrer
+    orcid: https://orcid.org/0000-0002-9209-9540
 repository-code: 'https://github.com/madeline-scyphers/boa'
 url: 'https://pyboa.readthedocs.io/en/latest/'
 abstract: >-
