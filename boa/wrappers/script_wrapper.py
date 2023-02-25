@@ -307,7 +307,7 @@ class ScriptWrapper(BaseWrapper):
                 # Grab stdout line by line as it becomes available.
                 # This will loop until p terminates.
                 for line in p.stdout:
-                    logger.info(line.decode("utf-8").strip())
+                    logger.info(line.strip())
         return ran_cmds
 
     def _read_subprocess_script_output(self, trial: BaseTrial, file_names: Iterable[str] | str):
