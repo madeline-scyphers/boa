@@ -303,7 +303,9 @@ class ScriptWrapper(BaseWrapper):
                 #     file.write(json.dumps(data))
 
                 args = split_shell_command(f"{run_cmd} {trial_dir}")
-                p = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
+                p = subprocess.Popen(
+                    args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, universal_newlines=True
+                )
                 if block:
                     p.communicate()
                 # TODO move polling and print to another thread so it doesn't block but still writes to log?
