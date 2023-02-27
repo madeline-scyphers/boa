@@ -15,7 +15,6 @@ conda:
 sphinx:
   fail_on_warning: true
 
-# Build PDF & ePub
+# Build PDF
 formats:
   - pdf
-  - epub
