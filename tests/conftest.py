@@ -48,6 +48,13 @@ def moo_config():
 
 
 @pytest.fixture
+def pass_through_config():
+    """PassThrough Optimization config"""
+    config_path = TEST_CONFIG_DIR / "test_config_pass_through_metric.yaml"
+    return load_yaml(config_path)
+
+
+@pytest.fixture
 def denormed_param_parse_config():
     """MultiObjective Optimization config"""
     config_path = TEST_CONFIG_DIR / "test_config_param_parse.yaml"

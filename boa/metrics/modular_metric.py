@@ -164,7 +164,9 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             if self.wrapper
             else {}
         )
-        wrapper_kwargs = wrapper_kwargs or {}
+        wrapper_kwargs = wrapper_kwargs if wrapper_kwargs is not None else {}
+        if wrapper_kwargs is not None and not isinstance(wrapper_kwargs, dict):
+            wrapper_kwargs = {"wrapper_args": wrapper_kwargs}
         safe_kwargs = {"trial": trial, **kwargs, **wrapper_kwargs}
         trial = safe_kwargs.pop("trial")
         # We add our extra kwargs to the arm parameters so they can be passed to evaluate

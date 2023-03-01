@@ -5,6 +5,7 @@ List of Metrics
 
 Metrics that are already defined in BOA:
 
+- :class:`.PassThrough`
 - :class:`.MeanSquaredError`
 - :class:`.RootMeanSquaredError`
 - :class:`.RSquared`
@@ -36,26 +37,60 @@ Examples
                 - metric: RMSE
                 - metric: R2
 
+PassThrough Metric
+******************
+
 If your metric is computed elsewhere (say by your model code or your model wrapping code),
-then you can use as a value passthrough the metric Mean. BOA will be adding
-a dedicated passthrough Metric in the near future, but for the moment you can use Mean
-and in your Wapper.fetch_trial_data you can do something like this
+then you can use the PassThrough metric. Passthrough metric defaults to minimizing.
+To mark as maximize, but minimize: False
+
+..  code-block:: YAML
+
+    # Single objective optimization config
+    optimization_options:
+        objective_options:
+            objectives:
+                # List all of your metrics here,
+                # only list 1 metric for a single objective optimization
+                - metric: PassThrough
+                  name: foo  # optional, any name will work
+                  minimize: False
+
+You could also simply specify a name, with no metric type and it will
+default to a pass through metric
+
+..  code-block:: YAML
+
+    # Single objective optimization config
+    optimization_options:
+        objective_options:
+            objectives:
+                # List all of your metrics here,
+                # only list 1 metric for a single objective optimization
+                - name: foo  # optional, any name will work
+
+If working in a language agnostic way, you can write out your output.json file like this
+see more at :mod:`Wrappers <boa.wrappers>`
+
+..  code-block:: JSON
+
+    {
+        "foo": 42
+    }
+
+If working with the Python API, your `fetch_trial_status` function could be
+something like this
 
 ..  code-block:: python
 
     def fetch_trial_data(self, trial, *args, **kwargs):
         value = get_value_somehow()
-        return dict(a=[value])
-
-Mean expects to get called with a parameter a being an array or list of values
-(notice that it isn't `dict(a=value)` it is `dict(a=[value])` with `[value]` making it
-a mean of just value, so it acts as a passthrough, but you have to return it as a dictionary
-with of a => list[value]
+        return value
 
 """
 from __future__ import annotations
 
-from typing import Type
+from typing import Iterable, Type
 
 import numpy as np
 
@@ -66,6 +101,40 @@ from boa.metrics.metric_funcs import (
 from boa.metrics.metric_funcs import setup_sklearn_metric
 from boa.metrics.modular_metric import ModularMetric
 from boa.metrics.synthetic_funcs import setup_synthetic_metric
+
+
+class PassThrough(ModularMetric):
+    """
+    Metric that just passes the value it receives back through
+    ex:
+
+        {metric: 5}
+
+    will just return 5
+
+    Defaults to minimizing, set `minimize: False` in your config if you wish
+    to maximize.
+    """
+
+    _metric_to_eval = lambda x: x  # noqa: E731
+
+    def _evaluate(self, params, **kwargs) -> float:
+        kwargs.update(params.pop("kwargs"))
+        args = kwargs["wrapper_args"]
+        if not isinstance(args, Iterable):
+            args = [args]
+        if len(args) > 1:
+            raise ValueError(
+                "Pass Through Metric can only pass through one value.\n"
+                "Check if you are passing more than one value to your pass through metric."
+            )
+        return self.f(*args)
+
+
+PassThroughMetric = PassThrough
+pass_through = PassThroughMetric
+passthrough = PassThroughMetric
+pass_through_metric = PassThroughMetric
 
 
 class SklearnMetric(ModularMetric):
@@ -241,6 +310,8 @@ def get_metric_from_config(config, instantiate=True, **kwargs):
         metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
     elif config.get("synthetic_metric"):
         metric = setup_synthetic_metric(instantiate=instantiate, **config, **kwargs)
+    elif config["name"]:  # only name but no metric type
+        metric = PassThroughMetric(name=config["name"], **kwargs)
     else:
         # TODO link to docs for configuration when it exists
         raise KeyError("No valid configuration for metric found.")

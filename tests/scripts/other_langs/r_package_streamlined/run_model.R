@@ -43,9 +43,7 @@ if (!is.na(res)) {
     # if it was a success, we don't even need to write out trial status,
     # it is assumed a success if we write out data and don't fail
     out_data <- list(
-        mean=list(
-            a=res
-        )
+        metric=res
         # trial_status=unbox("COMPLETED")  #  this is optional if it succeeds
     )
 
