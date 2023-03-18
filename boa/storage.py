@@ -47,7 +47,9 @@ from boa.wrappers.script_wrapper import ScriptWrapper
 logger = get_logger()
 
 
-def scheduler_to_json_file(scheduler, scheduler_filepath: PathLike = "scheduler_snapshot.json", dir_: PathLike = None, **kwargs) -> None:
+def scheduler_to_json_file(
+    scheduler, scheduler_filepath: PathLike = "scheduler_snapshot.json", dir_: PathLike = None, **kwargs
+) -> None:
     """Save a JSON-serialized snapshot of this `Scheduler`'s settings and state
     to a .json file by the given path.
     """
@@ -55,7 +57,9 @@ def scheduler_to_json_file(scheduler, scheduler_filepath: PathLike = "scheduler_
         scheduler_filepath = pathlib.Path(dir_) / scheduler_filepath
     with open(scheduler_filepath, "w+") as file:  # pragma: no cover
         file.write(json.dumps(scheduler_to_json_snapshot(scheduler)))
-        logger.info(f"Saved JSON-serialized state of optimization to `{scheduler_filepath}`." f"\nBoa version: {__version__}")
+        logger.info(
+            f"Saved JSON-serialized state of optimization to `{scheduler_filepath}`." f"\nBoa version: {__version__}"
+        )
 
 
 def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None, **kwargs) -> Scheduler:

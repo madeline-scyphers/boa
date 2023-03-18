@@ -1,19 +1,17 @@
-from __future__ import  annotations
+from __future__ import annotations
 
 from typing import TypeVar
 
-from ax.plot.trace import optimization_trace_single_method_plotly
-from ax.service.utils.report_utils import get_standard_plots, exp_to_df
-from ax.plot.slice import interact_slice_plotly
+import numpy as np
 from ax.plot.contour import interact_contour_plotly
 from ax.plot.pareto_frontier import interact_pareto_frontier
 from ax.plot.pareto_utils import compute_posterior_pareto_frontier
-import numpy as np
+from ax.plot.slice import interact_slice_plotly
+from ax.plot.trace import optimization_trace_single_method_plotly
 
+from boa.definitions import PathLike_tup
 from boa.scheduler import Scheduler
 from boa.storage import scheduler_from_json_file
-from boa.definitions import PathLike, PathLike_tup
-
 
 SchedulersOrPath = TypeVar("SchedulersOrPath", Scheduler, *PathLike_tup)
 SchedulersOrPathList = TypeVar("SchedulersOrPathList", Scheduler, list[Scheduler], *PathLike_tup)
@@ -34,11 +32,7 @@ def maybe_load_schedulers(schedulers: SchedulersOrPathList):
 
 
 def single_metric_trace(
-        schedulers: SchedulersOrPathList,
-        metric_name: str = None,
-        title: str = "",
-        ylabel: str = None,
-        **kwargs
+    schedulers: SchedulersOrPathList, metric_name: str = None, title: str = "", ylabel: str = None, **kwargs
 ):
 
     schedulers = maybe_load_schedulers(schedulers)
@@ -70,15 +64,11 @@ def single_metric_trace(
             else ("minimize" if schedulers[0].experiment.optimization_config.objective.minimize else "maximize")
         ),
         plot_trial_points=True,
-        **kwargs
+        **kwargs,
     )
 
 
-def interact_contours(
-        scheduler: SchedulersOrPath,
-        metric_name: str = None,
-        **kwargs
-):
+def interact_contours(scheduler: SchedulersOrPath, metric_name: str = None, **kwargs):
     scheduler = maybe_load_scheduler(scheduler)
 
     model = scheduler.generation_strategy.model
@@ -96,13 +86,7 @@ def interact_contours(
             else scheduler.experiment.optimization_config.objective.minimize
         )
 
-        plots += [
-            interact_contour_plotly(
-                model=model,
-                metric_name=name,
-                lower_is_better=lower_is_better
-            )
-            ]
+        plots += [interact_contour_plotly(model=model, metric_name=name, lower_is_better=lower_is_better)]
     if len(plots) == 1:
         return plots[0]
     return plots
@@ -116,17 +100,19 @@ def interact_slice(scheduler: SchedulersOrPath):
 
 
 def plot_pareto_frontier(
-        scheduler: SchedulersOrPath,
-        metric1: str | None = None,
-        metric2: str | None = None,
+    scheduler: SchedulersOrPath,
+    metric1: str | None = None,
+    metric2: str | None = None,
 ):
     scheduler = maybe_load_scheduler(scheduler)
     experiment = scheduler.experiment
 
     if not metric1 or not metric2:
         if len(experiment.metrics) != 2:
-            raise TypeError("When plotting a pareto frontier, you must either be using a optimization that has exactly"
-                            " 2 objectives (metrics), or supply your metrics yourself.")
+            raise TypeError(
+                "When plotting a pareto frontier, you must either be using a optimization that has exactly"
+                " 2 objectives (metrics), or supply your metrics yourself."
+            )
         metric1, metric2 = experiment.metrics.keys()
 
     try:
@@ -142,9 +128,7 @@ def plot_pareto_frontier(
         experiment=experiment,
         primary_objective=primary_objective,
         secondary_objective=secondary_objective,
-        absolute_metrics=[m.name for m in experiment.metrics.values()]
+        absolute_metrics=[m.name for m in experiment.metrics.values()],
     )
 
-    return interact_pareto_frontier(
-        frontier_list=[frontier]
-    )
+    return interact_pareto_frontier(frontier_list=[frontier])

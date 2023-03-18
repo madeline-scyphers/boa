@@ -91,7 +91,9 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
                 "generation_strategy": {
                     "steps": [{"model": "SOBOL", "num_trials": 2}, {"model": "GPEI", "num_trials": -1}]
                 },
-                "objective_options": {"objectives": [{"metric": "mean", "name": "Mean"}, {"metric": "RMSE", "info_only": True}]},
+                "objective_options": {
+                    "objectives": [{"metric": "mean", "name": "Mean"}, {"metric": "RMSE", "info_only": True}]
+                },
                 "trials": 5,
             },
             "parameters": [

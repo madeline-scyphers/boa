@@ -7,7 +7,6 @@ from typing import Iterable, Optional
 from ax.core.optimization_config import OptimizationConfig
 from ax.service.scheduler import Scheduler as AxScheduler
 
-from boa.definitions import PathLike
 from boa.runner import WrappedJobRunner
 
 logger = logging.getLogger(__file__)

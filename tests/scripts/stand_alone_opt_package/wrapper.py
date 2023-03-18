@@ -22,9 +22,9 @@ class Wrapper(boa.BaseWrapper):
     def fetch_trial_data(self, trial: Trial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
         # return dict(a=self.data[trial.index])
         return {
-                "Mean": {"a": list(trial.arm.parameters.values()), "sem": 4.5},
-                "RMSE": {
-                    "y_true": [1.12, 1.25],
-                    "y_pred": list(trial.arm.parameters.values()),
-                },
-            }
+            "Mean": {"a": list(trial.arm.parameters.values()), "sem": 4.5},
+            "RMSE": {
+                "y_true": [1.12, 1.25],
+                "y_pred": list(trial.arm.parameters.values()),
+            },
+        }
