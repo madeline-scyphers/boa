@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, Optional, Type
 from ax.exceptions.storage import JSONDecodeError as AXJSONDecodeError
 from ax.exceptions.storage import JSONEncodeError as AXJSONEncodeError
 from ax.service.scheduler import SchedulerOptions
+from ax.service.utils.report_utils import exp_to_df
 from ax.storage.json_store.decoder import (
     generation_strategy_from_json,
     object_from_json,
@@ -41,13 +42,15 @@ from boa.wrappers.base_wrapper import BaseWrapper
 logger = get_logger()
 
 
-def scheduler_to_json_file(scheduler, filepath: PathLike = "scheduler_snapshot.json") -> None:
+def scheduler_to_json_file(scheduler, scheduler_filepath: PathLike = "scheduler_snapshot.json", dir_: PathLike = None, **kwargs) -> None:
     """Save a JSON-serialized snapshot of this `Scheduler`'s settings and state
     to a .json file by the given path.
     """
-    with open(filepath, "w+") as file:  # pragma: no cover
+    if dir_:
+        scheduler_filepath = pathlib.Path(dir_) / scheduler_filepath
+    with open(scheduler_filepath, "w+") as file:  # pragma: no cover
         file.write(json.dumps(scheduler_to_json_snapshot(scheduler)))
-        logger.info(f"Saved JSON-serialized state of optimization to `{filepath}`." f"\nBoa version: {__version__}")
+        logger.info(f"Saved JSON-serialized state of optimization to `{scheduler_filepath}`." f"\nBoa version: {__version__}")
 
 
 def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None, **kwargs) -> Scheduler:
@@ -213,3 +216,19 @@ def recursive_deserialize(obj, **kwargs):
             for key, value in obj.items():
                 obj[key] = recursive_deserialize(value, **kwargs)
     return obj
+
+
+def exp_opt_to_csv(experiment, opt_path: PathLike = "optimization.csv", dir_: PathLike = None, **kwargs):
+    if dir_:
+        opt_path = pathlib.Path(dir_) / opt_path
+    df = exp_to_df(experiment)
+    df.to_csv(path_or_buf=opt_path, index=False, **kwargs)
+
+
+def scheduler_opt_to_csv(scheduler, **kwargs):
+    return exp_opt_to_csv(scheduler.experiment, **kwargs)
+
+
+def dump_scheduler_data(scheduler, **kwargs):
+    scheduler_to_json_file(scheduler, **kwargs)
+    scheduler_opt_to_csv(scheduler, **kwargs)

@@ -16,7 +16,7 @@ logger = logging.getLogger(__file__)
 class Scheduler(AxScheduler):
     runner: WrappedJobRunner
 
-    def report_results(self):
+    def report_results(self, force_refit: bool = None):
         """
         Ran whenever a batch of data comes in and the results are ready. This could be
         from one trial or a group of trials at once since it does interval polls to check
@@ -26,7 +26,7 @@ class Scheduler(AxScheduler):
         have finished, which are running, and what generation step will be used to
         generate the next trials.
         """
-        self.save_to_json()
+        self.save_data()
         try:
             trials = self.best_fitted_trials(use_model_predictions=False)
             best_trial_map = {idx: trial_dict["means"] for idx, trial_dict in trials.items()} if trials else {}
@@ -41,6 +41,7 @@ class Scheduler(AxScheduler):
             f"{best_trial_str}"
         )
         logger.info(update)
+        return super().report_results(force_refit=force_refit)
 
     def best_fitted_trials(
         self,
@@ -125,13 +126,11 @@ class Scheduler(AxScheduler):
                 trials = {int(best_trial): dict(params=best_params, means=means_dict, cov_matrix=cov_matrix)}
         return trials
 
-    def save_to_json(self, filepath: PathLike = None):
+    def save_data(self, **kwargs):
         """Save Scheduler to json file. Defaults to `wrapper.experiment_dir` / `filepath`"""
-        from boa.storage import scheduler_to_json_file
+        from boa.storage import dump_scheduler_data
 
-        filepath = filepath or "scheduler.json"
         try:
-            experiment_dir = self.runner.wrapper.experiment_dir
-            scheduler_to_json_file(self, experiment_dir / filepath)
+            dump_scheduler_data(scheduler=self, dir_=self.runner.wrapper.experiment_dir, **kwargs)
         except Exception as e:
             logger.exception("failed to save scheduler to json! Reason: %s" % repr(e))
