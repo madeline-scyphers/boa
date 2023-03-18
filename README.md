@@ -31,8 +31,9 @@ between models and the python libraries [Ax](https://ax.dev) and [BoTorch](https
 
 |                    |                                                                                                                                                                 |
 |--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Build Status       | [![ci](https://github.com/madeline-scyphers/boa/actions/workflows/CI.yaml/badge.svg)](https://github.com/madeline-scyphers/boa/actions/workflows/CI.yaml)       |
-| Coverage           | [![codecov](https://codecov.io/gh/madeline-scyphers/boa/branch/main/graph/badge.svg)](https://codecov.io/gh/madeline-scyphers/boa)                              |
+| Docs               | [![Documentation Status](https://readthedocs.org/projects/pyboa/badge/?version=latest)](https://pyboa.readthedocs.io/en/latest/?badge=latest)                   |
+| DOI                | [![DOI](https://zenodo.org/badge/480579470.svg)](https://zenodo.org/badge/latestdoi/480579470)                                                                  |
 | Latest release     | [![Github release](https://img.shields.io/github/release/madeline-scyphers/boa.svg?label=tag&colorB=11ccbb)](https://github.com/madeline-scyphers/boa/releases) |
 | Latest dev release | [![Github tag](https://img.shields.io/github/v/tag/madeline-scyphers/boa.svg?label=tag&colorB=11ccbb)](https://github.com/madeline-scyphers/boa/tags)           |
-| Docs               | [![Documentation Status](https://readthedocs.org/projects/pyboa/badge/?version=latest)](https://pyboa.readthedocs.io/en/latest/?badge=latest)                   |
+| Build Status       | [![ci](https://github.com/madeline-scyphers/boa/actions/workflows/CI.yaml/badge.svg)](https://github.com/madeline-scyphers/boa/actions/workflows/CI.yaml)       |
+| Coverage           | [![codecov](https://codecov.io/gh/madeline-scyphers/boa/branch/main/graph/badge.svg)](https://codecov.io/gh/madeline-scyphers/boa)                              |

@@ -358,9 +358,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         for name in self._metric_cache[trial.index].keys():
             if self.metric_names and name not in self.metric_names:
-                logger.warning(
-                    f"found extra returned metric: {name}" f" in returned metrics from fetch_trial_data"
-                )
+                logger.warning(f"found extra returned metric: {name} in returned metrics from fetch_trial_data")
         return self._metric_cache[trial.index][metric_name]
 
     def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
@@ -430,10 +428,10 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         >>> def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
         ...     return {
-        ...         "Mean": {"a": trial.arm.parameters, "sem": 4.5},
+        ...         "Mean": {"a": trial.arm.parameters.values(), "sem": 4.5},
         ...         "RMSE": {
         ...             "y_true": [1.12, 1.25, 2.54, 4.52],
-        ...             "y_pred": trial.arm.parameters,
+        ...             "y_pred": trial.arm.parameters.values(),
         ...         },
         ...     }
 
@@ -443,11 +441,11 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         >>> def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
         ...     if metric_name == "Mean":
-        ...         return {"a": trial.arm.parameters, "sem": 4.5}
+        ...         return {"a": trial.arm.parameters.values(), "sem": 4.5}
         ...     elif metric_name == "RMSE":
         ...         return {
         ...             "y_true": [1.12, 1.25, 2.54, 4.52],
-        ...             "y_pred": trial.arm.parameters,
+        ...             "y_pred": trial.arm.parameters.values(),
         ...         }
 
         This one is a little more complicated, but it assumes in your config for each metric, you

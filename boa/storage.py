@@ -36,8 +36,13 @@ from boa.logger import get_logger
 from boa.metrics.modular_metric import ModularMetric
 from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
-from boa.utils import _load_attr_from_module, _load_module_from_path
+from boa.utils import (
+    _load_attr_from_module,
+    _load_module_from_path,
+    get_dictionary_from_callable,
+)
 from boa.wrappers.base_wrapper import BaseWrapper
+from boa.wrappers.script_wrapper import ScriptWrapper
 
 logger = get_logger()
 
@@ -95,12 +100,10 @@ def scheduler_to_json_snapshot(
     options = SchedulerOptions(**options)
 
     try:
-        wrapper_serialization = (
-            object_to_json(
-                scheduler.experiment.runner.wrapper,
-                encoder_registry=encoder_registry,
-                class_encoder_registry=class_encoder_registry,
-            ),
+        wrapper_serialization = object_to_json(
+            scheduler.experiment.runner.wrapper,
+            encoder_registry=encoder_registry,
+            class_encoder_registry=class_encoder_registry,
         )
     except AXJSONEncodeError as e:
         logger.error(e)
@@ -162,6 +165,9 @@ def scheduler_from_json_snapshot(
     wrapper = None
     if "wrapper" in serialized:
         wrapper_dict = serialized.pop("wrapper", {})
+        # sometimes the way people write their to_dict methods wrap it in a list
+        if isinstance(wrapper_dict, list) and len(wrapper_dict) == 1:
+            wrapper_dict = wrapper_dict[0]
 
         try:
             wrapper = object_from_json(
@@ -169,7 +175,7 @@ def scheduler_from_json_snapshot(
                 decoder_registry=decoder_registry,
                 class_decoder_registry=class_decoder_registry,
             )
-        except Exception:
+        except Exception as e:
             deserialized = recursive_deserialize(
                 wrapper_dict,
                 decoder_registry=decoder_registry,
@@ -187,8 +193,10 @@ def scheduler_from_json_snapshot(
                 wrapper = WrapperCls.from_dict(**wrapper_dict)
 
             else:
-                logger.exception("Failed to deserialize wrapper.\n\n\n\n\n")
-                wrapper = BaseWrapper()
+                logger.exception(
+                    f"Failed to deserialize wrapper because of: {e!r}" f"\n\nUsing basic ScriptWrapper as back up"
+                )
+                wrapper = ScriptWrapper.from_dict(**get_dictionary_from_callable(ScriptWrapper.from_dict, wrapper_dict))
 
     serialized_generation_strategy = serialized.pop("generation_strategy")
     generation_strategy = generation_strategy_from_json(
@@ -212,7 +220,7 @@ def recursive_deserialize(obj, **kwargs):
             if "__type" not in obj:  # at least this out dict isn't serialized in AX format, let's check inners
                 raise AXJSONDecodeError("obj is not a AX JSON deserializable object")
             obj = object_from_json(obj, **kwargs)
-        except AXJSONDecodeError:
+        except (AXJSONDecodeError, TypeError):  # TypeError until https://github.com/facebook/Ax/pull/1418 is merged
             for key, value in obj.items():
                 obj[key] = recursive_deserialize(value, **kwargs)
     return obj

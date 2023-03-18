@@ -11,7 +11,6 @@ optimization_options:
               num_trials: -1
     scheduler:
         total_trials: 15
-        tolerated_trial_failure_rate: 0.8
 
 parameters:
     x0:
@@ -40,10 +39,7 @@ parameters:
         'value_type': 'float'
 
 script_options:
-    write_configs: Rscript write_configs.R
     run_model: Rscript run_model.R
-    set_trial_status: Rscript set_trial_status.R
-    fetch_trial_data: Rscript fetch_trial_data.R
 
 model_options:
     input_size: 15
