@@ -15,7 +15,7 @@ logger = logging.getLogger(__file__)
 class Scheduler(AxScheduler):
     runner: WrappedJobRunner
 
-    def report_results(self, force_refit: bool = None):
+    def report_results(self):
         """
         Ran whenever a batch of data comes in and the results are ready. This could be
         from one trial or a group of trials at once since it does interval polls to check
@@ -40,7 +40,6 @@ class Scheduler(AxScheduler):
             f"{best_trial_str}"
         )
         logger.info(update)
-        return super().report_results(force_refit=force_refit)
 
     def best_fitted_trials(
         self,
