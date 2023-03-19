@@ -6,6 +6,10 @@ channels:
 - defaults
 dependencies:
 - python=3.9
+- # mac x86 or apple silicone macs on rosetta python need pytorch>2
+  # so if on either of those, it should install pytorch>2 by default
+  # but if not and something doesn't work, upgrade pytorch, torchvision,
+  # and torchaudio
 - pytorch::pytorch
 - pytorch::torchvision
 - pytorch::torchaudio
