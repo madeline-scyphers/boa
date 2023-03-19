@@ -1,0 +1,7 @@
+name: boa
+channels:
+- conda-forge
+- defaults
+dependencies:
+  - r
+  - r-jsonlite
