@@ -114,5 +114,5 @@ jobs:
 
     steps:
       - name: Mark result as failed
-        if: (needs.linux.result != 'success') || (needs.mac.result != 'success')
+        if: (needs.ci.result != 'success')
         run: exit 1
