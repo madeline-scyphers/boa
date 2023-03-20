@@ -16,7 +16,7 @@ logger = logging.getLogger(__file__)
 class Scheduler(AxScheduler):
     runner: WrappedJobRunner
 
-    def report_results(self):
+    def report_results(self, force_refit: bool = False):
         """
         Ran whenever a batch of data comes in and the results are ready. This could be
         from one trial or a group of trials at once since it does interval polls to check
@@ -25,6 +25,9 @@ class Scheduler(AxScheduler):
         saves the scheduler to json and saves to the log a status update of what trials
         have finished, which are running, and what generation step will be used to
         generate the next trials.
+
+        Args:
+            force_refit: Not used. Arg from Ax for compatibility.
         """
         self.save_to_json()
         try:
