@@ -46,6 +46,7 @@ jobs:
             label: win-64
             prefix: C:\Miniconda3\envs\boa
 
+    name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v3
@@ -114,5 +115,5 @@ jobs:
 
     steps:
       - name: Mark result as failed
-        if: (needs.ci.result != 'success')
+        if: needs.ci.result != 'success'
         run: exit 1
