@@ -63,7 +63,7 @@ def main(config_path, scheduler_path, wrapper_path, temporary_dir, rel_to_here):
 
     if temporary_dir:
         with tempfile.TemporaryDirectory() as temp_dir:
-            experiment_dir = Path(temp_dir) / "temp"
+            experiment_dir = Path(temp_dir)
             return run(
                 config_path,
                 scheduler_path=scheduler_path,

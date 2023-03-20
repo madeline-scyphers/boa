@@ -54,7 +54,7 @@ class ScriptWrapper(BaseWrapper):
         ----------
         trial : BaseTrial
         """
-        self._run_subprocess_script_cmd_if_exists(trial, "write_configs", block=True)
+        self._run_subprocess_script_cmd_if_exists(trial, "write_configs")
 
     def run_model(self, trial: BaseTrial) -> None:
         """
@@ -79,7 +79,7 @@ class ScriptWrapper(BaseWrapper):
         ----------
         trial : BaseTrial
         """
-        self._run_subprocess_script_cmd_if_exists(trial, "run_model", block=False)
+        self._run_subprocess_script_cmd_if_exists(trial, "run_model")
 
     def set_trial_status(self, trial: BaseTrial) -> None:
         """
@@ -168,7 +168,7 @@ class ScriptWrapper(BaseWrapper):
         :meth:`~boa.wrappers.script_wrapper.ScriptWrapper.run_model`
         # TODO add sphinx link to ax trial status
         """
-        self._run_subprocess_script_cmd_if_exists(trial, "set_trial_status", block=True)
+        self._run_subprocess_script_cmd_if_exists(trial, "set_trial_status")
         data = self._read_subprocess_script_output(trial, file_names=["trial_status", "TrialStatus", *OUTPUT_FILES])
         if data is not None:
             trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus" or k.lower() == "trial_status"]
@@ -249,7 +249,6 @@ class ScriptWrapper(BaseWrapper):
         self._run_subprocess_script_cmd_if_exists(
             trial,
             func_names="fetch_trial_data",
-            block=True,
         )
         data = self._read_subprocess_script_output(trial, file_names=OUTPUT_FILES)
         if data is not None:
@@ -258,9 +257,7 @@ class ScriptWrapper(BaseWrapper):
                 data.pop(key)
             return data
 
-    def _run_subprocess_script_cmd_if_exists(
-        self, trial: BaseTrial, func_names: list[str] | str, block: bool = False, **kwargs
-    ):
+    def _run_subprocess_script_cmd_if_exists(self, trial: BaseTrial, func_names: list[str] | str, **kwargs):
         """
         Run a script command from their config file in a subproccess.
         Dump the trial data into a json file for them to collect if need be
@@ -306,20 +303,11 @@ class ScriptWrapper(BaseWrapper):
                 p = subprocess.Popen(
                     args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, universal_newlines=True
                 )
-                if block:
-                    p.communicate()
                 # TODO move polling and print to another thread so it doesn't block but still writes to log?
                 # Grab stdout line by line as it becomes available.
                 # This will loop until p terminates.
-                # while p.poll() is None:
-                #     l = p.stdout.readline()  # This blocks until it receives a newline.
-                #     if l:
-                #         logger.info(l)
-                # # When the subprocess terminates there might be unconsumed output
-                # # that still needs to be processed.
-                # l = p.stdout.read()
-                # if l:
-                #     logger.info(l)
+                for line in p.stdout:
+                    logger.info(line.strip())
         return ran_cmds
 
     def _read_subprocess_script_output(self, trial: BaseTrial, file_names: Iterable[str] | str):
