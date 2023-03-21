@@ -41,8 +41,8 @@ PassThrough Metric
 ******************
 
 If your metric is computed elsewhere (say by your model code or your model wrapping code),
-then you can use the PassThrough metric. Passthrough metric defaults to minimizing.
-To mark as maximize, but minimize: False
+then you can use the PassThrough metric. PassThrough metric defaults to minimizing.
+To mark as maximize, use ``minimize: False``.
 
 ..  code-block:: YAML
 
@@ -57,7 +57,7 @@ To mark as maximize, but minimize: False
                   minimize: False
 
 You could also simply specify a name, with no metric type and it will
-default to a pass through metric
+default to a pass through metric:
 
 ..  code-block:: YAML
 
@@ -70,7 +70,7 @@ default to a pass through metric
                 - name: foo  # optional, any name will work
 
 If working in a language agnostic way, you can write out your output.json file like this
-see more at :mod:`Wrappers <boa.wrappers>`
+(see more at :mod:`Wrappers <boa.wrappers>`):
 
 ..  code-block:: JSON
 
@@ -105,12 +105,12 @@ from boa.metrics.synthetic_funcs import setup_synthetic_metric
 
 class PassThrough(ModularMetric):
     """
-    Metric that just passes the value it receives back through
-    ex:
+    Metric that just passes the value it receives back through,
+    for example:
 
         {metric: 5}
 
-    will just return 5
+    will just return 5.
 
     Defaults to minimizing, set `minimize: False` in your config if you wish
     to maximize.
