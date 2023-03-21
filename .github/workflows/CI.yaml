@@ -70,13 +70,7 @@ jobs:
         id: cache
 
       - name: Update base environment
-        run: mamba env update -n boa -f environment.yml --prune
-        if: steps.cache.outputs.cache-hit != 'true'
-
-      - name: Update environment with development env
-        run: |
-          mamba env update -n boa -f environment_dev_update.yml
-          mamba env update -n boa -f environment_language_updates.yml
+        run: mamba env create -f environment_dev.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Lint

@@ -1,0 +1,56 @@
+name: boa-dev
+channels:
+- pytorch
+- conda-forge
+dependencies:
+- python=3.10
+  # mac x86 or apple silicone macs on rosetta python need pytorch>2
+  # so if on either of those, it should install pytorch>2 by default
+  # but if not and something doesn't work, upgrade pytorch, torchvision,
+  # and torchaudio
+- pytorch::pytorch
+- pytorch::torchvision
+- pytorch::torchaudio
+- numpy
+- pandas
+- scipy
+- scikit-learn
+- click
+- plotly>=5.10.0
+- notebook>=5.3
+- ipywidgets>=7.5
+- ax-platform==0.3.1
+- PyYAML
+
+  ## Jupyter and sphinx jupyter
+- myst-nb
+- jupyter
+
+  ## Aux Languages for testing
+- r
+- r-jsonlite
+
+- pip
+- pip:
+    ## Task management
+  - invoke
+
+    ## Testing tools
+  - pytest
+  - pytest-cov
+
+    ## Formatters
+  - isort
+  - black==22.6.0
+
+    ## Linters
+  - flake8
+  - flakeheaven>=3.0.0
+
+  ## Docs
+  # we use external role, which is from v4.4. in conda this causes conflicts
+  - sphinx>=4.4,<6  # <6 b/c pydata (<=0.12) doesn't work with sphinx 6, 4.4 is when certain sphinx options were introduced that we use
+  - pydata-sphinx-theme<0.12.0  # pydata 0.12 has a flyout menu bug
+  - sphinxext-remoteliteralinclude
+
+  - -e . --install-option="--no-deps"
