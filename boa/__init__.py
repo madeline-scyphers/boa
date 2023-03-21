@@ -35,6 +35,13 @@ del _add_common_encodes_and_decodes
 
 import warnings  # noqa
 
+# In AX, this error happens which we can't control
+# In a future version of pandas,
+# a length 1 tuple will be returned when iterating over a groupby with a grouper equal to a list of length 1.
 warnings.filterwarnings("ignore", category=FutureWarning, module="ax.core.observation")
+# In AX, this error happens, refering to their own calling of their own function
+#  FYI: The default behavior of `get_pareto_frontier_and_configs` when `transform_outcomes_and_configs`
+#  is not specified has changed.
+warnings.filterwarnings("ignore", category=UserWarning, module="ax.modelbridge.modelbridge_utils", lineno=852)
 
 del warnings

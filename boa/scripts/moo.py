@@ -30,9 +30,7 @@ def main():
     wrapper = Wrapper(config_path=config_path)
     controller = Controller(wrapper=wrapper)
     controller.initialize_scheduler()
-    scheduler = controller.run()
-    controller.logger.info(f"\n{exp_to_df(scheduler.experiment)}")
-    return scheduler
+    return controller.run()
 
 
 if __name__ == "__main__":
