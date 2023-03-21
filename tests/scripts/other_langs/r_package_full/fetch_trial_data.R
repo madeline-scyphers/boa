@@ -11,7 +11,7 @@ res <- model_data$output
 
 # format and save our data to a format that BOA is expecting
 out_data <- list(
-    mean=list(
+    metric=list(
         a=res
     )
 )
