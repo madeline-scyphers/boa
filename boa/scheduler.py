@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import logging
 from pprint import pformat
 from typing import Iterable, Optional
 
 from ax.core.optimization_config import OptimizationConfig
 from ax.service.scheduler import Scheduler as AxScheduler
 
+from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
 
-logger = logging.getLogger(__file__)
+logger = get_logger()
 
 
 class Scheduler(AxScheduler):
@@ -33,7 +33,7 @@ class Scheduler(AxScheduler):
             trials = self.best_fitted_trials(use_model_predictions=False)
             best_trial_map = {idx: trial_dict["means"] for idx, trial_dict in trials.items()} if trials else {}
             best_trial_str = f"\nBest trial so far: {pformat(best_trial_map)}"
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             best_trial_str = ""
             logger.exception(e)
         update = (
@@ -99,7 +99,7 @@ class Scheduler(AxScheduler):
                         idx: dict(params=trial_tup[0], means=trial_tup[1][0], cov_matrix=trial_tup[1][1])
                         for idx, trial_tup in trials.items()
                     }
-            except (TypeError, ValueError) as e:
+            except (TypeError, ValueError) as e:  # pragma: no cover
                 # If get_pareto doesn't work because of the gen_step not supporting multi obj
                 # then we log to the user that problem
                 logger.warning(

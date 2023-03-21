@@ -27,3 +27,14 @@ from boa.wrappers.wrapper_utils import *  # noqa
 _add_common_encodes_and_decodes()
 
 del _add_common_encodes_and_decodes
+
+
+# warnings from non boa modules to suppress
+# we only suppress very specific files, not entire libraries
+# so we don't accidentally suppress more than we need
+
+import warnings  # noqa
+
+warnings.filterwarnings("ignore", category=FutureWarning, module="ax.core.observation")
+
+del warnings

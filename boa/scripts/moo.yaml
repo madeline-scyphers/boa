@@ -11,7 +11,7 @@ optimization_options:
         objective_thresholds: []
     trials: 10
 
-parameters:git
+parameters:
     x1:
         type: range
         bounds: [0, 1]
