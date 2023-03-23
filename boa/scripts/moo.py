@@ -1,10 +1,12 @@
 from pathlib import Path
 
 import numpy as np
-from ax.service.utils.report_utils import exp_to_df
 
 from boa.controller import Controller
+from boa.metrics.synthetic_funcs import get_synth_func
 from boa.wrappers.base_wrapper import BaseWrapper
+
+hartmann6 = get_synth_func("hartmann6")
 
 
 class Wrapper(BaseWrapper):
@@ -15,12 +17,13 @@ class Wrapper(BaseWrapper):
         trial.mark_completed()
 
     def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
-        idx = trial.index + 1
+        val = hartmann6(np.array(list(trial.arm.parameters.values())))
+
         return {
-            "Meanyyy": {"a": idx * np.array([-0.3691, 4.6544, 1.2675, -0.4327]), "sem": 4.5},
+            "Meanyyy": {"a": val},
             "RMSE": {
-                "y_true": idx * np.array([1.12, 1.25, 2.54, 4.52]),
-                "y_pred": idx * np.array([1.51, 1.01, 2.21, 4.50]),
+                "y_true": hartmann6.fmin,
+                "y_pred": val,
             },
         }
 

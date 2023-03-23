@@ -12,6 +12,10 @@ optimization_options:
     trials: 10
 
 parameters:
+    x0:
+        type: range
+        bounds: [0, 1]
+        value_type: float
     x1:
         type: range
         bounds: [0, 1]

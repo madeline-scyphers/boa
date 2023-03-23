@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import TypeVar
 
 import numpy as np
+import plotly.graph_objs as go
 from ax.plot.contour import interact_contour_plotly
-from ax.plot.pareto_frontier import interact_pareto_frontier
+from ax.plot.pareto_frontier import plot_pareto_frontier as ax_plot_pareto_frontier
 from ax.plot.pareto_utils import compute_posterior_pareto_frontier
 from ax.plot.slice import interact_slice_plotly
 from ax.plot.trace import optimization_trace_single_method_plotly
@@ -17,29 +18,31 @@ SchedulersOrPath = TypeVar("SchedulersOrPath", Scheduler, *PathLike_tup)
 SchedulersOrPathList = TypeVar("SchedulersOrPathList", Scheduler, list[Scheduler], *PathLike_tup)
 
 
-def maybe_load_scheduler(scheduler: SchedulersOrPath):
+DEFAULT_CI_LEVEL: float = 0.9
+
+
+def _maybe_load_scheduler(scheduler: SchedulersOrPath):
     if isinstance(scheduler, PathLike_tup):
         scheduler = scheduler_from_json_file(scheduler)
     return scheduler
 
 
-def maybe_load_schedulers(schedulers: SchedulersOrPathList):
+def _maybe_load_schedulers(schedulers: SchedulersOrPathList):
     if not isinstance(schedulers, list):
         schedulers = [schedulers]
     for i, scheduler in enumerate(schedulers):
-        schedulers[i] = maybe_load_scheduler(scheduler)
+        schedulers[i] = _maybe_load_scheduler(scheduler)
     return schedulers
 
 
-def single_metric_trace(
+def plot_single_metric_trace(
     schedulers: SchedulersOrPathList, metric_name: str = None, title: str = "", ylabel: str = None, **kwargs
 ):
 
-    schedulers = maybe_load_schedulers(schedulers)
+    schedulers = _maybe_load_schedulers(schedulers)
 
     if not metric_name:
         metric_name = list(schedulers[0].experiment.metrics.keys())[0]
-    # ys = np.array([[1.2, 2.2, 3.1], [1.3, 2.0, 2.5], [1.8, 1.9, 2.8]])
     model_transitions = set()
     ys = []
     for scheduler in schedulers:
@@ -68,8 +71,8 @@ def single_metric_trace(
     )
 
 
-def interact_contours(scheduler: SchedulersOrPath, metric_name: str = None, **kwargs):
-    scheduler = maybe_load_scheduler(scheduler)
+def plot_contours(scheduler: SchedulersOrPath, metric_name: str = None, **kwargs):
+    scheduler = _maybe_load_scheduler(scheduler)
 
     model = scheduler.generation_strategy.model
     if not metric_name:
@@ -92,8 +95,8 @@ def interact_contours(scheduler: SchedulersOrPath, metric_name: str = None, **kw
     return plots
 
 
-def interact_slice(scheduler: SchedulersOrPath):
-    scheduler = maybe_load_scheduler(scheduler)
+def plot_slice(scheduler: SchedulersOrPath):
+    scheduler = _maybe_load_scheduler(scheduler)
 
     model = scheduler.generation_strategy.model
     return interact_slice_plotly(model=model)
@@ -103,8 +106,9 @@ def plot_pareto_frontier(
     scheduler: SchedulersOrPath,
     metric1: str | None = None,
     metric2: str | None = None,
+    CI_level: float = DEFAULT_CI_LEVEL,
 ):
-    scheduler = maybe_load_scheduler(scheduler)
+    scheduler = _maybe_load_scheduler(scheduler)
     experiment = scheduler.experiment
 
     if not metric1 or not metric2:
@@ -131,4 +135,87 @@ def plot_pareto_frontier(
         absolute_metrics=[m.name for m in experiment.metrics.values()],
     )
 
-    return interact_pareto_frontier(frontier_list=[frontier])
+    frontier_list = [frontier]
+    traces = []
+    shapes = []
+    for frontier in frontier_list:
+        config = ax_plot_pareto_frontier(
+            frontier=frontier,
+            CI_level=CI_level,
+        )
+        traces.append(config.data["data"][0])
+        shapes.append(config.data["layout"].get("shapes", []))
+
+    for i, trace in enumerate(traces):
+        if i == 0:  # Only the first trace is initially set to visible
+            trace["visible"] = True
+        else:  # All other plot traces are not visible initially
+            trace["visible"] = False
+
+    # TODO (jej): replace dropdown with two dropdowns, one for x one for y.
+    dropdown = []
+    for i, frontier in enumerate(frontier_list):
+        trace_cnt = 1
+        # Only one plot trace is visible at a given time.
+        visible = [False] * (len(frontier_list) * trace_cnt)
+        for j in range(i * trace_cnt, (i + 1) * trace_cnt):
+            visible[j] = True
+        rel_y = frontier.primary_metric not in frontier.absolute_metrics
+        rel_x = frontier.secondary_metric not in frontier.absolute_metrics
+        primary_metric = frontier.primary_metric
+        secondary_metric = frontier.secondary_metric
+        dropdown.append(
+            {
+                "method": "update",
+                "args": [
+                    {"visible": visible, "method": "restyle"},
+                    {
+                        "yaxis.title": primary_metric,
+                        "xaxis.title": secondary_metric,
+                        "yaxis.ticksuffix": "%" if rel_y else "",
+                        "xaxis.ticksuffix": "%" if rel_x else "",
+                        "shapes": shapes[i],
+                    },
+                ],
+                "label": f"{primary_metric} vs {secondary_metric}",
+            }
+        )
+
+    # Set initial layout arguments.
+    initial_frontier = frontier_list[0]
+    rel_x = initial_frontier.secondary_metric not in initial_frontier.absolute_metrics
+    rel_y = initial_frontier.primary_metric not in initial_frontier.absolute_metrics
+    secondary_metric = initial_frontier.secondary_metric
+    primary_metric = initial_frontier.primary_metric
+
+    layout = go.Layout(
+        title="Pareto Frontier",
+        xaxis={
+            "title": secondary_metric,
+            "ticksuffix": "%" if rel_x else "",
+            "zeroline": True,
+        },
+        yaxis={
+            "title": primary_metric,
+            "ticksuffix": "%" if rel_y else "",
+            "zeroline": True,
+        },
+        updatemenus=[
+            {
+                "buttons": dropdown,
+                "x": 0.075,
+                "xanchor": "left",
+                "y": 1.1,
+                "yanchor": "middle",
+            }
+        ],
+        hovermode="closest",
+        legend={"orientation": "h"},
+        width=750,
+        height=500,
+        margin=go.layout.Margin(pad=4, l=225, b=75, t=75),  # noqa E741
+        shapes=shapes[0],
+    )
+
+    fig = go.Figure(data=traces, layout=layout)
+    return fig
