@@ -1,12 +1,13 @@
 from pathlib import Path
 
-import numpy as np
+import torch
 
 from boa.controller import Controller
 from boa.metrics.synthetic_funcs import get_synth_func
 from boa.wrappers.base_wrapper import BaseWrapper
 
-hartmann6 = get_synth_func("hartmann6")
+BraninCurrin = get_synth_func("BraninCurrin")
+branin_currin = BraninCurrin()
 
 
 class Wrapper(BaseWrapper):
@@ -17,15 +18,8 @@ class Wrapper(BaseWrapper):
         trial.mark_completed()
 
     def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
-        val = hartmann6(np.array(list(trial.arm.parameters.values())))
-
-        return {
-            "Meanyyy": {"a": val},
-            "RMSE": {
-                "y_true": hartmann6.fmin,
-                "y_pred": val,
-            },
-        }
+        evaluation = branin_currin(torch.tensor([trial.arm.parameters.get("x1"), trial.arm.parameters.get("x2")]))
+        return {"branin": evaluation[0].item(), "currin": evaluation[1].item()}
 
 
 def main():
