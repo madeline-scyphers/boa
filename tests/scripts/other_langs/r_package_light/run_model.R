@@ -30,7 +30,7 @@ if (!is.na(res)) {
 
 
     out_data <- list(
-        mean=list(
+        metric=list(
             a=res
         )
     )
