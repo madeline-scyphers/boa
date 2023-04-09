@@ -15,6 +15,7 @@ from typing import Type
 
 import yaml
 from ax import Experiment
+from ax.service.utils.report_utils import exp_to_df
 
 from boa.__version__ import __version__ as VERSION
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
@@ -194,6 +195,8 @@ class Controller:
                 f"\n{LOG_INFO.format(exp_dir=self.wrapper.experiment_dir, start_time=start_tm)}"
                 f"\nEnd Time: {get_dt_now_as_str()}"
                 f"\nTotal Run Time: {time.time() - start}"
+                "\n"
+                f"\n{exp_to_df(scheduler.experiment)}"
                 f"\n{HEADER_BAR}"
             )
         return scheduler

@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import logging
+import time
 from pprint import pformat
 from typing import Iterable, Optional
 
 from ax.core.optimization_config import OptimizationConfig
 from ax.service.scheduler import Scheduler as AxScheduler
 
-from boa.definitions import PathLike
+from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
 
-logger = logging.getLogger(__file__)
+logger = get_logger()
 
 
 class Scheduler(AxScheduler):
@@ -29,12 +29,12 @@ class Scheduler(AxScheduler):
         Args:
             force_refit: Not used. Arg from Ax for compatibility.
         """
-        self.save_to_json()
+        self.save_data()
         try:
             trials = self.best_fitted_trials(use_model_predictions=False)
             best_trial_map = {idx: trial_dict["means"] for idx, trial_dict in trials.items()} if trials else {}
             best_trial_str = f"\nBest trial so far: {pformat(best_trial_map)}"
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             best_trial_str = ""
             logger.exception(e)
         update = (
@@ -88,6 +88,7 @@ class Scheduler(AxScheduler):
         trials = None
         if self.experiment.is_moo_problem:
             try:
+                s = time.time()
                 trials = self.get_pareto_optimal_parameters(
                     optimization_config=optimization_config,
                     trial_indices=trial_indices,
@@ -95,12 +96,13 @@ class Scheduler(AxScheduler):
                     *args,
                     **kwargs,
                 )
+                print("pareto took: ", time.time() - s)
                 if trials:
                     trials = {
                         idx: dict(params=trial_tup[0], means=trial_tup[1][0], cov_matrix=trial_tup[1][1])
                         for idx, trial_tup in trials.items()
                     }
-            except (TypeError, ValueError) as e:
+            except (TypeError, ValueError) as e:  # pragma: no cover
                 # If get_pareto doesn't work because of the gen_step not supporting multi obj
                 # then we log to the user that problem
                 logger.warning(
@@ -128,13 +130,11 @@ class Scheduler(AxScheduler):
                 trials = {int(best_trial): dict(params=best_params, means=means_dict, cov_matrix=cov_matrix)}
         return trials
 
-    def save_to_json(self, filepath: PathLike = None):
+    def save_data(self, **kwargs):
         """Save Scheduler to json file. Defaults to `wrapper.experiment_dir` / `filepath`"""
-        from boa.storage import scheduler_to_json_file
+        from boa.storage import dump_scheduler_data
 
-        filepath = filepath or "scheduler.json"
         try:
-            experiment_dir = self.runner.wrapper.experiment_dir
-            scheduler_to_json_file(self, experiment_dir / filepath)
+            dump_scheduler_data(scheduler=self, dir_=self.runner.wrapper.experiment_dir, **kwargs)
         except Exception as e:
             logger.exception("failed to save scheduler to json! Reason: %s" % repr(e))

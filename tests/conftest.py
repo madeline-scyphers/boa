@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 import boa.__main__ as dunder_main
+import boa.scripts.moo as run_moo
 import boa.scripts.run_branin as run_branin
 from boa import cd_and_cd_back, load_yaml, split_shell_command
 from boa.definitions import ROOT
@@ -85,7 +86,12 @@ def cd_to_root_and_back_session():
 
 @pytest.fixture(scope="session")
 def branin_main_run(tmp_path_factory, cd_to_root_and_back_session):
-    yield run_branin.main("", standalone_mode=False)
+    yield run_branin.main()
+
+
+@pytest.fixture(scope="session")
+def moo_main_run(tmp_path_factory, cd_to_root_and_back_session):
+    yield run_moo.main()
 
 
 @pytest.fixture(scope="session")
@@ -98,7 +104,9 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
                 "generation_strategy": {
                     "steps": [{"model": "SOBOL", "num_trials": 2}, {"model": "GPEI", "num_trials": -1}]
                 },
-                "objective_options": {"objectives": [{"boa_metric": "mean", "name": "mean"}]},
+                "objective_options": {
+                    "objectives": [{"metric": "mean", "name": "Mean"}, {"metric": "RMSE", "info_only": True}]
+                },
                 "trials": 5,
             },
             "parameters": [

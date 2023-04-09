@@ -18,6 +18,8 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any, Callable, Optional, Type
 
+import torch
+
 from boa.definitions import PathLike
 
 
@@ -101,6 +103,17 @@ def extract_init_args(
     for init in init_ls:
         kw.update(get_dictionary_from_callable(init, args, match_private=match_private, **kwargs))
     return kw
+
+
+def torch_device():
+    if torch.cuda.is_available():
+        device = "cuda"
+    # not all torch features are available in mps right now, so we hold off on mps for now
+    # elif torch.backends.mps.is_available():
+    #     device = "mps"
+    else:
+        device = "cpu"
+    return torch.device(device)
 
 
 def convert_type(maybe_iterable, conversion: dict, new_dict: dict = None):

@@ -3,7 +3,7 @@ from pathlib import Path
 from setuptools import setup
 
 BASE_ENV = Path(__file__).resolve().parent / "environment.yml"
-DEV_ENV = Path(__file__).resolve().parent / "environment_dev_update.yml"
+DEV_ENV = Path(__file__).resolve().parent / "environment_dev.yml"
 
 
 # dictionary of any package renaming from conda package names to PyPI names

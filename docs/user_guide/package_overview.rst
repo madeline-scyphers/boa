@@ -86,3 +86,13 @@ A fuller example using the command line interface can be found  :doc:`here </exa
     configuration
     run_script
     /api/boa.wrappers
+
+*********************************************
+Plotting Utility Functions
+*********************************************
+:doc:`BOA's </index>` provides a light plotting module to help with exploratory data analysis (EDA)
+
+.. toctree::
+    :maxdepth: 2
+
+    /api/boa.plotting

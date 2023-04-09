@@ -113,7 +113,7 @@ def get_experiment(config: dict, runner: Runner, wrapper: BaseWrapper = None, **
     search_space = instantiate_search_space_from_json(config.get("parameters"), config.get("parameter_constraints"))
 
     info_only_metrics = BoaInstantiationBase.get_metrics_from_obj_config(
-        **opt_options["objective_options"], info_only=True
+        **opt_options["objective_options"], wrapper=wrapper, info_only=True
     )
 
     optimization_config = BoaInstantiationBase.make_optimization_config(
@@ -144,10 +144,14 @@ def _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy):
     if experiment.is_moo_problem:
         for step in generation_strategy._steps:
             model_bridge = step.model.model_bridge_class
+            model_cls = step.model.model_class
             is_moo_modelbridge = (
                 model_bridge and issubclass(model_bridge, TorchModelBridge) and experiment.is_moo_problem
             )
-            if is_moo_modelbridge and not isinstance(model_bridge, MultiObjectiveBotorchModel):
+            if is_moo_modelbridge and not (
+                isinstance(model_bridge, MultiObjectiveBotorchModel)
+                or issubclass(model_cls, MultiObjectiveBotorchModel)
+            ):
                 logger.warning(
                     "Multi Objective Optimization was specified,"
                     f"\nbut generation steps used step: {step}, which is not"
