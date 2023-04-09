@@ -137,6 +137,8 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy", None),
     "sklearn": ("https://scikit-learn.org/stable", None),
     "torch": ("https://pytorch.org/docs/stable", None),
+    "panel": ("https://panel.holoviz.org", None),
+    "pandas": ("https://pandas.pydata.org/docs", None),
 }
 
 # BOA things

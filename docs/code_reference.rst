@@ -46,6 +46,15 @@ Saving and Loading your Experiment
 
     boa.storage
 
+Plotting your Experiment
+===================================
+
+.. autosummary::
+    :toctree: api
+    :template: custom_module_template_short.rst
+
+    boa.plotting
+
 
 Advanced Usage/Direct Python Access
 ====================================

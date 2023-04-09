@@ -1,9 +1,18 @@
+"""
+###################################
+Plotting Utils
+###################################
+
+Plotting utility functions
+"""
 from __future__ import annotations
 
+import os
 from itertools import combinations
-from typing import TypeVar
+from typing import TypeVar, Union
 
 import numpy as np
+import pandas as pd
 import panel as pn
 import plotly.graph_objs as go
 from ax.plot.contour import plot_contour_plotly
@@ -12,20 +21,21 @@ from ax.plot.pareto_frontier import plot_pareto_frontier as ax_plot_pareto_front
 from ax.plot.pareto_utils import compute_posterior_pareto_frontier
 from ax.plot.slice import interact_slice_plotly
 from ax.plot.trace import optimization_trace_single_method_plotly
+from ax.service.utils.report_utils import exp_to_df
 
 from boa.definitions import PathLike_tup
 from boa.scheduler import Scheduler
 from boa.storage import scheduler_from_json_file
 
-SchedulersOrPath = TypeVar("SchedulersOrPath", Scheduler, *PathLike_tup)
-SchedulersOrPathList = TypeVar("SchedulersOrPathList", Scheduler, list[Scheduler], *PathLike_tup)
+SchedulerOrPath = Union[Scheduler, os.PathLike, str]
+SchedulersOrPathList = Union[list[Scheduler], list[os.PathLike, str], Scheduler, os.PathLike, str]
 
 
 DEFAULT_CI_LEVEL: float = 0.9
 pn.extension("plotly")
 
 
-def _maybe_load_scheduler(scheduler: SchedulersOrPath):
+def _maybe_load_scheduler(scheduler: SchedulerOrPath):
     if isinstance(scheduler, PathLike_tup):
         scheduler = scheduler_from_json_file(scheduler)
     return scheduler
@@ -39,12 +49,54 @@ def _maybe_load_schedulers(schedulers: SchedulersOrPathList):
     return schedulers
 
 
+def scheduler_to_df(scheduler: SchedulerOrPath, **kwargs) -> pd.DataFrame:
+    """
+    Transforms an scheduler's experiment to a DataFrame with rows keyed by trial_index
+    and arm_name, metrics pivoted into one row. If the pivot results in more than
+    one row per arm (or one row per ``arm * map_keys`` combination if ``map_keys`` are
+    present), results are omitted and warning is produced.
+
+    Transforms an ``Experiment`` into a ``pd.DataFrame``.
+
+    Parameters
+    ----------
+    scheduler
+        Initialized scheduler or path to `scheduler.json file`.
+    **kwargs
+        key word arguments to pass to AXs `exp_to_df`
+
+    Returns
+    -------
+    A dataframe of inputs, metadata and metrics by trial and arm (and
+    ``map_keys``, if present). If no trials are available, returns an empty
+    dataframe.
+    """
+    experiment = scheduler.experiment
+    return exp_to_df(exp=experiment, **kwargs)
+
+
 def plot_metrics_trace(
     schedulers: SchedulersOrPathList,
     metric_names: list[str] = None,
     title: str = "Metric Performance vs. # of Iterations",
     **kwargs,
 ):
+    """Plots an optimization trace with mean and 2 SEMs
+
+    Parameters
+    ----------
+    schedulers
+        List of initialized scheduler or path to `scheduler.json file`
+        or single initialized scheduler or path to `scheduler.json file`
+    metric_names
+        metric name or list of metric names to restrict dropdowns to. If None, will use all metric names.
+    title
+        The title of plot
+    **kwargs
+        key word arguments to pass to AXs `optimization_trace_single_method_plotly`
+
+    """
+
     schedulers = _maybe_load_schedulers(schedulers)
 
     if not metric_names:
@@ -87,12 +139,24 @@ def plot_metrics_trace(
 
 
 def plot_contours(
-    scheduler: SchedulersOrPath,
+    scheduler: SchedulerOrPath,
     metric_names: list[str] = None,
     title: str = "Metric Contours Plot",
-    density=50,
     **kwargs,
 ):
+    """Plot predictions for a 2-d slice of the parameter space.
+
+    Parameters
+    ----------
+    scheduler
+        Initialized scheduler or path to `scheduler.json file`.
+    metric_names
+        metric name or list of metric names to restrict dropdowns to. If None, will use all metric names.
+    title
+        The title of plot
+    **kwargs
+        key word arguments to pass to AXs `plot_contour_plotly`
+    """
     scheduler = _maybe_load_scheduler(scheduler)
 
     model = scheduler.generation_strategy.model
@@ -177,26 +241,47 @@ def plot_contours(
     return col
 
 
-def plot_slice(scheduler: SchedulersOrPath):
+def plot_slice(scheduler: SchedulerOrPath, **kwargs):
+    """Create interactive plot with predictions for a 1-d slice of the parameter
+    space.
+
+    Parameters
+    ----------
+    scheduler
+        Initialized scheduler or path to `scheduler.json file`.
+    **kwargs
+        key word arguments to pass to AXs `interact_slice_plotly`
+    """
     scheduler = _maybe_load_scheduler(scheduler)
 
     model = scheduler.generation_strategy.model
-    return pn.pane.Plotly(interact_slice_plotly(model=model))
+    return pn.pane.Plotly(interact_slice_plotly(model=model, **kwargs))
 
 
 def plot_pareto_frontier(
-    scheduler: SchedulersOrPath,
-    metrics: list[str] | None = None,
-    CI_level: float = DEFAULT_CI_LEVEL,
+    scheduler: SchedulerOrPath,
+    metric_names: list[str] | None = None,
+    CI_level: float = DEFAULT_CI_LEVEL,  # noqa
 ):
+    """Plot a Pareto frontier from a scheduler.
+
+    Parameters
+    ----------
+    scheduler
+        Initialized scheduler or path to `scheduler.json file`.
+    metric_names
+        metric name or list of metric names to restrict dropdowns to. If None, will use all metric names.
+    CI_level
+        The confidence level, i.e. 0.95 (95%)
+    """
     scheduler = _maybe_load_scheduler(scheduler)
     experiment = scheduler.experiment
-    if metrics:
-        for m in metrics:
+    if metric_names:
+        for m in metric_names:
             if m not in scheduler.experiment.metrics:
                 raise TypeError(f"metric name {m} not found, check spelling of metric name")
-        metrics = [m for name, m in scheduler.experiment.metrics.items() if name in metrics]
-        metric_combos = combinations(metrics, 2)
+        metric_names = [m for name, m in scheduler.experiment.metrics.items() if name in metric_names]
+        metric_combos = combinations(metric_names, 2)
 
     #     if not metric1 or not metric2:
     #         if len(experiment.metrics) != 2:
