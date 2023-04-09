@@ -3,22 +3,86 @@ optimization_options:
     objective_options:
         objectives:
             - name: branin
-              lower_is_better: True
+              lower_is_better: False
+              noise_sd: 0
             - name: currin
+              lower_is_better: False
+              noise_sd: 0
+            - name: hartmann6
               lower_is_better: True
-    trials: 10
+              noise_sd: 0
+#            - name: d
+#              lower_is_better: False
+#              noise_sd: 0
+    trials: 35
 
 parameters:
+    x0:
+        type: range
+        bounds: [0, 1]
+        value_type: float
     x1:
         type: range
         bounds: [0, 1]
         value_type: float
-
     x2:
         type: range
         bounds: [0, 1]
         value_type: float
-
-parameter_constraints:
-    - x2 + x1 >= .1
-    - x2 + x1 + .6*x1 <= .6
+    x3:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+    x4:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+    x5:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+#    x6:
+#        type: range
+#        bounds: [0, 1]
+#        value_type: float
+#    x7:
+#        type: range
+#        bounds: [0, 1]
+#        value_type: float
+#    x8:
+#        type: range
+#        bounds: [0, 1]
+#        value_type: float
+#    x9:
+#        type: range
+#        bounds: [0, 1]
+#        value_type: float
+#    x0:
+#        type: range
+#        bounds: [60.0, 120.0]
+#        value_type: float
+#    x1:
+#        type: range
+#        bounds: [0.05, 18.0]
+#        value_type: float
+#    x2:
+#        type: range
+#        bounds: [293.0, 303.0]
+#        value_type: float
+#    x3:
+#        type: range
+#        bounds: [0.05, 18.0]
+#        value_type: float
+#    x4:
+#        type: range
+#        bounds: [0.01, 0.5]
+#        value_type: float
+#    x5:
+#        type: range
+#        bounds: [500.0, 700.0]
+#        value_type: float
+#    x6:
+#        type: range
+#        bounds: [5.0, 6.5]
+#        value_type: float
+##

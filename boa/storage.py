@@ -48,7 +48,7 @@ logger = get_logger()
 
 
 def scheduler_to_json_file(
-    scheduler, scheduler_filepath: PathLike = "scheduler_snapshot.json", dir_: PathLike = None, **kwargs
+    scheduler, scheduler_filepath: PathLike = "scheduler.json", dir_: PathLike = None, **kwargs
 ) -> None:
     """Save a JSON-serialized snapshot of this `Scheduler`'s settings and state
     to a .json file by the given path.
@@ -113,6 +113,12 @@ def scheduler_to_json_snapshot(
         logger.error(e)
         wrapper_serialization = scheduler.experiment.runner.wrapper.to_dict()
 
+    gs = object_to_json(
+        scheduler.generation_strategy,
+        encoder_registry=encoder_registry,
+        class_encoder_registry=class_encoder_registry,
+    )
+
     serialization = {
         "_type": scheduler.__class__.__name__,
         "experiment": object_to_json(
@@ -120,11 +126,7 @@ def scheduler_to_json_snapshot(
             encoder_registry=encoder_registry,
             class_encoder_registry=class_encoder_registry,
         ),
-        "generation_strategy": object_to_json(
-            scheduler.generation_strategy,
-            encoder_registry=encoder_registry,
-            class_encoder_registry=class_encoder_registry,
-        ),
+        "generation_strategy": gs,
         "options": object_to_json(
             options,
             encoder_registry=encoder_registry,
@@ -206,6 +208,8 @@ def scheduler_from_json_snapshot(
     generation_strategy = generation_strategy_from_json(
         generation_strategy_json=serialized_generation_strategy, experiment=experiment
     )
+
+    generation_strategy._fit_or_update_current_model(data=experiment.fetch_data())
 
     scheduler = Scheduler(generation_strategy=generation_strategy, experiment=experiment, options=options, **kwargs)
     scheduler._experiment = experiment

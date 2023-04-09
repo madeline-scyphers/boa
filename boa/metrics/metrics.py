@@ -311,7 +311,7 @@ def get_metric_from_config(config, instantiate=True, **kwargs):
     elif config.get("synthetic_metric"):
         metric = setup_synthetic_metric(instantiate=instantiate, **config, **kwargs)
     elif config["name"]:  # only name but no metric type
-        metric = PassThroughMetric(name=config["name"], **kwargs)
+        metric = PassThroughMetric(**config, **kwargs)
     else:
         # TODO link to docs for configuration when it exists
         raise KeyError("No valid configuration for metric found.")

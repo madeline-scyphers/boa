@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from itertools import combinations
 from typing import TypeVar
 
 import numpy as np
+import panel as pn
 import plotly.graph_objs as go
-from ax.plot.contour import interact_contour_plotly
+from ax.plot.contour import plot_contour_plotly
+from ax.plot.helper import get_range_parameters
 from ax.plot.pareto_frontier import plot_pareto_frontier as ax_plot_pareto_frontier
 from ax.plot.pareto_utils import compute_posterior_pareto_frontier
 from ax.plot.slice import interact_slice_plotly
@@ -19,6 +22,7 @@ SchedulersOrPathList = TypeVar("SchedulersOrPathList", Scheduler, list[Scheduler
 
 
 DEFAULT_CI_LEVEL: float = 0.9
+pn.extension("plotly")
 
 
 def _maybe_load_scheduler(scheduler: SchedulersOrPath):
@@ -35,107 +39,198 @@ def _maybe_load_schedulers(schedulers: SchedulersOrPathList):
     return schedulers
 
 
-def plot_single_metric_trace(
-    schedulers: SchedulersOrPathList, metric_name: str = None, title: str = "", ylabel: str = None, **kwargs
+def plot_metrics_trace(
+    schedulers: SchedulersOrPathList,
+    metric_names: list[str] = None,
+    title: str = "Metric Performance vs. # of Iterations",
+    **kwargs,
 ):
-
     schedulers = _maybe_load_schedulers(schedulers)
 
-    if not metric_name:
-        metric_name = list(schedulers[0].experiment.metrics.keys())[0]
-    model_transitions = set()
-    ys = []
-    for scheduler in schedulers:
-        data = scheduler.experiment.fetch_data()
-        ys.append(data.df[data.df["metric_name"] == metric_name]["mean"])
-        model_transitions.update(scheduler.generation_strategy.model_transitions)
-    ys = np.array(ys)
+    if not metric_names:
+        metric_names = list(schedulers[0].experiment.metrics.keys())
+    metric_name = pn.widgets.Select(name="Metric Name", options=metric_names)
 
-    if ylabel is None:
+    def get_plot(metric_name):
+        model_transitions = set()
+        ys = []
+        for scheduler in schedulers:
+            data = scheduler.experiment.fetch_data()
+            ys.append(data.df[data.df["metric_name"] == metric_name]["mean"])
+            model_transitions.update(scheduler.generation_strategy.model_transitions)
+        ys = np.array(ys)
         ylabel = metric_name.title()
 
-    return optimization_trace_single_method_plotly(
-        y=ys,
-        title=title,
-        ylabel=ylabel,
-        model_transitions=model_transitions,
-        # Try and use the metric's lower_is_better property, but fall back on
-        # objective's minimize property if relevent
-        optimization_direction=(
-            ("minimize" if schedulers[0].experiment.metrics[metric_name].lower_is_better is True else "maximize")
-            if schedulers[0].experiment.metrics[metric_name].lower_is_better is not None
-            else ("minimize" if schedulers[0].experiment.optimization_config.objective.minimize else "maximize")
-        ),
-        plot_trial_points=True,
-        **kwargs,
-    )
+        return pn.pane.Plotly(
+            optimization_trace_single_method_plotly(
+                y=ys,
+                ylabel=ylabel,
+                model_transitions=list(model_transitions),
+                # Try and use the metric's lower_is_better property, but fall back on
+                # objective's minimize property if relevent
+                optimization_direction=(
+                    (
+                        "minimize"
+                        if schedulers[0].experiment.metrics[metric_name].lower_is_better is True
+                        else "maximize"
+                    )
+                    if schedulers[0].experiment.metrics[metric_name].lower_is_better is not None
+                    else ("minimize" if schedulers[0].experiment.optimization_config.objective.minimize else "maximize")
+                ),
+                plot_trial_points=True,
+                **kwargs,
+            ),
+            sizing_mode="stretch_width",
+        )
+
+    return pn.Column("## " + title, pn.Row(metric_name), pn.bind(get_plot, metric_name), sizing_mode="stretch_width")
 
 
-def plot_contours(scheduler: SchedulersOrPath, metric_name: str = None, **kwargs):
+def plot_contours(
+    scheduler: SchedulersOrPath,
+    metric_names: list[str] = None,
+    title: str = "Metric Contours Plot",
+    density=50,
+    **kwargs,
+):
     scheduler = _maybe_load_scheduler(scheduler)
 
     model = scheduler.generation_strategy.model
-    if not metric_name:
-        metric_name = model.metric_names
 
-    if isinstance(metric_name, str):
-        metric_name = [metric_name]
+    if not metric_names:
+        metric_names = list(scheduler.experiment.metrics.keys())
 
-    plots = []
-    for name in metric_name:
+    range_parameters = get_range_parameters(model, min_num_values=5)
+    param_names1 = [parameter.name for i, parameter in enumerate(range_parameters) if i != 1]
+    param_names2 = [parameter.name for i, parameter in enumerate(range_parameters) if i != 0]
+
+    #     is_log_dict: Dict[str, bool] = {}
+    #     grid_dict: Dict[str, np.ndarray] = {}
+    #     for parameter in range_parameters:
+    #         is_log_dict[parameter.name] = parameter.log_scale
+    #         grid_dict[parameter.name] = get_grid_for_parameter(parameter, density)
+
+    # Populate `f_dict` (the predicted expectation value of `metric_name`) and
+    # `sd_dict` (the predicted SEM), each of which represents a 2D array of plots
+    # where each parameter can be assigned to each of the x or y axes.
+
+    #     f_dict: Dict[str, Dict[str, np.ndarray]] = {
+    #         param1: {param2: [] for param2 in param_names} for param1 in param_names
+    #     }
+
+    #     sd_dict: Dict[str, Dict[str, np.ndarray]] = {
+    #         param1: {param2: [] for param2 in param_names} for param1 in param_names
+    #
+    metric_name = pn.widgets.Select(name="Metric Name", options=metric_names)
+
+    param_x = pn.widgets.Select(name="Param X", options=param_names1)
+    param_y = pn.widgets.Select(name="Param Y", options=param_names2)
+
+    def get_plot(metric_name, param_x, param_y):
         lower_is_better = (
-            scheduler.experiment.metrics[name].lower_is_better
-            if scheduler.experiment.metrics[name].lower_is_better is not None
+            scheduler.experiment.metrics[metric_name].lower_is_better
+            if scheduler.experiment.metrics[metric_name].lower_is_better is not None
             else scheduler.experiment.optimization_config.objective.minimize
         )
+        return plot_contour_plotly(
+            model=model,
+            lower_is_better=lower_is_better,
+            param_x=param_x,
+            param_y=param_y,
+            metric_name=metric_name,
+            **kwargs,
+        )
 
-        plots += [interact_contour_plotly(model=model, metric_name=name, lower_is_better=lower_is_better)]
-    if len(plots) == 1:
-        return plots[0]
-    return plots
+    #         plot_data, _, _ = get_plot_data(
+    #             model=model, generator_runs_dict=generator_runs_dict, metric_names={metric_name},
+    #         )
+    #         _, f_plt, sd_plt, _, _, _ = _get_contour_predictions(
+    #                 model=model,
+    #                 x_param_name=param1,
+    #                 y_param_name=param2,
+    #                 metric=metric_name,
+    #                 generator_runs_dict=generator_runs_dict,
+    #                 density=density,
+    #                 slice_values=slice_values,
+    #                 fixed_features=fixed_features,
+    #             )
+    #         f_dict[param1][param2] = f_plt
+    #         sd_dict[param1][param2] = sd_plt
+    #         return pn.Row(f_plt, sd_plt)
+
+    #         return interact_contour_plotly(model=model, metric_name=metric_name, lower_is_better=lower_is_better)
+
+    col = pn.Column(
+        "## " + title, pn.Row(metric_name, param_x, param_y), get_plot(metric_name.value, param_x.value, param_y.value)
+    )
+
+    def update(event):
+        param_x.options = [param.name for param in range_parameters if param.name != param_y.value]
+        param_y.options = [param.name for param in range_parameters if param.name != param_x.value]
+        print(param_y.options)
+        col[-1].object = get_plot(metric_name.value, param_x.value, param_y.value)
+
+    metric_name.param.watch(update, "value")
+    param_x.param.watch(update, "value")
+    param_y.param.watch(update, "value")
+
+    return col
 
 
 def plot_slice(scheduler: SchedulersOrPath):
     scheduler = _maybe_load_scheduler(scheduler)
 
     model = scheduler.generation_strategy.model
-    return interact_slice_plotly(model=model)
+    return pn.pane.Plotly(interact_slice_plotly(model=model))
 
 
 def plot_pareto_frontier(
     scheduler: SchedulersOrPath,
-    metric1: str | None = None,
-    metric2: str | None = None,
+    metrics: list[str] | None = None,
     CI_level: float = DEFAULT_CI_LEVEL,
 ):
     scheduler = _maybe_load_scheduler(scheduler)
     experiment = scheduler.experiment
+    if metrics:
+        for m in metrics:
+            if m not in scheduler.experiment.metrics:
+                raise TypeError(f"metric name {m} not found, check spelling of metric name")
+        metrics = [m for name, m in scheduler.experiment.metrics.items() if name in metrics]
+        metric_combos = combinations(metrics, 2)
 
-    if not metric1 or not metric2:
-        if len(experiment.metrics) != 2:
-            raise TypeError(
-                "When plotting a pareto frontier, you must either be using a optimization that has exactly"
-                " 2 objectives (metrics), or supply your metrics yourself."
-            )
-        metric1, metric2 = experiment.metrics.keys()
+    #     if not metric1 or not metric2:
+    #         if len(experiment.metrics) != 2:
+    #             raise TypeError(
+    #                 "When plotting a pareto frontier, you must either be using a optimization that has exactly"
+    #                 " 2 objectives (metrics), or supply your metrics yourself."
+    #             )
+    #         metric1, metric2 = experiment.metrics.keys()
+    else:
+        metric_combos = combinations(scheduler.experiment.metrics.values(), 2)
 
-    try:
-        primary_objective = experiment.metrics[metric1]
-    except KeyError as e:
-        raise TypeError(f"metric name {metric1} not found in optimization!") from e
-    try:
-        secondary_objective = experiment.metrics[metric2]
-    except KeyError as e:
-        raise TypeError(f"metric name {metric2} not found in optimization!") from e
+    frontier_list = []
+    for ms in metric_combos:
+        primary_objective, secondary_objective = ms
 
-    frontier = compute_posterior_pareto_frontier(
-        experiment=experiment,
-        primary_objective=primary_objective,
-        secondary_objective=secondary_objective,
-        absolute_metrics=[m.name for m in experiment.metrics.values()],
-    )
+        #     try:
+        #         primary_objective = experiment.metrics[metric1]
+        #     except KeyError as e:
+        #         raise TypeError(f"metric name {metric1} not found in optimization!") from e
+        #     try:
+        #         secondary_objective = experiment.metrics[metric2]
+        #     except KeyError as e:
+        #         raise TypeError(f"metric name {metric2} not found in optimization!") from e
 
-    frontier_list = [frontier]
+        frontier = compute_posterior_pareto_frontier(
+            experiment=experiment,
+            data=experiment.fetch_data(),
+            primary_objective=primary_objective,
+            secondary_objective=secondary_objective,
+            absolute_metrics=[m.name for m in experiment.metrics.values()],
+            num_points=30,
+        )
+        frontier_list.append(frontier)
+
     traces = []
     shapes = []
     for frontier in frontier_list:
@@ -218,4 +313,4 @@ def plot_pareto_frontier(
     )
 
     fig = go.Figure(data=traces, layout=layout)
-    return fig
+    return pn.pane.Plotly(fig)
