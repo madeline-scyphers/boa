@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 from itertools import combinations
-from typing import TypeVar, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
