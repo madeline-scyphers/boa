@@ -6,11 +6,10 @@ build:
     python: "mambaforge-4.10"
   jobs:
     post_install:
-      - conda env update --name ${READTHEDOCS_VERSION} --file environment_dev_update.yml
       - conda list
 
 conda:
-  environment: environment.yml
+  environment: environment_dev.yml
 
 sphinx:
   fail_on_warning: true
