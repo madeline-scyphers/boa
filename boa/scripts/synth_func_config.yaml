@@ -13,8 +13,6 @@ optimization_options:
               num_trials: -1
     scheduler:
         total_trials: 20
-    experiment:
-        name: "test_experiment"
     on_reload:
 
 parameters:

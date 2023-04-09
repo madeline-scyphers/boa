@@ -1,10 +1,8 @@
 import logging
 import shutil
-import tempfile
 import time
 from pathlib import Path
 
-import click
 from ax.service.utils.report_utils import exp_to_df
 
 try:
@@ -16,10 +14,10 @@ from boa import WrappedJobRunner, get_dt_now_as_str, get_experiment, get_schedul
 from boa.logger import get_logger
 
 
-@click.command()
 def main():
-    with tempfile.TemporaryDirectory() as exp_dir:
-        return run_opt(exp_dir)
+    # with tempfile.TemporaryDirectory() as exp_dir:
+    exp_dir = "."
+    return run_opt(exp_dir)
 
 
 def run_opt(exp_dir):
@@ -44,7 +42,7 @@ def run_opt(exp_dir):
     logging.info(exp_to_df(scheduler.experiment))
 
     logger.info("\nTrials completed! Total run time: %d", time.time() - start)
-    return scheduler, config
+    return scheduler
 
 
 if __name__ == "__main__":

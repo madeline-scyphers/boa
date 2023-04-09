@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, Optional, Type
 from ax.exceptions.storage import JSONDecodeError as AXJSONDecodeError
 from ax.exceptions.storage import JSONEncodeError as AXJSONEncodeError
 from ax.service.scheduler import SchedulerOptions
+from ax.service.utils.report_utils import exp_to_df
 from ax.storage.json_store.decoder import (
     generation_strategy_from_json,
     object_from_json,
@@ -35,19 +36,30 @@ from boa.logger import get_logger
 from boa.metrics.modular_metric import ModularMetric
 from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
-from boa.utils import _load_attr_from_module, _load_module_from_path
+from boa.utils import (
+    _load_attr_from_module,
+    _load_module_from_path,
+    get_dictionary_from_callable,
+)
 from boa.wrappers.base_wrapper import BaseWrapper
+from boa.wrappers.script_wrapper import ScriptWrapper
 
 logger = get_logger()
 
 
-def scheduler_to_json_file(scheduler, filepath: PathLike = "scheduler_snapshot.json") -> None:
+def scheduler_to_json_file(
+    scheduler, scheduler_filepath: PathLike = "scheduler.json", dir_: PathLike = None, **kwargs
+) -> None:
     """Save a JSON-serialized snapshot of this `Scheduler`'s settings and state
     to a .json file by the given path.
     """
-    with open(filepath, "w+") as file:  # pragma: no cover
+    if dir_:
+        scheduler_filepath = pathlib.Path(dir_) / scheduler_filepath
+    with open(scheduler_filepath, "w+") as file:  # pragma: no cover
         file.write(json.dumps(scheduler_to_json_snapshot(scheduler)))
-        logger.info(f"Saved JSON-serialized state of optimization to `{filepath}`." f"\nBoa version: {__version__}")
+        logger.info(
+            f"Saved JSON-serialized state of optimization to `{scheduler_filepath}`." f"\nBoa version: {__version__}"
+        )
 
 
 def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None, **kwargs) -> Scheduler:
@@ -92,16 +104,20 @@ def scheduler_to_json_snapshot(
     options = SchedulerOptions(**options)
 
     try:
-        wrapper_serialization = (
-            object_to_json(
-                scheduler.experiment.runner.wrapper,
-                encoder_registry=encoder_registry,
-                class_encoder_registry=class_encoder_registry,
-            ),
+        wrapper_serialization = object_to_json(
+            scheduler.experiment.runner.wrapper,
+            encoder_registry=encoder_registry,
+            class_encoder_registry=class_encoder_registry,
         )
     except AXJSONEncodeError as e:
         logger.error(e)
         wrapper_serialization = scheduler.experiment.runner.wrapper.to_dict()
+
+    gs = object_to_json(
+        scheduler.generation_strategy,
+        encoder_registry=encoder_registry,
+        class_encoder_registry=class_encoder_registry,
+    )
 
     serialization = {
         "_type": scheduler.__class__.__name__,
@@ -110,11 +126,7 @@ def scheduler_to_json_snapshot(
             encoder_registry=encoder_registry,
             class_encoder_registry=class_encoder_registry,
         ),
-        "generation_strategy": object_to_json(
-            scheduler.generation_strategy,
-            encoder_registry=encoder_registry,
-            class_encoder_registry=class_encoder_registry,
-        ),
+        "generation_strategy": gs,
         "options": object_to_json(
             options,
             encoder_registry=encoder_registry,
@@ -159,6 +171,9 @@ def scheduler_from_json_snapshot(
     wrapper = None
     if "wrapper" in serialized:
         wrapper_dict = serialized.pop("wrapper", {})
+        # sometimes the way people write their to_dict methods wrap it in a list
+        if isinstance(wrapper_dict, list) and len(wrapper_dict) == 1:
+            wrapper_dict = wrapper_dict[0]
 
         try:
             wrapper = object_from_json(
@@ -166,7 +181,7 @@ def scheduler_from_json_snapshot(
                 decoder_registry=decoder_registry,
                 class_decoder_registry=class_decoder_registry,
             )
-        except Exception:
+        except Exception as e:
             deserialized = recursive_deserialize(
                 wrapper_dict,
                 decoder_registry=decoder_registry,
@@ -184,13 +199,17 @@ def scheduler_from_json_snapshot(
                 wrapper = WrapperCls.from_dict(**wrapper_dict)
 
             else:
-                logger.exception("Failed to deserialize wrapper.\n\n\n\n\n")
-                wrapper = BaseWrapper()
+                logger.exception(
+                    f"Failed to deserialize wrapper because of: {e!r}" f"\n\nUsing basic ScriptWrapper as back up"
+                )
+                wrapper = ScriptWrapper.from_dict(**get_dictionary_from_callable(ScriptWrapper.from_dict, wrapper_dict))
 
     serialized_generation_strategy = serialized.pop("generation_strategy")
     generation_strategy = generation_strategy_from_json(
         generation_strategy_json=serialized_generation_strategy, experiment=experiment
     )
+
+    generation_strategy._fit_or_update_current_model(data=experiment.fetch_data())
 
     scheduler = Scheduler(generation_strategy=generation_strategy, experiment=experiment, options=options, **kwargs)
     scheduler._experiment = experiment
@@ -209,7 +228,23 @@ def recursive_deserialize(obj, **kwargs):
             if "__type" not in obj:  # at least this out dict isn't serialized in AX format, let's check inners
                 raise AXJSONDecodeError("obj is not a AX JSON deserializable object")
             obj = object_from_json(obj, **kwargs)
-        except AXJSONDecodeError:
+        except (AXJSONDecodeError, TypeError):  # TypeError until https://github.com/facebook/Ax/pull/1418 is merged
             for key, value in obj.items():
                 obj[key] = recursive_deserialize(value, **kwargs)
     return obj
+
+
+def exp_opt_to_csv(experiment, opt_path: PathLike = "optimization.csv", dir_: PathLike = None, **kwargs):
+    if dir_:
+        opt_path = pathlib.Path(dir_) / opt_path
+    df = exp_to_df(experiment)
+    df.to_csv(path_or_buf=opt_path, index=False, **kwargs)
+
+
+def scheduler_opt_to_csv(scheduler, **kwargs):
+    return exp_opt_to_csv(scheduler.experiment, **kwargs)
+
+
+def dump_scheduler_data(scheduler, **kwargs):
+    scheduler_to_json_file(scheduler, **kwargs)
+    scheduler_opt_to_csv(scheduler, **kwargs)

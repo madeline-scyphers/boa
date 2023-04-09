@@ -16,22 +16,28 @@ optimization_options:
 parameters:
     x0:
         values: ["foo", "bar"]
-        'type': 'choice'
+        type: 'choice'
+        is_ordered: False
     x1:
         values: ["foo", "bar"]
-        'type': 'choice'
+        type: 'choice'
+        is_ordered: False
     x2:
         values: ["foo", "bar"]
-        'type': 'choice'
+        type: 'choice'
+        is_ordered: False
     x3:
         values: ["foo", "bar"]
-        'type': 'choice'
+        type: 'choice'
+        is_ordered: False
     x4:
         values: ["foo", "bar"]
-        'type': 'choice'
+        type: 'choice'
+        is_ordered: False
     x5:
         values: ["foo", "bar"]
-        'type': 'choice'
+        type: 'choice'
+        is_ordered: False
 
 script_options:
     run_model: Rscript run_model.R

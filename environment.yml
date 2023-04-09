@@ -1,11 +1,13 @@
 name: boa
 channels:
 - pytorch
-- anaconda
 - conda-forge
-- defaults
 dependencies:
-- python=3.9
+- python=3.10
+  # mac x86 or Apple Silicon macs on rosetta python need pytorch>2
+  # so if on either of those, it should install pytorch>2 by default
+  # but if not and something doesn't work, upgrade pytorch, torchvision,
+  # and torchaudio
 - pytorch::pytorch
 - pytorch::torchvision
 - pytorch::torchaudio
@@ -14,12 +16,10 @@ dependencies:
 - scipy
 - scikit-learn
 - click
-- sqlalchemy<2.0  # Ax breaks with sqlalchemy>2.0
+- panel
 - plotly>=5.10.0
 - notebook>=5.3
 - ipywidgets>=7.5
-- ax-platform==0.2.9
+- ax-platform==0.3.1
 - PyYAML
-- pip
-- pip:
-  - -e . --install-option="--no-deps"
+

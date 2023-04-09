@@ -61,15 +61,9 @@ Installing for Contributing
 fork the boa repository from `boa's GitHub page <https://github.com/madeline-scyphers/boa>`_.
 and then clone your forked repo
 
-If you are not on an x86 mac (or a mac with python running through rosetta), from the root directory of the cloned repository, run::
+From the root directory of the cloned repository, run::
 
      conda env create
-     # If you want to install the dev requirements for development, run this line
-     conda env update --name boa --file environment_dev_update.yml
-
-x86 macs (or a mac with python running through rosetta), run::
-
-     conda env create --file environment_mac_x86.yml
      # If you want to install the dev requirements for development, run this line
      conda env update --name boa --file environment_dev_update.yml
 
@@ -78,6 +72,12 @@ This will install boa in editable mode.
 If you plan on running any of the tests in other languages, run::
 
     conda env update --name boa -f environment_language_updates.yml
+
+
+mac x86 or apple silicone macs on rosetta python need pytorch>2.0
+so if on either of those, it should install pytorch>2 by default
+but if not and something doesn't work, upgrade pytorch, torchvision,
+and torchaudio
 
 ********
 Test run

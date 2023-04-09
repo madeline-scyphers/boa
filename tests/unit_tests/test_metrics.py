@@ -24,6 +24,9 @@ class Wrapper(BaseWrapper):
         super().__init__(*args, **kwargs)
         self.fetch_all = fetch_all
 
+    def run_model(self, trial) -> None:
+        pass
+
     def set_trial_status(self, trial) -> None:
         trial.mark_completed()
 
@@ -46,6 +49,11 @@ class Wrapper(BaseWrapper):
                     "y_true": idx * np.array([1.12, 1.25, 2.54, 4.52]),
                     "y_pred": idx * np.array([1.51, 1.01, 2.21, 4.50]),
                 }
+
+
+class WrapperPassThrough(Wrapper):
+    def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
+        return trial.index
 
 
 def test_load_metric_by_name():
@@ -151,10 +159,30 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_
 
 
 def test_can_create_info_only_metrics(metric_config, tmp_path):
-    controller = Controller(config=metric_config, wrapper=Wrapper, fetch_all=False, experiment_dir=tmp_path)
+    controller = Controller(config=metric_config, wrapper=Wrapper, experiment_dir=tmp_path)
     controller.initialize_scheduler()
 
     assert isinstance(controller.scheduler.experiment.optimization_config, OptimizationConfig)
     assert not isinstance(controller.scheduler.experiment.optimization_config, MultiObjectiveOptimizationConfig)
 
     assert len(controller.scheduler.experiment.tracking_metrics) > 0
+
+
+def test_pass_through_metric_passes_through_value(pass_through_config, tmp_path):
+    controller = Controller(
+        config=pass_through_config, wrapper=WrapperPassThrough, fetch_all=False, experiment_dir=tmp_path
+    )
+    controller.initialize_scheduler()
+
+    scheduler = controller.scheduler
+    experiment = controller.experiment
+    wrapper = controller.wrapper
+
+    for _ in range(5):
+        trial = experiment.new_trial(generator_run=scheduler.generation_strategy.gen(experiment))
+        for name, metric in experiment.metrics.items():
+            ok = metric.fetch_trial_data(trial)
+            data = ok.value
+            f_ret = metric.f(wrapper.fetch_trial_data(trial, {}, name))
+            assert f_ret == data.df["mean"].iloc[0]
+            assert f_ret == trial.index

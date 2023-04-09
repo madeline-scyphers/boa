@@ -351,7 +351,9 @@ class BaseWrapper(metaclass=WrapperRegister):
         res = self.fetch_trial_data(
             trial=trial, metric_properties=self._metric_properties, metric_name=metric_name, *args, **kwargs
         )
-        res = res or {}
+        res = res if res is not None else {}
+        if not isinstance(res, dict):
+            res = {"wrapper_args": res}
         if metric_name not in res:
             res = {metric_name: res}
         self._metric_cache[trial.index].update(res)

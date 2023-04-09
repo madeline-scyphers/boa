@@ -9,14 +9,15 @@ from boa.scripts.script_wrappers import Wrapper
 
 
 def test_exp_dir_exists(branin_main_run):
-    scheduler, config = branin_main_run
+    scheduler = branin_main_run
 
     experiment_dir = scheduler.experiment.runner.wrapper.experiment_dir
     assert experiment_dir.exists()
 
 
 def test_trial_dir_exists(branin_main_run):
-    scheduler, config = branin_main_run
+    scheduler = branin_main_run
+    config = scheduler.runner.wrapper.config
 
     experiment_dir = scheduler.experiment.runner.wrapper.experiment_dir
     # we leave off 5 trials from total trials for the save load test below
@@ -25,7 +26,8 @@ def test_trial_dir_exists(branin_main_run):
 
 
 def test_output_file_exists(branin_main_run):
-    scheduler, config = branin_main_run
+    scheduler = branin_main_run
+    config = scheduler.runner.wrapper.config
 
     experiment_dir = scheduler.experiment.runner.wrapper.experiment_dir
     # we leave off 5 trials from total trials for the save load test below
@@ -34,7 +36,8 @@ def test_output_file_exists(branin_main_run):
 
 
 def test_df(branin_main_run):
-    scheduler, config = branin_main_run
+    scheduler = branin_main_run
+    config = scheduler.runner.wrapper.config
     config_metric = config["optimization_options"]["objective_options"]["objectives"][0]
 
     df = scheduler.experiment.fetch_data().df

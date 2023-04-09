@@ -126,7 +126,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         """"""  # remove init docstring from parent class to stop it showing in sphinx
         # some classes put their metric_to_evals as class attributes to access non instantiated for deserialization
         # also, if we don't access through __class__, it bounds it to self and passes self as first arg
-        metric_to_eval = metric_to_eval or self.__class__._metric_to_eval
+        metric_to_eval = self.__class__._metric_to_eval or metric_to_eval
         if not metric_to_eval:
             raise TypeError("__init__() missing 1 required positional argument: 'metric_to_eval'")
         if "to_eval_name" in kwargs:
@@ -164,7 +164,9 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             if self.wrapper
             else {}
         )
-        wrapper_kwargs = wrapper_kwargs or {}
+        wrapper_kwargs = wrapper_kwargs if wrapper_kwargs is not None else {}
+        if wrapper_kwargs is not None and not isinstance(wrapper_kwargs, dict):
+            wrapper_kwargs = {"wrapper_args": wrapper_kwargs}
         safe_kwargs = {"trial": trial, **kwargs, **wrapper_kwargs}
         trial = safe_kwargs.pop("trial")
         # We add our extra kwargs to the arm parameters so they can be passed to evaluate

@@ -7,6 +7,7 @@ Runner that calls your :mod:`.wrappers` to run your model and poll the trial sta
 
 """
 
+import concurrent.futures
 from collections import defaultdict
 from typing import Any, Dict, Iterable, Set
 
@@ -14,9 +15,12 @@ from ax.core.base_trial import BaseTrial, TrialStatus
 from ax.core.runner import Runner
 from ax.core.trial import Trial
 
+from boa.logger import get_logger
 from boa.metaclasses import RunnerRegister
 from boa.utils import serialize_init_args
 from boa.wrappers.base_wrapper import BaseWrapper
+
+logger = get_logger()
 
 
 class WrappedJobRunner(Runner, metaclass=RunnerRegister):
@@ -43,6 +47,38 @@ class WrappedJobRunner(Runner, metaclass=RunnerRegister):
         # This run metadata will be attached to trial as `trial.run_metadata`
         # by the base `Scheduler`.
         return {"job_id": trial.index}
+
+    def run_multiple(self, trials) -> Dict[int, Dict[str, Any]]:
+        """Runs a single evaluation for each of the given trials. Useful when deploying
+        multiple trials at once is more efficient than deploying them one-by-one.
+        Used in Ax ``Scheduler``.
+
+        NOTE: By default simply loops over `run_trial`. Should be overwritten
+        if deploying multiple trials in batch is preferable.
+
+        Args:
+            trials: Iterable of trials to be deployed, each containing arms with
+                parameterizations to be evaluated. Can be a `Trial`
+                if contains only one arm or a `BatchTrial` if contains
+                multiple arms.
+
+        Returns:
+            Dict of trial index to the run metadata of that trial from the deployment
+            process.
+        """
+        results = {}
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            trial_runs = {executor.submit(self.run, trial=trial): trial.index for trial in trials}
+            for future in concurrent.futures.as_completed(trial_runs):
+                trial_index = trial_runs[future]
+                try:
+                    results[trial_index] = future.result()
+                except Exception as e:
+                    logger.exception(f"Error completing run because of {e}!")
+                    raise
+            concurrent.futures.wait(trial_runs)
+
+        return results
 
     def poll_trial_status(self, trials: Iterable[BaseTrial]) -> Dict[TrialStatus, Set[int]]:
         """Checks the status of any non-terminal trials and returns their
