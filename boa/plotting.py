@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 from itertools import combinations
-from typing import Union
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -28,7 +28,7 @@ from boa.scheduler import Scheduler
 from boa.storage import scheduler_from_json_file
 
 SchedulerOrPath = Union[Scheduler, os.PathLike, str]
-SchedulersOrPathList = Union[list[Scheduler], list[os.PathLike, str], Scheduler, os.PathLike, str]
+SchedulersOrPathList = Union[List[Scheduler], List[Union[os.PathLike, str]], Scheduler, os.PathLike, str]
 
 
 DEFAULT_CI_LEVEL: float = 0.9

@@ -96,7 +96,8 @@ autodoc_member_order = "bysource"
 autodoc_typehints = "both"
 
 # autodoc_type_aliases = {
-#     "PathLike": "boa.definitions.PathLike"
+#     "PathLike": "boa.definitions.PathLike",
+#     "SchedulersOrPathList": "boa.plotting.SchedulersOrPathList",
 # }
 # -- Options for HTML output -------------------------------------------------
 
@@ -127,7 +128,6 @@ html_theme_options = {
 
 # For to-do extension
 todo_include_todos = True
-
 
 # external project mapping for intersphinx
 intersphinx_mapping = {
