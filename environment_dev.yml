@@ -9,8 +9,6 @@ dependencies:
   # but if not and something doesn't work, upgrade pytorch, torchvision,
   # and torchaudio
 - pytorch::pytorch
-- pytorch::torchvision
-- pytorch::torchaudio
 - numpy
 - pandas
 - scipy
