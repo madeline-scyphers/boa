@@ -29,11 +29,13 @@ between models and the python libraries [Ax](https://ax.dev) and [BoTorch](https
 
 - see [installation guide](https://pyboa.readthedocs.io/en/latest/user_guide/getting_started.html#installation) 
 
-|                    |                                                                                                                                                                 |
-|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Docs               | [![Documentation Status](https://readthedocs.org/projects/pyboa/badge/?version=latest)](https://pyboa.readthedocs.io/en/latest/?badge=latest)                   |
-| DOI                | [![DOI](https://zenodo.org/badge/480579470.svg)](https://zenodo.org/badge/latestdoi/480579470)                                                                  |
-| Latest release     | [![Github release](https://img.shields.io/github/release/madeline-scyphers/boa.svg?label=tag&colorB=11ccbb)](https://github.com/madeline-scyphers/boa/releases) |
-| Latest dev release | [![Github tag](https://img.shields.io/github/v/tag/madeline-scyphers/boa.svg?label=tag&colorB=11ccbb)](https://github.com/madeline-scyphers/boa/tags)           |
-| Build Status       | [![ci](https://github.com/madeline-scyphers/boa/actions/workflows/CI.yaml/badge.svg)](https://github.com/madeline-scyphers/boa/actions/workflows/CI.yaml)       |
-| Coverage           | [![codecov](https://codecov.io/gh/madeline-scyphers/boa/branch/main/graph/badge.svg)](https://codecov.io/gh/madeline-scyphers/boa)                              |
+|                       |                                                                                                                                                                 |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Docs                  | [![Documentation Status](https://readthedocs.org/projects/pyboa/badge/?version=latest)](https://pyboa.readthedocs.io/en/latest/?badge=latest)                   |
+| DOI                   | [![DOI](https://zenodo.org/badge/480579470.svg)](https://zenodo.org/badge/latestdoi/480579470)                                                                  |
+| Conda Install         | [![Conda Version](https://anaconda.org/conda-forge/boa-framework/badges/version.svg)](https://anaconda.org/conda-forge/boa-framework)                           |
+| PyPI Install          | [![PyPI version](https://badge.fury.io/py/boa-framework.svg)](https://badge.fury.io/py/boa-framework)                                                           |
+| Github Latest release | [![Github release](https://img.shields.io/github/release/madeline-scyphers/boa.svg?label=tag&colorB=11ccbb)](https://github.com/madeline-scyphers/boa/releases) |
+| Github dev release    | [![Github tag](https://img.shields.io/github/v/tag/madeline-scyphers/boa.svg?label=tag&colorB=11ccbb)](https://github.com/madeline-scyphers/boa/tags)           |
+| Build Status          | [![ci](https://github.com/madeline-scyphers/boa/actions/workflows/CI.yaml/badge.svg)](https://github.com/madeline-scyphers/boa/actions/workflows/CI.yaml)       |
+| Coverage              | [![codecov](https://codecov.io/gh/madeline-scyphers/boa/branch/main/graph/badge.svg)](https://codecov.io/gh/madeline-scyphers/boa)                              |
