@@ -11,8 +11,9 @@ Installation
 Install Python
 ==============
 
-To use ``boa``, you must first have Python and the conda package manager
-installed. There are two options for this:
+To use ``boa``, you must first have Python installed, either with conda or other.
+
+Here are instructions on how to install python through Anaconda or miniconda:
 
 - **Install Anaconda**: This is the recommended option for those who are new to
   Python. Anaconda comes with a few choices of IDEs and Jupyter Notebook, which can be used to run interactive Python
@@ -29,26 +30,31 @@ installed. There are two options for this:
 Install boa
 ===========
 
-If you don't already have a dedicated conda environment for your model::
+If using conda and you don't already have a dedicated conda environment for your model::
 
      conda create -n boa
      conda activate boa
 
-If you don't need to create a new environment, activate the existing conda environment you will be using.
+or if not using Python, make sure you have a virtual environment create::
 
-If you are not on an x86 mac (or a mac with python running through rosetta), run these commands to install the dependencies::
+    python -m venv venv
 
-    conda install botorch torchvision "sqlalchemy<2.0" "ax-platform==0.2.9" -c pytorch -c gpytorch -c conda-forge
+and activate the virtual environment,
+on windows::
 
-x86 macs (or a mac with python running through rosetta), run::
+    venv\Scripts\activate.bat
 
-    conda install pytorch<1.12.0 -c pytorch
-    conda install botorch -c pytorch -c gpytorch -c conda-forge
-    pip install ax-platform "sqlalchemy<2.0"
+on linux and mac::
 
-Install boa::
+    source tutorial-env/bin/activate
 
-    pip install git+https://github.com/madeline-scyphers/boa.git
+Once your environment is activated, if using conda, run::
+
+    conda install boa-framework -c pytorch -c conda-forge
+
+If not using conda, run::
+
+    pip install boa-framework
 
 If you want to install the latest (bleeding-edge) develop version of boa::
 
@@ -63,21 +69,16 @@ and then clone your forked repo
 
 From the root directory of the cloned repository, run::
 
-     conda env create
-     # If you want to install the dev requirements for development, run this line
-     conda env update --name boa --file environment_dev_update.yml
+     conda env create --file environment_dev.yml
 
 This will install boa in editable mode.
-
-If you plan on running any of the tests in other languages, run::
-
-    conda env update --name boa -f environment_language_updates.yml
-
 
 mac x86 or apple silicone macs on rosetta python need pytorch>2.0
 so if on either of those, it should install pytorch>2 by default
 but if not and something doesn't work, upgrade pytorch, torchvision,
 and torchaudio
+
+:doc:`/contributing`
 
 ********
 Test run
@@ -89,6 +90,18 @@ Once everything is installed, run the test script to ensure everything is instal
 
 If this test case runs successfully, you can move on to the next steps.
 
-:doc:`/contributing`
+**********
+Update BOA
+**********
+
+To update BOA
+
+if using Conda to install BOA, run::
+
+    conda update boa-framework
+
+if using pip to install BOA, run::
+
+    pip install -U boa-framework
 
 If you have errors, see the :doc:`/troubleshooting` section.
