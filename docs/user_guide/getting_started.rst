@@ -78,6 +78,8 @@ so if on either of those, it should install pytorch>2 by default
 but if not and something doesn't work, upgrade pytorch, torchvision,
 and torchaudio
 
+:doc:`/contributing`
+
 ********
 Test run
 ********
@@ -88,6 +90,18 @@ Once everything is installed, run the test script to ensure everything is instal
 
 If this test case runs successfully, you can move on to the next steps.
 
-:doc:`/contributing`
+**********
+Update BOA
+**********
+
+To update BOA
+
+if using Conda to install BOA, run::
+
+    conda update boa-framework
+
+if using pip to install BOA, run::
+
+    pip install -U boa-framework
 
 If you have errors, see the :doc:`/troubleshooting` section.
