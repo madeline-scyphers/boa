@@ -8,6 +8,14 @@ First make sure you have read :doc:`/user_guide/getting_started` to get your dev
 
 When in question about rst, see references under docs/references in the source code.
 
+Setup pre-commit
+---------------------------------------------
+We use pre-commit to automatically manage linting on every commit. To set it up, run in your boa development environment::
+
+    pre-commit install
+
+This should now run all of our linting (the same as `invoke style` below) on every commit so you don't accidentally commit code that will fail the CI only because of linting.
+
 Format the code and lint it (check the style)
 ---------------------------------------------
 
@@ -30,7 +38,20 @@ Ensure your new changes are documented.
 Commit your changes
 ---------------------------------------------
 
-Example: ``fix(package): update setup.py arguments 🎉`` (emojis are fine too)
+Example::
+
+    git commit -m fix(package): update setup.py arguments 🎉
+
+(emojis are fine too)
+
+or a longer commit message::
+
+    git commit
+
+    package: fix things with stuff
+
+    More commit message things
+    and more
 
 Push your changes to your fork
 ---------------------------------------------

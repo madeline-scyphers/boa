@@ -1,0 +1,27 @@
+default_install_hook_types: [pre-commit, pre-push, commit-msg]
+
+repos:
+  - repo: local
+    hooks:
+      - id: black
+        name: black
+        entry: invoke black
+        stages: [pre-commit]
+        language: system
+        pass_filenames: false
+  - repo: local
+    hooks:
+      - id: isort
+        name: isort
+        entry: invoke isort
+        stages: [pre-commit]
+        language: system
+        pass_filenames: false
+  - repo: local
+    hooks:
+      - id: lint
+        name: lint
+        entry: invoke lint
+        stages: [pre-commit]
+        language: system
+        pass_filenames: false
