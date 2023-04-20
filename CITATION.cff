@@ -22,7 +22,7 @@ authors:
     family-names: Bohrer
     orcid: 'https://orcid.org/0000-0002-9209-9540'
 repository-code: 'https://github.com/madeline-scyphers/boa'
-url: 'https://pyboa.readthedocs.io/en/latest/'
+url: 'https://boa-framework.readthedocs.io/en/latest/'
 doi: '10.5281/zenodo.7655353'
 abstract: >-
   Bayesian Optimization for Anything: A high-level Bayesian

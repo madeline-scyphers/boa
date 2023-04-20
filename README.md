@@ -27,11 +27,11 @@ between models and the python libraries [Ax](https://ax.dev) and [BoTorch](https
 
 ## Install requirements
 
-- see [installation guide](https://pyboa.readthedocs.io/en/latest/user_guide/getting_started.html#installation) 
+- see [installation guide](https://boa-framework.readthedocs.io/en/latest/user_guide/getting_started.html#installation) 
 
 |                       |                                                                                                                                                                 |
 |-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Docs                  | [![Documentation Status](https://readthedocs.org/projects/pyboa/badge/?version=latest)](https://pyboa.readthedocs.io/en/latest/?badge=latest)                   |
+| Docs                  | [![Documentation Status](https://readthedocs.org/projects/boa-framework/badge/?version=latest)](https://boa-framework.readthedocs.io/en/latest/?badge=latest)   |
 | DOI                   | [![DOI](https://zenodo.org/badge/480579470.svg)](https://zenodo.org/badge/latestdoi/480579470)                                                                  |
 | Conda Install         | [![Conda Version](https://anaconda.org/conda-forge/boa-framework/badges/version.svg)](https://anaconda.org/conda-forge/boa-framework)                           |
 | PyPI Install          | [![PyPI version](https://badge.fury.io/py/boa-framework.svg)](https://badge.fury.io/py/boa-framework)                                                           |
