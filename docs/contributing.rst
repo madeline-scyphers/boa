@@ -53,6 +53,11 @@ or a longer commit message::
     More commit message things
     and more
 
+
+You can temporarily bypass pre-commit (The CI jobs on github will still run) if you have something you are in the middle of by add `--no-verify` to your git command::
+
+    git commit --no-verify ...
+
 Push your changes to your fork
 ---------------------------------------------
 
