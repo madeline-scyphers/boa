@@ -24,7 +24,7 @@ dynamic = ["version", "dependencies", "optional-dependencies"]
 [project.urls]
 "Source Code" = "https://github.com/madeline-scyphers/boa"
 "Bug Tracker" = "https://github.com/madeline-scyphers/boa/issues"
-Documentation = "http://pyboa.readthedocs.io"
+Documentation = "http://boa-framework.readthedocs.io"
 
 [tool.setuptools.packages.find]
 include = ["boa*"]
