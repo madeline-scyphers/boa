@@ -33,6 +33,7 @@ dependencies:
 - pip:
     ## Task management
   - invoke
+  - pre-commit
 
     ## Testing tools
   - pytest
