@@ -118,6 +118,9 @@ class PassThrough(ModularMetric):
 
     _metric_to_eval = lambda x: x  # noqa: E731
 
+    def __init__(self, lower_is_better=True, *args, **kwargs):
+        super().__init__(lower_is_better=lower_is_better, *args, **kwargs)
+
     def _evaluate(self, params, **kwargs) -> float:
         kwargs.update(params.pop("kwargs"))
         args = kwargs["wrapper_args"]

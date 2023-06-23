@@ -9,6 +9,7 @@ to make sure that if users do any directory changes inside a wrapper function,
 the original directory is returned to afterwards.
 
 """
+import inspect
 import sys
 from abc import ABCMeta
 from functools import wraps
@@ -45,7 +46,17 @@ class WrapperRegister(ABCMeta):
         cls.set_trial_status = write_exception_to_log(cd_and_cd_back_dec()(cls.set_trial_status))
         cls.fetch_trial_data = write_exception_to_log(cd_and_cd_back_dec()(cls.fetch_trial_data))
         cls._fetch_trial_data = write_exception_to_log(cd_and_cd_back_dec()(cls._fetch_trial_data))
-        cls._path = Path(sys.modules[cls.__module__].__file__)
+        try:
+            _path = Path(sys.modules[cls.__module__].__file__)
+        except AttributeError:  # running in a jupyter notebook `__file__` doesn't work
+            logger.warning(
+                "Could not save Wrapper file location. "
+                "\nIs your Wrapper defined in a Jupyter Notebook?"
+                "\nBOA will not be able to reload from file without directly"
+                "\nreinstantiating your Wrapper and passing it to BOA"
+            )
+            _path = None
+        cls._path = _path
         super().__init__(*args, **kwargs)
 
 

@@ -144,6 +144,10 @@ class BaseWrapper(metaclass=WrapperRegister):
         else:
             self._output_dir = output_dir
 
+    @property
+    def path(self):
+        return self._path
+
     def load_config(self, config_path: PathLike, *args, **kwargs) -> dict:
         """
         Load config takes a configuration path of either a JSON file or a YAML file and returns
@@ -351,7 +355,13 @@ class BaseWrapper(metaclass=WrapperRegister):
         res = self.fetch_trial_data(
             trial=trial, metric_properties=self._metric_properties, metric_name=metric_name, *args, **kwargs
         )
-        res = res if res is not None else {}
+        if res is None:
+            raise ValueError(
+                "No data returned when fetching Metric!"
+                " Make sure you return something form `fetch_trial_data`"
+                " or if using language agnostic setup, write out your data as specified in"
+                " the Wrapper docs."
+            )
         if not isinstance(res, dict):
             res = {"wrapper_args": res}
         if metric_name not in res:

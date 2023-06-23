@@ -35,7 +35,7 @@ from boa.utils import (
 )
 
 if TYPE_CHECKING:  # pragma: no cover
-    from boa import BaseWrapper
+    from boa import BaseWrapper, ScriptWrapper
 
 logger = get_logger()
 
@@ -141,8 +141,13 @@ def initialize_wrapper(
     **kwargs,
 ):
     if isinstance(wrapper, PathLike_tup):
-        module = _load_module_from_path(wrapper, "user_wrapper")
-        WrapperCls: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_name)
+        try:
+            module = _load_module_from_path(wrapper)
+            WrapperCls: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_name)
+        except Exception:
+            from boa.wrappers.script_wrapper import ScriptWrapper
+
+            WrapperCls = ScriptWrapper
     else:
         WrapperCls = wrapper
 
