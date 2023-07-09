@@ -144,9 +144,10 @@ class BaseWrapper(metaclass=WrapperRegister):
         else:
             self._output_dir = output_dir
 
-    @property
-    def path(self):
-        return self._path
+    @classmethod
+    def path(cls):
+        """Path of file that the Wrapper class is defined in"""
+        return cls._path
 
     def load_config(self, config_path: PathLike, *args, **kwargs) -> dict:
         """

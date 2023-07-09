@@ -1,6 +1,10 @@
 # MultiObjective Optimization config
 optimization_options:
     objective_options:
+        objective_thresholds:
+            - branin >= -195
+            - currin >= -10.521741333278536
+            - hartmann6 <= 0.2154494439486514
         objectives:
             - name: branin
               lower_is_better: False
@@ -11,10 +15,10 @@ optimization_options:
             - name: hartmann6
               lower_is_better: True
               noise_sd: 0
-#            - name: d
-#              lower_is_better: False
-#              noise_sd: 0
-    trials: 35
+
+    experiment:
+        name: "moo_run"
+    trials: 100
 
 parameters:
     x0:
@@ -41,48 +45,3 @@ parameters:
         type: range
         bounds: [0, 1]
         value_type: float
-#    x6:
-#        type: range
-#        bounds: [0, 1]
-#        value_type: float
-#    x7:
-#        type: range
-#        bounds: [0, 1]
-#        value_type: float
-#    x8:
-#        type: range
-#        bounds: [0, 1]
-#        value_type: float
-#    x9:
-#        type: range
-#        bounds: [0, 1]
-#        value_type: float
-#    x0:
-#        type: range
-#        bounds: [60.0, 120.0]
-#        value_type: float
-#    x1:
-#        type: range
-#        bounds: [0.05, 18.0]
-#        value_type: float
-#    x2:
-#        type: range
-#        bounds: [293.0, 303.0]
-#        value_type: float
-#    x3:
-#        type: range
-#        bounds: [0.05, 18.0]
-#        value_type: float
-#    x4:
-#        type: range
-#        bounds: [0.01, 0.5]
-#        value_type: float
-#    x5:
-#        type: range
-#        bounds: [500.0, 700.0]
-#        value_type: float
-#    x6:
-#        type: range
-#        bounds: [5.0, 6.5]
-#        value_type: float
-##

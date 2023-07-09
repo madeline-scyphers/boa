@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 from pprint import pformat
 from typing import Iterable, Optional
 
@@ -88,7 +87,6 @@ class Scheduler(AxScheduler):
         trials = None
         if self.experiment.is_moo_problem:
             try:
-                s = time.time()
                 trials = self.get_pareto_optimal_parameters(
                     optimization_config=optimization_config,
                     trial_indices=trial_indices,
@@ -96,7 +94,6 @@ class Scheduler(AxScheduler):
                     *args,
                     **kwargs,
                 )
-                print("pareto took: ", time.time() - s)
                 if trials:
                     trials = {
                         idx: dict(params=trial_tup[0], means=trial_tup[1][0], cov_matrix=trial_tup[1][1])
@@ -171,7 +168,6 @@ class Scheduler(AxScheduler):
         trials = None
         if self.experiment.is_moo_problem:
             try:
-                s = time.time()
                 trials = self.get_pareto_optimal_parameters(
                     optimization_config=optimization_config,
                     trial_indices=trial_indices,
@@ -179,7 +175,6 @@ class Scheduler(AxScheduler):
                     *args,
                     **kwargs,
                 )
-                print("pareto took: ", time.time() - s)
                 if trials:
                     trials = {
                         idx: dict(params=trial_tup[0], means=trial_tup[1][0], cov_matrix=trial_tup[1][1])

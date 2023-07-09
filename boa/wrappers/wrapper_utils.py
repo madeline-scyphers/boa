@@ -35,7 +35,7 @@ from boa.utils import (
 )
 
 if TYPE_CHECKING:  # pragma: no cover
-    from boa import BaseWrapper, ScriptWrapper
+    from boa import BaseWrapper
 
 logger = get_logger()
 

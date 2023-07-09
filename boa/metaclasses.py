@@ -9,7 +9,6 @@ to make sure that if users do any directory changes inside a wrapper function,
 the original directory is returned to afterwards.
 
 """
-import inspect
 import sys
 from abc import ABCMeta
 from functools import wraps
