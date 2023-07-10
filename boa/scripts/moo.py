@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 import torch
 
 from boa.controller import Controller
@@ -14,7 +13,6 @@ tkwargs = {
 Problem = get_synth_func("BraninCurrin")
 
 problem = Problem(negate=True).to(**tkwargs)
-hartmann6 = get_synth_func("hartmann6")
 
 
 class Wrapper(BaseWrapper):
@@ -28,23 +26,7 @@ class Wrapper(BaseWrapper):
         evaluation = problem(torch.tensor([trial.arm.parameters["x0"], trial.arm.parameters["x1"]]))
         a = float(evaluation[0])
         b = float(evaluation[1])
-        c = hartmann6(
-            np.array(
-                [
-                    trial.arm.parameters["x0"],
-                    trial.arm.parameters["x1"],
-                    trial.arm.parameters["x2"],
-                    trial.arm.parameters["x3"],
-                    trial.arm.parameters["x4"],
-                    trial.arm.parameters["x5"],
-                ]
-            )
-        )
-        return {
-            "branin": a,
-            "currin": b,
-            "hartmann6": c,
-        }
+        return {"branin": a, "currin": b}
 
 
 def main():

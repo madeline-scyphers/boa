@@ -30,7 +30,7 @@ class Scheduler(AxScheduler):
         """
         self.save_data()
         try:
-            trials = self.best_fitted_trials(use_model_predictions=False)
+            trials = self.best_raw_trials()
             best_trial_map = {idx: trial_dict["means"] for idx, trial_dict in trials.items()} if trials else {}
             best_trial_str = f"\nBest trial so far: {pformat(best_trial_map)}"
         except Exception as e:  # pragma: no cover

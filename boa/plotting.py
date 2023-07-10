@@ -261,6 +261,7 @@ def plot_slice(scheduler: SchedulerOrPath, **kwargs):
 def plot_pareto_frontier(
     scheduler: SchedulerOrPath,
     metric_names: list[str] | None = None,
+    num_points: int = 20,
     CI_level: float = DEFAULT_CI_LEVEL,  # noqa
 ):
     """Plot a Pareto frontier from a scheduler.
@@ -271,6 +272,8 @@ def plot_pareto_frontier(
         Initialized scheduler or path to `scheduler.json file`.
     metric_names
         metric name or list of metric names to restrict dropdowns to. If None, will use all metric names.
+    num_points
+        The number of points to compute on the Pareto frontier.
     CI_level
         The confidence level, i.e. 0.95 (95%)
     """
@@ -297,22 +300,13 @@ def plot_pareto_frontier(
     for ms in metric_combos:
         primary_objective, secondary_objective = ms
 
-        #     try:
-        #         primary_objective = experiment.metrics[metric1]
-        #     except KeyError as e:
-        #         raise TypeError(f"metric name {metric1} not found in optimization!") from e
-        #     try:
-        #         secondary_objective = experiment.metrics[metric2]
-        #     except KeyError as e:
-        #         raise TypeError(f"metric name {metric2} not found in optimization!") from e
-
         frontier = compute_posterior_pareto_frontier(
             experiment=experiment,
             data=experiment.fetch_data(),
             primary_objective=primary_objective,
             secondary_objective=secondary_objective,
             absolute_metrics=[m.name for m in experiment.metrics.values()],
-            num_points=30,
+            num_points=num_points,
         )
         frontier_list.append(frontier)
 
