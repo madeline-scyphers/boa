@@ -18,6 +18,6 @@ dependencies:
 - plotly>=5.10.0
 - notebook>=5.3
 - ipywidgets>=7.5
-- ax-platform==0.3.1
+- ax-platform==0.3.3
 - PyYAML
 
