@@ -3,9 +3,8 @@ optimization_options:
     objective_options:
         objectives:
             - name: Cosine8
-              boa_metric: mean
-    scheduler:
-        total_trials: 100
+    trials: 50
+    append_timestamp: False
 parameters:
     x0:
         type: range

@@ -193,10 +193,17 @@ def scheduler_from_json_snapshot(
             ):
 
                 path = pathlib.Path(wrapper_path) if wrapper_path is not None else pathlib.Path(deserialized["path"])
-                module = _load_module_from_path(path, "user_wrapper")
-                WrapperCls: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_dict["name"])
-
-                wrapper = WrapperCls.from_dict(**wrapper_dict)
+                try:
+                    module = _load_module_from_path(path)
+                    WrapperCls: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_dict["name"])
+                    wrapper = WrapperCls.from_dict(**wrapper_dict)
+                except Exception:
+                    logger.exception(
+                        f"Failed to deserialize wrapper because of: {e!r}" f"\n\nUsing basic ScriptWrapper as back up"
+                    )
+                    wrapper = ScriptWrapper.from_dict(
+                        **get_dictionary_from_callable(ScriptWrapper.from_dict, wrapper_dict)
+                    )
 
             else:
                 logger.exception(
