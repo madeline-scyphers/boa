@@ -47,7 +47,9 @@ def test_calling_command_line_r_test_scripts(r_scripts_run):
     scheduler = r_scripts_run
     wrapper = scheduler.experiment.runner.wrapper
     config = wrapper.config
-    total_trials = config["optimization_options"]["scheduler"]["total_trials"]
+    total_trials = config["optimization_options"].get("scheduler", {}).get("total_trials") or config[
+        "optimization_options"
+    ].get("trials")
     assert len(scheduler.experiment.trials) == total_trials
 
 
