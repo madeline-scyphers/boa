@@ -73,7 +73,7 @@ nitpick_ignore_regex = [
 ]
 
 
-nb_execution_mode = "on"
+nb_execution_mode = "off"
 
 nb_execution_excludepatterns = ["example_optimization_results.ipynb"]
 
