@@ -73,8 +73,6 @@ nitpick_ignore_regex = [
 ]
 
 
-# Use saved output in notebooks rather than executing on build
-# Since the current examples are not part of boa, they need to execute locally
 nb_execution_mode = "off"
 
 nb_execution_excludepatterns = ["example_optimization_results.ipynb"]
