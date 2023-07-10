@@ -51,6 +51,9 @@ __pycache__/
 .AppleDouble
 .LSOverride
 
+# Linting
+.flakeheaven_cache
+
 #vscode
 .vscode
 
