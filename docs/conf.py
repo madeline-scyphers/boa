@@ -21,7 +21,7 @@ from boa._doc_utils import add_ref_to_all_submodules_inits
 
 # -- Project information -----------------------------------------------------
 
-project = "boa"
+project = "BOA"
 copyright = "2022, Madeline Scyphers, Justine Missik"
 author = "Madeline Scyphers, Justine Missik"
 
