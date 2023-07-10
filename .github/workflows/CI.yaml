@@ -74,12 +74,12 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: export env to artifact
-        run: mamba env export -n boa > environment_ci.yml
+        run: mamba env export -n boa > environment_ci_${{ matrix.os }}.yml
 
       - uses: actions/upload-artifact@v3
         with:
-          name: environment_ci.yml
-          path: environment_ci.yml
+          name: environment_ci_${{ matrix.os }}.yml
+          path: environment_ci_${{ matrix.os }}.yml
 
       - name: Lint
         shell: bash -l {0}
