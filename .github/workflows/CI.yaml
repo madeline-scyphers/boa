@@ -66,12 +66,20 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: ${{ matrix.prefix }}
-          key: ${{ matrix.label }}-conda-${{ hashFiles('environment.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+          key: ${{ matrix.label }}-conda-${{ hashFiles('environment_dev.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
       - name: Update base environment
         run: mamba env update -n boa -f environment_dev.yml --prune
         if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: export env to artifact
+        run: mamba env export -n boa > environment_ci.yml
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: environment_ci.yml
+          path: environment_ci.yml
 
       - name: Lint
         shell: bash -l {0}
