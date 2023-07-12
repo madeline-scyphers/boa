@@ -81,3 +81,9 @@ pyflakes = ["+*"]
 # And ignore module level imports not at top of file because of jupyter notebook examples
 pycodestyle = ["+*", "-W503", "-E402"]
 
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --doctest-glob='*.rst'"
+doctest_optionflags = "NORMALIZE_WHITESPACE"
+norecursedirs = "_build"
+filterwarnings = ["ignore::DeprecationWarning:invoke"]
+

@@ -63,21 +63,21 @@ def cd_and_cd_back(path: PathLike = None):
     Examples
     ========
     >>> starting_dir = os.getcwd()
-    ... with cd_and_cd_back():
+    >>> with cd_and_cd_back():
     ...     # with do some things that change the directory
     ...     os.chdir("..")
     ... # When we exit the context manager (dedent) we go back to the starting directory
-    ... ending_dir = os.getcwd()
-    ... assert starting_dir == ending_dir
+    >>> ending_dir = os.getcwd()
+    >>> assert starting_dir == ending_dir
 
     >>> starting_dir = os.getcwd()
-    ... path_to_change_to = ".."
-    ... with cd_and_cd_back(path=path_to_change_to):
+    >>> path_to_change_to = ".."
+    >>> with cd_and_cd_back(path=path_to_change_to):
     ...     # with do some things inside the context manager
-    ...     ...
+    ...     pass
     ... # When we exit the context manager (dedent) we go back to the starting directory
-    ... ending_dir = os.getcwd()
-    ... assert starting_dir == ending_dir
+    >>> ending_dir = os.getcwd()
+    >>> assert starting_dir == ending_dir
 
     """
     cwd = os.getcwd()
@@ -101,23 +101,23 @@ def cd_and_cd_back_dec(path: PathLike = None):
 
     Examples
     ========
-    >>> @cd_and_cd_back_dec
+    >>> @cd_and_cd_back_dec()
     ... def foo():
     ...     os.chdir("..")
-    ...
-    ... starting_dir = os.getcwd()
-    ... foo()
-    ... ending_dir = os.getcwd()
-    ... assert starting_dir == ending_dir
+
+    >>> starting_dir = os.getcwd()
+    >>> foo()
+    >>> ending_dir = os.getcwd()
+    >>> assert starting_dir == ending_dir
 
     >>> @cd_and_cd_back_dec(path="..")
     ... def bar():
     ...     os.chdir("..")
-    ...
-    ... starting_dir = os.getcwd()
-    ... bar()
-    ... ending_dir = os.getcwd()
-    ... assert starting_dir == ending_dir
+
+    >>> starting_dir = os.getcwd()
+    >>> bar()
+    >>> ending_dir = os.getcwd()
+    >>> assert starting_dir == ending_dir
 
     """
 

@@ -8,6 +8,13 @@ import shutil
 from invoke import task
 
 POSIX = os.name == "posix"
+# we test these one at a time, b/c we get a ImportPathMismatchError with doctest and pytest from modules called
+# the same thing in different packages (such as a wrapper.py docs and in boa)
+TEST_DIRECTORIES = [
+    "boa",
+    # "docs", we have no doctests in docs yet, so this running returns none, which fails, which isn't what we want
+    "tests",
+]
 
 
 @task
@@ -71,6 +78,19 @@ All Style Checks Passed Successfully
     )
 
 
+@task
+def test_dir(command, options="", dir_="."):
+    """Runs pytest to identify failing tests and doctests"""
+
+    print(
+        """
+Running pytest the test framework
+=================================
+"""
+    )
+    command.run(f"python -m pytest {options} {dir_}", echo=True, pty=POSIX)
+
+
 @task(aliases=["tests"])
 def test(command, options=""):
     """Runs pytest to identify failing tests and doctests"""
@@ -81,7 +101,16 @@ Running pytest the test framework
 =================================
 """
     )
-    command.run(f"python -m pytest {options} .", echo=True, pty=POSIX)
+    for dir_ in TEST_DIRECTORIES:
+        test_dir(command, options=options, dir_=dir_)
+    # command.run(f"python -m pytest {options} {' '.join(dir_ for dir_ in TEST_DIRECTORIES)}", echo=True, pty=POSIX)
+
+    print(
+        """
+All Testing Directories Passed Successfully
+===========================================
+"""
+    )
 
 
 @task
