@@ -468,13 +468,13 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         >>> def func_a(array):
         ...     return np.mean(np.exp(array))
-        ...
-        ... def func_b(array):
+
+        >>> def func_b(array):
         ...     return np.exp(np.mean(array))
-        ...
-        ... funcs = {func_a.__name__: func_a, func_b.__name__: func_b}
-        ...
-        ... def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
+
+        >>> funcs = {func_a.__name__: func_a, func_b.__name__: func_b}
+
+        >>> def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
         ...     # we define in our config the names of functions to associate with certain metrics
         ...     # and look them up at run time
         ...     return {"a": funcs[metric_properties[metric_name]["function"]](trial.arm.parameters)}
