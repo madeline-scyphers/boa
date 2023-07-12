@@ -7,6 +7,7 @@ Examples
     :maxdepth: 2
 
     example_py_run
+    run_r_streamlined
 
 
 .. toctree::

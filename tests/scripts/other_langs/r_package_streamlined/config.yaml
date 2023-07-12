@@ -2,6 +2,8 @@ optimization_options:
     objective_options:
         objectives:
             - name: metric
+    experiment:
+        name: "r_streamlined_run"
     trials: 15
 
 parameters:
