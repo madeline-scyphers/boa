@@ -73,9 +73,22 @@ nitpick_ignore_regex = [
 ]
 
 
-nb_execution_mode = "off"
+nb_execution_mode = "force"
 
-nb_execution_excludepatterns = ["example_optimization_results.ipynb"]
+nb_kernel_rgx_aliases = {".*conda.*": "python3"}
+nb_execution_excludepatterns = [
+    "example_optimization_results.ipynb",
+    # "1moo_optimization_run.ipynb",
+    # "1optimization_run.ipynb",
+    # "1run_r_streamlined.ipynb"
+    # "2load_scheduler.ipynb",
+    # "2load_moo_scheduler.ipynb"
+]
+nb_execution_timeout = 600
+nb_execution_raise_on_error = True
+nb_execution_show_tb = True
+nb_number_source_lines = True
+nb_render_markdown_format = "myst"
 
 html_js_files = ["https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"]
 

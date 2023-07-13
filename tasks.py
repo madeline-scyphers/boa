@@ -114,7 +114,7 @@ All Testing Directories Passed Successfully
 
 
 @task
-def docs(command, warn_is_error=False):
+def docs(command, warn_is_error=False, options=""):
     """Runs Sphinx to build the docs locally for testing"""
     print(
         """
@@ -122,12 +122,15 @@ Running Sphinx to test the docs building
 ========================================
 """
     )
-    options = "-W " if warn_is_error else ""
+    o = "-W " if warn_is_error else ""
+    if "-W" in options:
+        options = options.replace("-W", "")
+    options = options + " " + o
     shutil.rmtree("docs/_build", ignore_errors=True)
     shutil.rmtree("docs/api", ignore_errors=True)
     shutil.rmtree("docs/code_reference/api", ignore_errors=True)
     shutil.rmtree("docs/jupyter_execute", ignore_errors=True)
-    command.run(f"sphinx-build {options}-b html docs docs/_build", echo=True, pty=POSIX)
+    command.run(f"sphinx-build {options} -b html docs docs/_build", echo=True, pty=POSIX)
 
 
 @task(pre=[black, isort, lint, test, docs])
