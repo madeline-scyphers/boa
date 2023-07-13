@@ -33,10 +33,20 @@ parameters:
         'value_type': 'float'
 
 script_options:
+    # notice here that this is a shell command
+    # this is what BOA will do to launch your script
+    # it will also pass as a command line argument the current trial directory
+    # that is being parameterized
+
+    # This can either be a relative path or absolute path
+    # (by default when BOA launches from a config file
+    # it uses the config file directory as your working directory)
+    # here config.yaml and run_model.R are in the same directory
     run_model: Rscript run_model.R
 
 
 # options only needed by the model and not BOA
-model_options:
-    input_size: 15
-    model_dir: .
+# You can put anything here that your model might need
+# We don't need anything extra so we leave it commented out
+# model_options:
+    # the_question: 42
