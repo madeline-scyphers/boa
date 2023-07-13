@@ -13,7 +13,3 @@ conda:
 
 sphinx:
   fail_on_warning: true
-
-# Build PDF (ePuB causes "duplicated ToC entry found" between html pages and the epub xhtml pages)
-formats:
-  - pdf
