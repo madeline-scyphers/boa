@@ -7,17 +7,17 @@ Examples
     :maxdepth: 2
 
     example_py_run
-    run_r_streamlined
+    1run_r_streamlined
 
 
 .. toctree::
     :caption: Running Directly in Python
     :maxdepth: 2
 
-    optimization_run
-    load_scheduler
-    moo_optimization_run
-    load_moo_scheduler
+    1optimization_run
+    2load_scheduler
+    1moo_optimization_run
+    2load_moo_scheduler
 
 
 .. toctree::
