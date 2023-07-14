@@ -246,6 +246,7 @@ def exp_opt_to_csv(experiment, opt_path: PathLike = "optimization.csv", dir_: Pa
         opt_path = pathlib.Path(dir_) / opt_path
     df = exp_to_df(experiment)
     df.to_csv(path_or_buf=opt_path, index=False, **kwargs)
+    logger.info(f"Saved optimization parametrization and objective to `{opt_path}`.")
 
 
 def scheduler_opt_to_csv(scheduler, **kwargs):

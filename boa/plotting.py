@@ -393,3 +393,35 @@ def plot_pareto_frontier(
 
     fig = go.Figure(data=traces, layout=layout)
     return pn.pane.Plotly(fig)
+
+
+def app_view(
+    scheduler: SchedulerOrPath,
+    metric_names: list[str] | None = None,
+):
+    """Creates a web view of a variety of EDA plots from a scheduler.
+
+    Parameters
+    ----------
+    scheduler
+        Initialized scheduler or path to `scheduler.json file`.
+    metric_names
+        metric name or list of metric names to restrict dropdowns to. If None, will use all metric names.
+    """
+    scheduler = _maybe_load_scheduler(scheduler)
+    view = pn.Column()
+    if scheduler.experiment.is_moo_problem:
+        pareto = plot_pareto_frontier(scheduler=scheduler, metric_names=metric_names)
+    else:
+        pareto = None
+    view.append(pn.Row(plot_metrics_trace(schedulers=scheduler, metric_names=metric_names), pareto))
+    view.append(plot_slice(scheduler=scheduler))
+    view.append(plot_contours(scheduler=scheduler, metric_names=metric_names))
+    view.append(scheduler_to_df(scheduler))
+
+    template = pn.template.BootstrapTemplate(
+        site="BOA",
+        main=[view],
+    )
+
+    return template.servable()

@@ -65,7 +65,7 @@ or::
 
     python -m boa -c path/to/your/config/file
 
-:doc:`BOA's </index>` will save the its current state automatically to a `scheduler.json` file in your output experiment directory every 1-few trials (depending on parallelism settings). The console will output the Output directory at the start and end of your runs to the console, it will also throughout the run, whenever it saves the `scheduler.json` file, output to the console the location where the file is being saved. You can resume a stopped run from a scheduler file::
+:doc:`BOA's </index>` will save the its current state automatically to a `scheduler.json` file in your output experiment directory every 1-few trials (depending on parallelism settings). It will also save a optimization.csv at the end of your run with the trial information as well in the same directory as scheduler.json. The console will output the Output directory at the start and end of your runs to the console, it will also throughout the run, whenever it saves the `scheduler.json` file, output to the console the location where the file is being saved. You can resume a stopped run from a scheduler file::
 
     python -m boa --scheduler-path path/to/your/scheduler.json
 

@@ -15,7 +15,14 @@ from boa.metrics.metric_funcs import *  # noqa
 from boa.metrics.metrics import *  # noqa
 from boa.metrics.modular_metric import *  # noqa
 from boa.metrics.synthetic_funcs import *  # noqa
-from boa.plotting import *  # noqa
+from boa.plotting import (  # noqa
+    app_view,
+    plot_contours,
+    plot_metrics_trace,
+    plot_pareto_frontier,
+    plot_slice,
+    scheduler_to_df,
+)
 from boa.registry import _add_common_encodes_and_decodes
 from boa.runner import *  # noqa
 from boa.scheduler import *  # noqa
