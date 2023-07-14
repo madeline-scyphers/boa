@@ -8,6 +8,7 @@ Examples
 
     example_py_run
     1run_r_streamlined
+    2EDA_from_r_run
 
 
 .. toctree::
