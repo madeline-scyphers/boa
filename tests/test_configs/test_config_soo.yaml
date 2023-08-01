@@ -4,19 +4,11 @@ optimization_options:
     objectives:
       - name: rmse
         metric: RootMeanSquaredError
+        weight: 1
         properties:
           obs_file: path
-#        upper_bound:
-#          bound: 100
-#          relative: false
-#        lower_bound:
-#          bound: 0
-#          relative: false
-      - name: r2
-        metric: R2
-    weights:
-      - 1
-      - 2
+      - metric: R2
+        weight: 2
     minimize: true
 #    outcome_constraints:
 #      - metric:

@@ -121,6 +121,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         name: Optional[str] = None,
         wrapper: Optional[BaseWrapper] = None,
         properties: Optional[dict[str]] = None,
+        weight: Optional[float] = None,
         **kwargs,
     ):
         """"""  # remove init docstring from parent class to stop it showing in sphinx
@@ -143,6 +144,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
         kwargs["param_names"] = param_names or []
         self.wrapper = wrapper or BaseWrapper()
+        self._weight = weight
         super().__init__(
             noise_sd=noise_sd,
             name=name,

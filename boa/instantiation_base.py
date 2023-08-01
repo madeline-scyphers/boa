@@ -15,14 +15,13 @@ class BoaInstantiationBase(InstantiationBase):
         objective_thresholds: list[str] = None,
         outcome_constraints: list[str] = None,
         status_quo_defined: bool = False,
-        weights: list[float] | None = None,
         minimize: bool = None,
         **kwargs,
     ):
         objective_thresholds = objective_thresholds or []
         outcome_constraints = outcome_constraints or []
         return cls.optimization_config_from_objectives(
-            cls.make_objectives(objectives, weights=weights, minimize=minimize, **kwargs),
+            cls.make_objectives(objectives, minimize=minimize, **kwargs),
             cls.make_objective_thresholds(objective_thresholds, status_quo_defined),
             cls.make_outcome_constraints(outcome_constraints, status_quo_defined),
         )
@@ -50,11 +49,11 @@ class BoaInstantiationBase(InstantiationBase):
         return metrics
 
     @classmethod
-    def make_objectives(
-        cls, objectives: dict, weights: list[float] | None = None, minimize: bool = None, **kwargs
-    ) -> list[Objective]:
+    def make_objectives(cls, objectives: dict, minimize: bool = None, **kwargs) -> list[Objective]:
+
         metrics = cls.get_metrics_from_obj_config(objectives, **kwargs)
 
+        weights = [metric._weight for metric in metrics]
         kw = {}
         if weights:
             kw["weights"] = weights
