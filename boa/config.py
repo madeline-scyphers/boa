@@ -92,10 +92,29 @@ def _scheduler_converter(scheduler_options: dict) -> SchedulerOptions:
     return SchedulerOptions(**scheduler_options)
 
 
+def _parameter_normalization(
+    parameters: list[TParameterRepresentation] | dict[str, dict]
+) -> list[TParameterRepresentation]:
+    if isinstance(parameters, list):
+        return parameters
+    new_parameters = []
+    for param, d in parameters.items():
+        d["name"] = param  # Add "name" attribute for each parameter
+        # remove bounds on fixed params
+        if d.get("type", "") == "fixed" and "bounds" in d:
+            del d["bounds"]
+        # Remove value on range params
+        if d.get("type", "") == "range" and "value" in d:
+            del d["value"]
+
+        new_parameters.append(d)
+    return new_parameters
+
+
 @define
 class Config:
     objectives: list[Objective] = field(converter=lambda ls: [Objective(**obj) for obj in ls])
-    parameters: list[TParameterRepresentation]
+    parameters: list[TParameterRepresentation] = field(converter=_parameter_normalization)
     outcome_constraints: list[str] = None
     objective_thresholds: list[str] = None
     generation_steps: Optional[list[GenerationStep]] = field(default=None, converter=_gen_step_converter)
