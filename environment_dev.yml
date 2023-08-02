@@ -20,6 +20,7 @@ dependencies:
 - ipywidgets>=7.5
 - ax-platform==0.3.3
 - PyYAML
+- attrs
 
   ## Jupyter and sphinx jupyter
 - myst-nb
