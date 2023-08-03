@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import pathlib
 from types import ModuleType
-from typing import Optional
+from typing import Optional, Union
 
 import ax.early_stopping.strategies as early_stopping_strats
 import ax.global_stopping.strategies as global_stopping_strats
@@ -15,6 +15,8 @@ from ax.service.utils.instantiation import TParameterRepresentation
 
 from boa.definitions import PathLike
 from boa.wrappers.wrapper_utils import load_jsonlike
+
+__all__ = ["Objective", "ScriptOptions", "Config"]
 
 
 @define
@@ -37,7 +39,8 @@ class ScriptOptions:
     append_timestamp: bool = True
     wrapper_path: str = "wrapper.py"
     working_dir: str = "."
-    experiment_dir: str = "experiment_dir"
+    experiment_dir: Optional[PathLike] = None
+    output_dir: Optional[PathLike] = None
 
     def __attrs_post_init__(self):
         if (self.rel_to_config and self.rel_to_launch) or (not self.rel_to_config and not self.rel_to_launch):
@@ -114,7 +117,7 @@ def _parameter_normalization(
 @define
 class Config:
     objectives: list[Objective] = field(converter=lambda ls: [Objective(**obj) for obj in ls])
-    parameters: list[TParameterRepresentation] = field(converter=_parameter_normalization)
+    parameters: tuple[TParameterRepresentation] = field(converter=_parameter_normalization)
     outcome_constraints: list[str] = None
     objective_thresholds: list[str] = None
     generation_steps: Optional[list[GenerationStep]] = field(default=None, converter=_gen_step_converter)
@@ -123,6 +126,7 @@ class Config:
     parameter_constraints: list[str] = Factory(list)
     model_options: Optional[dict | list] = None
     script_options: Optional[ScriptOptions] = field(default=None, converter=ScriptOptions)
+    parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None
 
     @classmethod
     def from_jsonlike(cls, file):

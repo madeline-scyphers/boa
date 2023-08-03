@@ -12,6 +12,7 @@ import pathlib
 from ax.core.base_trial import BaseTrial
 from ax.storage.json_store.encoder import object_to_json
 
+from boa.config import Config
 from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metaclasses import WrapperRegister
@@ -36,14 +37,13 @@ class BaseWrapper(metaclass=WrapperRegister):
     kwargs
     """
 
-    def __init__(self, config_path: PathLike = None, config: dict = None, setup=True, *args, **kwargs):
+    def __init__(self, config_path: PathLike = None, config: Config = None, setup=True, *args, **kwargs):
         self.config_path = config_path
         self._experiment_dir = None
         self._working_dir = None
         self._output_dir = None
-        self.ex_settings = {}
-        self.model_settings = {}
-        self.script_options = {}
+        self.model_settings = None
+        self.script_options = None
         self._metric_cache = {}
         self._metric_properties = {}
         self._metric_names = kwargs.get("metric_names", [])
@@ -62,12 +62,12 @@ class BaseWrapper(metaclass=WrapperRegister):
                 self.config = config
 
         if setup and self.config:
-            experiment_dir = self.mk_experiment_dir(*args, **kwargs)
+            experiment_dir = self.setup(*args, **kwargs)
             if not self.experiment_dir:
                 if experiment_dir:
                     self.experiment_dir = experiment_dir
-                elif self.ex_settings["experiment_dir"]:
-                    self.experiment_dir = self.ex_settings["experiment_dir"]
+                elif self.config.script_options.experiment_dir:
+                    self.experiment_dir = self.config.script_options.experiment_dir
                 else:
                     raise ValueError("No experiment_dir set or returned from mk_experiment_dir")
 
@@ -87,29 +87,30 @@ class BaseWrapper(metaclass=WrapperRegister):
             self._metric_names = []
 
     @property
-    def config(self):
+    def config(self) -> Config:
         return self._config
 
     @config.setter
     def config(self, config):
-        self._config = config or {}
-        if self._config:
-            self.ex_settings = self._config["optimization_options"]
-            self.model_settings = self._config.get("model_options", {}) or {}
-            self.script_options = self._config.get("script_options", {}) or {}
-            metric_propertis = {}
-            for metric in self.ex_settings["objective_options"]["objectives"]:
-                if "properties" in metric:
-                    name = (
-                        metric.get("name")
-                        or metric.get("metric")
-                        or metric.get("boa_metric")
-                        or metric.get("synthetic_metric")
-                        or metric.get("sklearn_metric")
-                    )
-                    metric_propertis[name] = metric["properties"]
+        if not config:
+            self._config = None
+            return
+        self._config = config
+        self.model_settings = self._config.model_options
+        self.script_options = self._config.script_options
+        metric_propertis = {}
+        for metric in self._config.objectives:
+            if metric.properties:
+                name = (
+                    metric.get("name")
+                    or metric.get("metric")
+                    or metric.get("boa_metric")
+                    or metric.get("synthetic_metric")
+                    or metric.get("sklearn_metric")
+                )
+                metric_propertis[name] = metric["properties"]
 
-            self._metric_properties = metric_propertis
+        self._metric_properties = metric_propertis
 
     @property
     def experiment_dir(self):
@@ -149,10 +150,10 @@ class BaseWrapper(metaclass=WrapperRegister):
         """Path of file that the Wrapper class is defined in"""
         return cls._path
 
-    def load_config(self, config_path: PathLike, *args, **kwargs) -> dict:
+    def load_config(self, config_path: PathLike, *args, **kwargs) -> Config:
         """
         Load config takes a configuration path of either a JSON file or a YAML file and returns
-        your configuration dictionary.
+        your configuration dataclass.
 
         Load_config will (unless overwritten in a subclass), do some basic "normalizations"
         to your configuration for convenience. See :func:`.normalize_config`
@@ -169,16 +170,13 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Returns
         -------
-        dict
+        Config
             loaded_config
         """
         try:
-            config = load_jsonlike(config_path, normalize=False)
+            config = Config.from_jsonlike(config_path)
         except ValueError as e:  # return empty config if not json or yaml file
-            logger.warning(repr(e))
-            return {}
-        parameter_keys = config.get("optimization_options", {}).get("parameter_keys", None)
-        config = normalize_config(config=config, parameter_keys=parameter_keys)
+            raise e
 
         self.config = config
         return self.config
@@ -222,14 +220,10 @@ class BaseWrapper(metaclass=WrapperRegister):
             (Defaults to your configuration file and then True)
         """
         # grab exp dir from config file or if passed in
-        experiment_dir = experiment_dir or self.ex_settings.get("experiment_dir")
-        output_dir = output_dir or self.ex_settings.get("output_dir")
-        experiment_name = experiment_name or self.ex_settings.get("experiment", {}).get("name", "boa_runs")
-        append_timestamp = (
-            append_timestamp
-            or self.ex_settings.get("append_timestamp")
-            or self.script_options.get("append_timestamp", True)
-        )
+        experiment_dir = experiment_dir or self.config.script_options.experiment_dir
+        output_dir = output_dir or self.config.script_options.output_dir
+        experiment_name = experiment_name or self.config.name
+        append_timestamp = append_timestamp or self.script_options.append_timestamp
         if experiment_dir:
             mk_exp_dir_kw = dict(experiment_dir=experiment_dir, append_timestamp=append_timestamp, **kwargs)
         else:  # if no exp dir, instead grab output dir from config or passed in
@@ -241,13 +235,11 @@ class BaseWrapper(metaclass=WrapperRegister):
                 output_dir=output_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, **kwargs
             )
 
-            # We use str() because make_experiment_dir returns a Path object (json serialization)
-            self.ex_settings["output_dir"] = str(output_dir)
             self.output_dir = output_dir
 
         experiment_dir = make_experiment_dir(**mk_exp_dir_kw)
 
-        self.ex_settings["experiment_dir"] = str(experiment_dir)
+        self.config.script_options.experiment_dir = experiment_dir
         self.experiment_dir = experiment_dir
         return experiment_dir
 
@@ -262,7 +254,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         (the default version or your own implementation) or call ``super().setup(*args, **kwargs)``
         which will then call the original version, which will call mk_experiment_directory.
         """
-        return self.mk_experiment_directory(*args, **kwargs)
+        return self.mk_experiment_dir(*args, **kwargs)
 
     def write_configs(self, trial: BaseTrial) -> None:
         """
@@ -507,7 +499,7 @@ class BaseWrapper(metaclass=WrapperRegister):
                 working_dir=kwargs.get("working_dir"),
                 output_dir=kwargs.get("output_dir"),
                 metric_names=kwargs.get("metric_names"),
-                config=kwargs.get("config", {}),
+                config=kwargs.get("config", {}),  # TODO this might need work for converting to dataclasses
             ),
             setup=False,
             **kwargs,

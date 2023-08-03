@@ -23,6 +23,12 @@ def synth_config():
 
 
 @pytest.fixture
+def generic_config():
+    config_path = TEST_CONFIG_DIR / "test_config_generic.yaml"
+    return load_yaml(config_path, normalize=False)
+
+
+@pytest.fixture
 def metric_config():
     config_path = TEST_CONFIG_DIR / "test_config_metric.yaml"
     return load_yaml(config_path)
