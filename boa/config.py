@@ -2,32 +2,67 @@ from __future__ import annotations
 
 import os
 import pathlib
+from enum import Enum
 from types import ModuleType
 from typing import Optional, Union
 
 import ax.early_stopping.strategies as early_stopping_strats
 import ax.global_stopping.strategies as global_stopping_strats
-from attrs import Factory, define, field
+from attrs import Factory, converters, define, field
 from ax.modelbridge.generation_node import GenerationStep
 from ax.modelbridge.registry import Models
 from ax.service.scheduler import SchedulerOptions
 from ax.service.utils.instantiation import TParameterRepresentation
 
 from boa.definitions import PathLike
+from boa.utils import deprecation
 from boa.wrappers.wrapper_utils import load_jsonlike
 
-__all__ = ["Objective", "ScriptOptions", "Config"]
+__all__ = ["Objective", "Metric", "ScriptOptions", "Config"]
+
+
+class MetricType(Enum):
+    METRIC = "metric"
+    BOA_METRIC = "boa_metric"
+    SKLEARN_METRIC = "sklearn_metric"
+    SYNTHETIC_METRIC = "synthetic_metric"
+
+
+def _metric_type_converter(type_: MetricType | str) -> MetricType:
+    if isinstance(type_, MetricType):
+        return type_
+    try:
+        return MetricType[type_]
+    except KeyError:
+        return MetricType(type_)
 
 
 @define
-class Objective:
-    name: str
-    metric: str
+class Metric:
+    metric: Optional[str] = None
+    name: Optional[str] = field(default=None, converter=converters.optional(str))
+    type_: Optional[MetricType | str] = field(
+        default=MetricType.METRIC, converter=converters.optional(_metric_type_converter)
+    )
     noise_sd: Optional[float] = 0
     minimize: Optional[bool] = True
     info_only: bool = False
     weight: Optional[float] = None
     properties: Optional[dict] = None
+
+    def __attrs_post_init__(self):
+        if not self.metric and not self.name:
+            raise TypeError("Must specify either metric name or metric")
+        if self.name is None:
+            self.name = self.metric
+
+
+@define
+class Objective:
+    metrics: list[Metric] = field(converter=lambda lst: [Metric(**metric) for metric in lst])
+    outcome_constraints: Optional[list[str]] = None
+    objective_thresholds: Optional[list[str]] = None
+    minimize: Optional[bool] = None
 
 
 @define
@@ -116,17 +151,20 @@ def _parameter_normalization(
 
 @define
 class Config:
-    objectives: list[Objective] = field(converter=lambda ls: [Objective(**obj) for obj in ls])
-    parameters: tuple[TParameterRepresentation] = field(converter=_parameter_normalization)
-    outcome_constraints: list[str] = None
-    objective_thresholds: list[str] = None
-    generation_steps: Optional[list[GenerationStep]] = field(default=None, converter=_gen_step_converter)
-    scheduler: Optional[SchedulerOptions] = field(default=None, converter=_scheduler_converter)
+    # objective: list[Objective] = field(converter=lambda ls: [Objective(**obj) for obj in ls])
+    objective: Objective = field(converter=lambda d: Objective(**d))  #
+    parameters: tuple[TParameterRepresentation] = field(converter=_parameter_normalization)  #
+    generation_steps: Optional[list[GenerationStep]] = field(
+        default=None, converter=converters.optional(_gen_step_converter)
+    )  #
+    scheduler: Optional[SchedulerOptions] = field(default=None, converter=converters.optional(_scheduler_converter))
     name: str = "boa_runs"
-    parameter_constraints: list[str] = Factory(list)
-    model_options: Optional[dict | list] = None
-    script_options: Optional[ScriptOptions] = field(default=None, converter=ScriptOptions)
-    parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None
+    parameter_constraints: list[str] = Factory(list)  #
+    model_options: Optional[dict | list] = None  #
+    script_options: Optional[ScriptOptions] = field(
+        default=None, converter=converters.optional(lambda d: ScriptOptions(**d))
+    )  #
+    parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None  #
 
     @classmethod
     def from_jsonlike(cls, file):
@@ -138,8 +176,68 @@ class Config:
     # def generate_default_config(cls):
     #     ...
 
+    @classmethod
+    def from_deprecated(cls, configd: dict):
+        if "optimization_options" not in configd:
+            return cls(**configd)
+        deprecation(
+            "Config format is deprecated, consult documentation for current format to write your configuration file.",
+            "1.0",
+        )
+        config = {}
+        opt_ops = configd["optimization_options"]
+
+        #####################################################
+        # copy over config things that didn't change
+        for key in ["parameters", "parameter_constraints", "model_options", "script_options", "parameter_keys"]:
+            if key in configd:
+                config[key] = configd[key]
+
+        #####################################################
+        # copy objective over and then process slight changes
+        config["objective"] = opt_ops["objective_options"]
+
+        # rename old objectives key to metrics key
+        config["objective"]["metrics"] = config["objective"].pop("objectives")
+
+        # convert old way of doing metric types to new way
+        for metric in config["objective"]["metrics"]:
+            for member in MetricType:
+                if member.value in metric and member.value != "metric":
+                    type_ = member.value
+                    metric["metric"] = metric.pop(type_)
+                    metric["type_"] = type_
+
+        # if weights key is present, then they need to be added to ind metrics
+        if "weights" in config["objective"]:
+            if len(config["objective"]["weights"]) != len(config["objective"]["metrics"]):
+                raise ValueError(
+                    "Weights need to be the same length as objectives! " "You must have 1 weight for each objective"
+                )
+            for metric, weight in zip(config["objective"]["metrics"], config["objective"]["weights"]):
+                metric["weight"] = weight
+            # delete leftover weights key
+            del config["objective"]["weights"]
+
+        #####################################################
+        # restructure generation_strategy to streamlined generation_steps format
+        if "generation_strategy" in opt_ops:
+            config["generation_steps"] = opt_ops["generation_strategy"]["steps"]
+
+        #####################################################
+        #  copy over scheduler
+        if "scheduler" in opt_ops:
+            config["scheduler"] = opt_ops["scheduler"]
+
+        #####################################################
+        #  copy over experiment name
+        if "name" in opt_ops.get("experiment", {}):
+            config["name"] = opt_ops["experiment"]["name"]
+
+        return cls(**config)
+
 
 if __name__ == "__main__":
     from tests.conftest import TEST_CONFIG_DIR
 
-    config = Config.from_jsonlike(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml"))
+    __c = Config.from_jsonlike(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml"))

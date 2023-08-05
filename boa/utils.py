@@ -14,6 +14,7 @@ import importlib
 import inspect
 import sys
 import types
+import warnings
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any, Callable, Optional, Type
@@ -241,3 +242,9 @@ def _convert_type(item, conversion: dict):
                 return conversion[type(item)](item)  # directly use the item passed in
             return conversion[type_](item)
     return item
+
+
+def deprecation(message, version_to_remove=None):
+    if version_to_remove:
+        message += "\nScheduled to be removed on version {version}".format(version=version_to_remove)
+    warnings.warn(message, DeprecationWarning, stacklevel=2)

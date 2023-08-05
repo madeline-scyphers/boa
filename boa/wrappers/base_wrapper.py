@@ -16,12 +16,7 @@ from boa.config import Config
 from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metaclasses import WrapperRegister
-from boa.wrappers.wrapper_utils import (
-    initialize_wrapper,
-    load_jsonlike,
-    make_experiment_dir,
-    normalize_config,
-)
+from boa.wrappers.wrapper_utils import initialize_wrapper, make_experiment_dir
 
 logger = get_logger()
 

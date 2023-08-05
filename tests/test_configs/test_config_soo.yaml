@@ -4,11 +4,12 @@ optimization_options:
     objectives:
       - name: rmse
         metric: RootMeanSquaredError
-        weight: 1
         properties:
           obs_file: path
       - metric: R2
-        weight: 2
+    weights:
+      - 1
+      - 2
     minimize: true
 #    outcome_constraints:
 #      - metric:
@@ -26,8 +27,8 @@ optimization_options:
         num_trials: -1
   scheduler:
     total_trials: 10
-    experiment:
-        name: "test_experiment"
+  experiment:
+      name: "test_experiment"
 
 model_options:
   model_specific_options:

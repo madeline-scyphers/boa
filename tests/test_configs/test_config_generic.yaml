@@ -1,13 +1,17 @@
-objectives:
-    # List all of your metrics here,
-    # only list 1 metric for a single objective optimization
-    -   name: rmse
-        metric: RootMeanSquaredError
-    # We can mark metrics as info only just so we can track their results later
-    # without it impacting our optimization
-    -   name: Meanyyy
-        metric: Mean
-        info_only: True
+objective:
+    metrics:
+        # List all of your metrics here,
+        # only list 1 metric for a single objective optimization
+        -   name: rmse
+            metric: RootMeanSquaredError
+        # We can mark metrics as info only just so we can track their results later
+        # without it impacting our optimization
+        -   name: Meanyyy
+            metric: Mean
+            info_only: True
+
+    outcome_constraints: []
+    minimize: true
 
 parameters:
     x1:

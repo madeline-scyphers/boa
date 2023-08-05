@@ -8,18 +8,12 @@ import boa.__main__ as dunder_main
 import boa.scripts.moo as run_moo
 import boa.scripts.run_branin as run_branin
 from boa import cd_and_cd_back, load_yaml, split_shell_command
-from boa.definitions import ROOT
+from boa.definitions import ROOT, TEST_SCRIPTS_DIR
 
 logger = logging.getLogger(__file__)
 
 TEST_DIR = ROOT / "tests"
 TEST_CONFIG_DIR = TEST_DIR / "test_configs"
-
-
-@pytest.fixture
-def synth_config():
-    config_path = TEST_CONFIG_DIR / "test_config_synth.yaml"
-    return load_yaml(config_path)
 
 
 @pytest.fixture
@@ -29,36 +23,56 @@ def generic_config():
 
 
 @pytest.fixture
+def synth_config():
+    config_path = TEST_CONFIG_DIR / "test_config_synth.yaml"
+    return load_yaml(config_path, normalize=False)
+
+
+@pytest.fixture
 def metric_config():
     config_path = TEST_CONFIG_DIR / "test_config_metric.yaml"
-    return load_yaml(config_path)
+    return load_yaml(config_path, normalize=False)
 
 
 @pytest.fixture
 def gen_strat1_config():
     config_path = TEST_CONFIG_DIR / "test_config_gen_strat1.yaml"
-    return load_yaml(config_path)
+    return load_yaml(config_path, normalize=False)
 
 
 @pytest.fixture
 def soo_config():
     """ScalarizedObjective Optimization config"""
     config_path = TEST_CONFIG_DIR / "test_config_soo.yaml"
-    return load_yaml(config_path)
+    return load_yaml(config_path, normalize=False)
 
 
 @pytest.fixture
 def moo_config():
     """MultiObjective Optimization config"""
     config_path = TEST_CONFIG_DIR / "test_config_moo.yaml"
-    return load_yaml(config_path)
+    return load_yaml(config_path, normalize=False)
 
 
 @pytest.fixture
 def pass_through_config():
     """PassThrough Optimization config"""
     config_path = TEST_CONFIG_DIR / "test_config_pass_through_metric.yaml"
-    return load_yaml(config_path)
+    return load_yaml(config_path, normalize=False)
+
+
+@pytest.fixture
+def scripts_moo():
+    """PassThrough Optimization config"""
+    config_path = TEST_SCRIPTS_DIR / "moo.yaml"
+    return load_yaml(config_path, normalize=False)
+
+
+@pytest.fixture
+def scripts_synth_func():
+    """PassThrough Optimization config"""
+    config_path = TEST_SCRIPTS_DIR / "synth_func_config.yaml"
+    return load_yaml(config_path, normalize=False)
 
 
 @pytest.fixture
