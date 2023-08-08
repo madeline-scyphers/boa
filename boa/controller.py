@@ -19,6 +19,7 @@ from ax.service.utils.report_utils import exp_to_df
 
 from boa.__version__ import __version__ as VERSION
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
+from boa.config import Config
 from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
@@ -64,7 +65,7 @@ class Controller:
         self,
         wrapper: Type[BaseWrapper] | BaseWrapper | PathLike,
         config_path: PathLike = None,
-        config: dict = None,
+        config: Config = None,
         **kwargs,
     ):
         if not (config or config_path or isinstance(wrapper, BaseWrapper)):

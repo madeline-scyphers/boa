@@ -1,13 +1,14 @@
-import os
 import sys
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 import click
 
+from boa.config import Config
 from boa.controller import Controller
 from boa.wrappers.script_wrapper import ScriptWrapper
-from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
+from boa.wrappers.wrapper_utils import cd_and_cd_back
 
 
 @click.command()
@@ -95,40 +96,38 @@ def run(config_path, scheduler_path, rel_to_here, wrapper_path=None, experiment_
         if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is
         if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from
     experiment_dir
-        experiment output directory to save BOA run to
+        experiment output directory to save BOA run to, can only be specified during an initial run
+        (when passing in a config_path, not a scheduler_path)
 
     Returns
     -------
         Scheduler
     """
-    config = {}
-    script_options = {}
-    ex_options = {}
+    config: Optional[Config] = None
     if config_path:
         config_path = Path(config_path).resolve()
-        config = load_jsonlike(config_path, normalize=False)
-        script_options = config.get("script_options", {})
-        ex_options = config.get("optimization_options", {})
-        rel_to_here = script_options.get("rel_to_config", False) or script_options.get("rel_to_launch", rel_to_here)
+        config = Config.from_jsonlike(file=config_path, rel_to_config=not rel_to_here)
     if scheduler_path:
         scheduler_path = Path(scheduler_path).resolve()
     if experiment_dir:
         experiment_dir = Path(experiment_dir).resolve()
+        if config:
+            config.script_options.experiment_dir = experiment_dir
     wrapper_path = Path(wrapper_path).resolve() if wrapper_path else None
 
-    if config_path and not rel_to_here:
-        rel_path = config_path.parent
-    else:
-        rel_path = os.getcwd()
-
     if config:
-        options = get_config_options(
-            experiment_dir=experiment_dir, rel_path=rel_path, script_options=script_options, ex_options=ex_options
+        options = dict(
+            append_timestamp=config.script_options.append_timestamp,
+            experiment_dir=config.script_options.experiment_dir,
+            working_dir=config.script_options.working_dir,
+            wrapper_name=config.script_options.wrapper_name,
+            wrapper_path=config.script_options.wrapper_path,
         )
     else:
         options = dict(scheduler_path=scheduler_path, working_dir=Path.cwd())
 
-    sys.path.append(str(rel_path))
+    sys.path.append(str(config.script_options.working_dir))
+    sys.path.append(str(config.script_options.base_path))
     with cd_and_cd_back(options["working_dir"]):
         if scheduler_path:
 
@@ -139,46 +138,12 @@ def run(config_path, scheduler_path, rel_to_here, wrapper_path=None, experiment_
             else:
                 options["wrapper"] = ScriptWrapper
             controller = Controller(
-                config_path=config_path,
+                config=config,
                 **options,
             )
             controller.initialize_scheduler()
         scheduler = controller.run()
         return scheduler
-
-
-def get_config_options(experiment_dir, rel_path, script_options, ex_options):
-    wrapper_name = script_options.get("wrapper_name", "Wrapper")
-    append_timestamp = ex_options.get("append_timestamp") or script_options.get("append_timestamp", True)
-
-    wrapper_path = script_options.get("wrapper_path", "wrapper.py")
-    wrapper_path = _prepend_rel_path(rel_path, wrapper_path) if wrapper_path else wrapper_path
-
-    working_dir = ex_options.get("working_dir") or script_options.get("working_dir", ".")
-    working_dir = _prepend_rel_path(rel_path, working_dir)
-
-    experiment_dir = experiment_dir or ex_options.get("experiment_dir") or script_options.get("experiment_dir")
-    experiment_dir = _prepend_rel_path(rel_path, experiment_dir) if experiment_dir else experiment_dir
-
-    if working_dir:
-        sys.path.append(str(working_dir))
-
-    return dict(
-        append_timestamp=append_timestamp,
-        experiment_dir=experiment_dir,
-        working_dir=working_dir,
-        wrapper_name=wrapper_name,
-        wrapper_path=wrapper_path,
-    )
-
-
-def _prepend_rel_path(rel_path, path):
-    if not path:
-        return path
-    path = Path(path)
-    if not path.is_absolute():
-        path = rel_path / path
-    return path.resolve()
 
 
 if __name__ == "__main__":

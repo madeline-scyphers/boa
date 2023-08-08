@@ -94,15 +94,9 @@ class BaseWrapper(metaclass=WrapperRegister):
         self.model_settings = self._config.model_options
         self.script_options = self._config.script_options
         metric_propertis = {}
-        for metric in self._config.objectives:
+        for metric in self._config.objective.metrics:
             if metric.properties:
-                name = (
-                    metric.get("name")
-                    or metric.get("metric")
-                    or metric.get("boa_metric")
-                    or metric.get("synthetic_metric")
-                    or metric.get("sklearn_metric")
-                )
+                name = metric.name
                 metric_propertis[name] = metric["properties"]
 
         self._metric_properties = metric_propertis

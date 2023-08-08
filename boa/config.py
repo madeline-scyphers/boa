@@ -57,10 +57,17 @@ class Metric:
         default=MetricType.METRIC, converter=converters.optional(_metric_type_converter)
     )
     noise_sd: Optional[float] = 0
-    minimize: Optional[bool] = True
+    minimize: Optional[bool] = field(default=True, kw_only=True)
     info_only: bool = False
     weight: Optional[float] = None
     properties: Optional[dict] = None
+
+    def __init__(self, *args, lower_is_better: Optional[bool] = None, **kwargs):
+        if lower_is_better is not None:
+            if "minimize" in kwargs:
+                raise TypeError("Specify either `lower_is_better` or `minimize` but not both")
+            kwargs["minimize"] = lower_is_better
+        self.__attrs_init__(*args, **kwargs)
 
     def __attrs_post_init__(self):
         if not self.metric and not self.name:
@@ -199,7 +206,9 @@ class Config:
     script_options: Optional[ScriptOptions | dict] = field(
         default=None, converter=_convert_on_dict(lambda d: ScriptOptions(**d))
     )  #
-    parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None  #
+    parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None
+
+    _config_path: Optional[PathLike] = None
 
     @classmethod
     def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None):
@@ -213,12 +222,14 @@ class Config:
             "rel_to_config", fields_dict(ScriptOptions)["rel_to_config"].default
         )
         if rel_to_config:
+            if "script_options" not in config:
+                config["script_options"] = {}
             # we set rel_to_config to True in case it was passed in to override config
             config["script_options"]["rel_to_config"] = True
             config["script_options"]["rel_to_launch"] = False
             config["script_options"]["base_path"] = config_path.parent
 
-        return cls(**config)
+        return cls(**config, config_path=file)
 
     # @classmethod
     # def generate_default_config(cls):
