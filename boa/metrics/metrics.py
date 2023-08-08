@@ -296,11 +296,10 @@ success = []
 
 def get_metric_from_config(config: Metric, instantiate=True, **kwargs) -> ModularMetric:
     kwargs["lower_is_better"] = config.minimize
+    kwargs["metric_name"] = config.metric
     if config.type_ == MetricType.METRIC or config.type_ == MetricType.BOA_METRIC:
-        kwargs["metric_name"] = config.metric
         metric = get_metric_by_class_name(instantiate=instantiate, **config.to_dict(), **kwargs)
     elif config.type_ == MetricType.SKLEARN_METRIC:
-        kwargs["metric_name"] = config.metric
         kwargs["sklearn_"] = True
         metric = get_metric_by_class_name(instantiate=instantiate, **config.to_dict(), **kwargs)
     elif config.type_ == MetricType.SYNTHETIC_METRIC:

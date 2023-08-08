@@ -26,7 +26,6 @@ TEST_DIR = ROOT / "tests"
 def test_save_load_scheduler_branin(branin_main_run, tmp_path):
     file_out = tmp_path / "scheduler.json"
     scheduler = branin_main_run
-    config = scheduler.runner.wrapper.config
     scheduler_to_json_file(scheduler, file_out)
 
     pre_num_trials = len(scheduler.experiment.trials)
@@ -62,7 +61,6 @@ def test_can_pass_custom_wrapper_path_when_loading_scheduler(branin_main_run, tm
 
 def test_can_pass_custom_wrapper_path_when_loading_scheduler_from_cli(stand_alone_opt_package_run, tmp_path_factory):
     scheduler = stand_alone_opt_package_run
-    wrapper = scheduler.experiment.runner.wrapper
 
     temp_dir = tmp_path_factory.mktemp("temp_dir")
     file_out = temp_dir / "scheduler.json"

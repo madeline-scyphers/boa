@@ -5,7 +5,7 @@ from dataclasses import asdict as dc_asdict
 from dataclasses import is_dataclass
 from enum import Enum
 from types import ModuleType
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import ax.early_stopping.strategies as early_stopping_strats
 import ax.global_stopping.strategies as global_stopping_strats
@@ -37,6 +37,8 @@ class ToDict:
 def _convert_on_type(converter, type_, default_if_none=None) -> Any:
     def type_converter(val):
         if default_if_none is not None and val is None:
+            if isinstance(default_if_none, Callable):
+                return default_if_none()
             return default_if_none
         if isinstance(val, type_):
             return converter(val)
@@ -45,8 +47,8 @@ def _convert_on_type(converter, type_, default_if_none=None) -> Any:
     return type_converter
 
 
-def _convert_on_dict(converter):
-    return _convert_on_type(converter=converter, type_=dict)
+def _convert_on_dict(converter, *args, **kwargs):
+    return _convert_on_type(converter=converter, type_=dict, *args, **kwargs)
 
 
 class MetricType(Enum):
@@ -223,13 +225,13 @@ class Config(ToDict):
         default=None, converter=converters.optional(_gen_step_converter)
     )  #
     scheduler: Optional[SchedulerOptions] = field(
-        factory=SchedulerOptions, converter=_convert_on_dict(_scheduler_converter)
+        default=None, converter=_convert_on_dict(_scheduler_converter, default_if_none=SchedulerOptions)
     )
     name: str = "boa_runs"
     parameter_constraints: list[str] = Factory(list)  #
     model_options: Optional[dict | list] = None  #
     script_options: Optional[ScriptOptions | dict] = field(
-        factory=ScriptOptions, converter=_convert_on_dict(lambda d: ScriptOptions(**d))
+        default=None, converter=_convert_on_dict(lambda d: ScriptOptions(**d), default_if_none=ScriptOptions)
     )  #
     parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None
 
@@ -242,7 +244,7 @@ class Config(ToDict):
 
         config = cls.convert_deprecated(configd=config)
 
-        script_options = config.get("script_options", {})
+        script_options = config.get("script_options") or {}
         rel_to_config = rel_to_config or script_options.get(
             "rel_to_config", fields_dict(ScriptOptions)["rel_to_config"].default
         )

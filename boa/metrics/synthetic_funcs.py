@@ -39,7 +39,7 @@ hartmann4 = from_botorch(Hartmann4())
 
 
 def get_synth_func(
-    synthetic_metric: str,
+    metric_name: str,
 ) -> (
     botorch.test_functions.synthetic.SyntheticTestFunction | ax.utils.measurement.synthetic_functions.SyntheticFunction
 ):
@@ -51,15 +51,15 @@ def get_synth_func(
     ]
     for module in synthetic_funcs_modules:
         try:
-            return getattr(module, synthetic_metric)
+            return getattr(module, metric_name)
         except AttributeError:
             continue
     # If we don't find the class by the end of the modules, raise attribute error
-    raise AttributeError(f"boa synthetic function: {synthetic_metric} not found in modules: {synthetic_funcs_modules}!")
+    raise AttributeError(f"boa synthetic function: {metric_name} not found in modules: {synthetic_funcs_modules}!")
 
 
-def setup_synthetic_metric(synthetic_metric, instantiate=True, **kw):
-    metric = get_synth_func(synthetic_metric)
+def setup_synthetic_metric(metric_name, instantiate=True, **kw):
+    metric = get_synth_func(metric_name)
 
     if isclass(metric) and issubclass(metric, ax.utils.measurement.synthetic_functions.SyntheticFunction):
         metric = metric()  # if they pass a ax synthetic metric class, not instance
@@ -68,6 +68,6 @@ def setup_synthetic_metric(synthetic_metric, instantiate=True, **kw):
         metric = from_botorch(botorch_synthetic_function=metric())
 
     def modular_synthetic_metric(**kwargs):
-        return ModularMetric(**{"name": synthetic_metric, **kw, **kwargs, "metric_to_eval": metric})
+        return ModularMetric(**{"name": metric_name, **kw, **kwargs, "metric_to_eval": metric})
 
     return modular_synthetic_metric(**kw) if instantiate else modular_synthetic_metric

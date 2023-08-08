@@ -4,8 +4,9 @@ from boa import boa_params_to_wpr, normalize_config
 
 
 def test_wpr_params_to_boa(denormed_param_parse_config):
-    parameter_keys = denormed_param_parse_config["optimization_options"]["parameter_keys"]
-    config = normalize_config(denormed_param_parse_config, parameter_keys)
+    # parameter_keys = denormed_param_parse_config.parameter_keys
+    config = denormed_param_parse_config
+    # config = normalize_config(denormed_param_parse_config, parameter_keys)
     # How the parameter names should
     names = {
         "params_a_x2",
@@ -19,7 +20,7 @@ def test_wpr_params_to_boa(denormed_param_parse_config):
         "params2_1_0_x1",
         "params2_1_0_x2",
     }
-    for key in config["parameters"]:
+    for key in config.parameters:
         assert key["name"] in names
     assert len(config["parameters"]) == len(names)
 
