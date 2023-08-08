@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import os
 import pathlib
 from enum import Enum
 from types import ModuleType
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import ax.early_stopping.strategies as early_stopping_strats
 import ax.global_stopping.strategies as global_stopping_strats
-from attrs import Factory, converters, define, field
+from attrs import Factory, converters, define, field, fields_dict
 from ax.modelbridge.generation_node import GenerationStep
 from ax.modelbridge.registry import Models
 from ax.service.scheduler import SchedulerOptions
@@ -18,7 +17,20 @@ from boa.definitions import PathLike
 from boa.utils import deprecation
 from boa.wrappers.wrapper_utils import load_jsonlike
 
-__all__ = ["Objective", "Metric", "ScriptOptions", "Config"]
+__all__ = ["Objective", "Metric", "MetricType", "ScriptOptions", "Config"]
+
+
+def _convert_on_type(converter, type_) -> Any:
+    def type_converter(val):
+        if isinstance(val, type_):
+            return converter(val)
+        return val
+
+    return type_converter
+
+
+def _convert_on_dict(converter):
+    return _convert_on_type(converter=converter, type_=dict)
 
 
 class MetricType(Enum):
@@ -57,9 +69,16 @@ class Metric:
             self.name = self.metric
 
 
+def _metric_converter(ls: list[Metric | dict]) -> list[Metric]:
+    for i, metric in enumerate(ls):
+        if isinstance(metric, dict):
+            ls[i] = Metric(**metric)
+    return ls
+
+
 @define
 class Objective:
-    metrics: list[Metric] = field(converter=lambda lst: [Metric(**metric) for metric in lst])
+    metrics: list[Metric] = field(converter=_metric_converter)
     outcome_constraints: Optional[list[str]] = None
     objective_thresholds: Optional[list[str]] = None
     minimize: Optional[bool] = None
@@ -69,7 +88,7 @@ class Objective:
 class ScriptOptions:
     rel_to_config: Optional[bool] = None
     rel_to_launch: Optional[bool] = True
-    base_path: Optional[PathLike] = field(factory=os.getcwd, converter=pathlib.Path)
+    base_path: Optional[PathLike] = None
     wrapper_name: str = "Wrapper"
     append_timestamp: bool = True
     wrapper_path: str = "wrapper.py"
@@ -80,6 +99,18 @@ class ScriptOptions:
     def __attrs_post_init__(self):
         if (self.rel_to_config and self.rel_to_launch) or (not self.rel_to_config and not self.rel_to_launch):
             raise TypeError("Must specify exactly one of rel_to_here or rel_to_config")
+
+        if not self.base_path:
+            if self.rel_to_config:
+                raise TypeError(
+                    "Must specify path to config directory in `ScriptOptions` dataclass when using rel-to-config"
+                    "as the `base_path` argument."
+                    "If you are an external user, the easiest way to ensure this, is to use the Config.from_jsonlike"
+                    "class constructor, with either `rel_to_config` set to true in the config file or rel_to_config"
+                    "set to true as an argument (to override what is in the config). This will automatically set "
+                    "the `base_path` argument for `ScriptOptions`."
+                )
+            self.base_path = pathlib.Path.cwd()
 
         self.wrapper_path = self._make_path_absolute(self.base_path, self.wrapper_path)
         self.working_dir = self._make_path_absolute(self.base_path, self.working_dir)
@@ -95,13 +126,18 @@ class ScriptOptions:
         return path.resolve()
 
 
-def _gen_step_converter(steps: Optional[list]) -> list[GenerationStep]:
-    for step in steps:
+def _gen_step_converter(steps: Optional[list[dict | GenerationStep]]) -> list[GenerationStep]:
+    gs = []
+    for i, step in enumerate(steps):
+        if isinstance(step, GenerationStep):
+            gs.append(step)
+            continue
         try:
             step["model"] = Models[step["model"]]
         except KeyError:
             step["model"] = Models(step["model"])
-    return [GenerationStep(**step) for step in steps]
+        gs.append(GenerationStep(**step))
+    return gs
 
 
 def _load_stopping_strategy(d: dict, module: ModuleType):
@@ -151,25 +187,37 @@ def _parameter_normalization(
 
 @define
 class Config:
-    # objective: list[Objective] = field(converter=lambda ls: [Objective(**obj) for obj in ls])
-    objective: Objective = field(converter=lambda d: Objective(**d))  #
+    objective: Objective = field(converter=_convert_on_dict(lambda d: Objective(**d)))  #
     parameters: tuple[TParameterRepresentation] = field(converter=_parameter_normalization)  #
     generation_steps: Optional[list[GenerationStep]] = field(
         default=None, converter=converters.optional(_gen_step_converter)
     )  #
-    scheduler: Optional[SchedulerOptions] = field(default=None, converter=converters.optional(_scheduler_converter))
+    scheduler: Optional[SchedulerOptions] = field(default=None, converter=_convert_on_dict(_scheduler_converter))
     name: str = "boa_runs"
     parameter_constraints: list[str] = Factory(list)  #
     model_options: Optional[dict | list] = None  #
-    script_options: Optional[ScriptOptions] = field(
-        default=None, converter=converters.optional(lambda d: ScriptOptions(**d))
+    script_options: Optional[ScriptOptions | dict] = field(
+        default=None, converter=_convert_on_dict(lambda d: ScriptOptions(**d))
     )  #
     parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None  #
 
     @classmethod
-    def from_jsonlike(cls, file):
+    def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None):
         config_path = pathlib.Path(file).resolve()
         config = load_jsonlike(config_path, normalize=False)
+
+        config = cls.convert_deprecated(configd=config)
+
+        script_options = config.get("script_options", {})
+        rel_to_config = rel_to_config or script_options.get(
+            "rel_to_config", fields_dict(ScriptOptions)["rel_to_config"].default
+        )
+        if rel_to_config:
+            # we set rel_to_config to True in case it was passed in to override config
+            config["script_options"]["rel_to_config"] = True
+            config["script_options"]["rel_to_launch"] = False
+            config["script_options"]["base_path"] = config_path.parent
+
         return cls(**config)
 
     # @classmethod
@@ -177,9 +225,9 @@ class Config:
     #     ...
 
     @classmethod
-    def from_deprecated(cls, configd: dict):
+    def convert_deprecated(cls, configd: dict) -> dict:
         if "optimization_options" not in configd:
-            return cls(**configd)
+            return configd
         deprecation(
             "Config format is deprecated, consult documentation for current format to write your configuration file.",
             "1.0",
@@ -234,10 +282,14 @@ class Config:
         if "name" in opt_ops.get("experiment", {}):
             config["name"] = opt_ops["experiment"]["name"]
 
-        return cls(**config)
+        return config
+
+    @classmethod
+    def from_deprecated(cls, configd: dict):
+        return cls(**cls.convert_deprecated(configd=configd))
 
 
 if __name__ == "__main__":
     from tests.conftest import TEST_CONFIG_DIR
 
-    __c = Config.from_jsonlike(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml"))
+    c = Config.from_jsonlike(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml"))
