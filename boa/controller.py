@@ -181,11 +181,7 @@ class Controller:
 
         try:
             final_msg = "Trials Completed!"
-            if "trials" in self.config["optimization_options"]:
-                n_trials = self.config["optimization_options"]["trials"]
-                scheduler.run_n_trials(n_trials)
-            else:
-                scheduler.run_all_trials()
+            scheduler.run_all_trials()
         except BaseException as e:
             final_msg = f"Error Completing because of {repr(e)}"
             raise

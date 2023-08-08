@@ -282,9 +282,7 @@ class ScriptWrapper(BaseWrapper):
             func_names = [func_names]
         ran_cmds = False
         for func_name in func_names:
-            run_cmd = self.config.get("script_options", {}).get(f"{func_name}") or self.config.get(
-                "script_options", {}
-            ).get(f"{func_name}_run_cmd")
+            run_cmd = getattr(self.config.script_options, func_name)
             if run_cmd:
                 ran_cmds = True
                 # TODO BaseTrial doesn't have arm property, just arms.

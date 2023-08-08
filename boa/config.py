@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import pathlib
+from dataclasses import asdict as dc_asdict
+from dataclasses import is_dataclass
 from enum import Enum
 from types import ModuleType
 from typing import Any, Optional, Union
 
 import ax.early_stopping.strategies as early_stopping_strats
 import ax.global_stopping.strategies as global_stopping_strats
+from attr import asdict
 from attrs import Factory, converters, define, field, fields_dict
 from ax.modelbridge.generation_node import GenerationStep
 from ax.modelbridge.registry import Models
@@ -20,8 +23,21 @@ from boa.wrappers.wrapper_utils import load_jsonlike
 __all__ = ["Objective", "Metric", "MetricType", "ScriptOptions", "Config"]
 
 
-def _convert_on_type(converter, type_) -> Any:
+@define
+class ToDict:
+    def to_dict(self):
+        def vs(inst, attrib, val):
+            if is_dataclass(val):
+                return dc_asdict(val)
+            return val
+
+        return asdict(self, value_serializer=vs)
+
+
+def _convert_on_type(converter, type_, default_if_none=None) -> Any:
     def type_converter(val):
+        if default_if_none is not None and val is None:
+            return default_if_none
         if isinstance(val, type_):
             return converter(val)
         return val
@@ -38,6 +54,7 @@ class MetricType(Enum):
     BOA_METRIC = "boa_metric"
     SKLEARN_METRIC = "sklearn_metric"
     SYNTHETIC_METRIC = "synthetic_metric"
+    PASSTHROUGH = "PassThrough"
 
 
 def _metric_type_converter(type_: MetricType | str) -> MetricType:
@@ -50,7 +67,7 @@ def _metric_type_converter(type_: MetricType | str) -> MetricType:
 
 
 @define
-class Metric:
+class Metric(ToDict):
     metric: Optional[str] = None
     name: Optional[str] = field(default=None, converter=converters.optional(str))
     type_: Optional[MetricType | str] = field(
@@ -71,9 +88,11 @@ class Metric:
 
     def __attrs_post_init__(self):
         if not self.metric and not self.name:
-            raise TypeError("Must specify either metric name or metric")
+            raise TypeError("Must specify at least metric name or metric")
         if self.name is None:
             self.name = self.metric
+        elif self.metric is None:
+            self.type_ = MetricType.PASSTHROUGH
 
 
 def _metric_converter(ls: list[Metric | dict]) -> list[Metric]:
@@ -84,15 +103,15 @@ def _metric_converter(ls: list[Metric | dict]) -> list[Metric]:
 
 
 @define
-class Objective:
+class Objective(ToDict):
     metrics: list[Metric] = field(converter=_metric_converter)
-    outcome_constraints: Optional[list[str]] = None
-    objective_thresholds: Optional[list[str]] = None
+    outcome_constraints: Optional[list[str]] = Factory(list)
+    objective_thresholds: Optional[list[str]] = Factory(list)
     minimize: Optional[bool] = None
 
 
 @define
-class ScriptOptions:
+class ScriptOptions(ToDict):
     rel_to_config: Optional[bool] = None
     rel_to_launch: Optional[bool] = True
     base_path: Optional[PathLike] = None
@@ -102,6 +121,10 @@ class ScriptOptions:
     working_dir: str = "."
     experiment_dir: Optional[PathLike] = None
     output_dir: Optional[PathLike] = None
+    write_configs: Optional[str] = None
+    run_model: Optional[str] = None
+    set_trial_status: Optional[str] = None
+    fetch_trial_data: Optional[str] = None
 
     def __attrs_post_init__(self):
         if (self.rel_to_config and self.rel_to_launch) or (not self.rel_to_config and not self.rel_to_launch):
@@ -193,18 +216,20 @@ def _parameter_normalization(
 
 
 @define
-class Config:
+class Config(ToDict):
     objective: Objective = field(converter=_convert_on_dict(lambda d: Objective(**d)))  #
-    parameters: tuple[TParameterRepresentation] = field(converter=_parameter_normalization)  #
+    parameters: list[TParameterRepresentation] = field(converter=_parameter_normalization)  #
     generation_steps: Optional[list[GenerationStep]] = field(
         default=None, converter=converters.optional(_gen_step_converter)
     )  #
-    scheduler: Optional[SchedulerOptions] = field(default=None, converter=_convert_on_dict(_scheduler_converter))
+    scheduler: Optional[SchedulerOptions] = field(
+        factory=SchedulerOptions, converter=_convert_on_dict(_scheduler_converter)
+    )
     name: str = "boa_runs"
     parameter_constraints: list[str] = Factory(list)  #
     model_options: Optional[dict | list] = None  #
     script_options: Optional[ScriptOptions | dict] = field(
-        default=None, converter=_convert_on_dict(lambda d: ScriptOptions(**d))
+        factory=ScriptOptions, converter=_convert_on_dict(lambda d: ScriptOptions(**d))
     )  #
     parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None
 
@@ -287,6 +312,10 @@ class Config:
         #  copy over scheduler
         if "scheduler" in opt_ops:
             config["scheduler"] = opt_ops["scheduler"]
+        if "trials" in opt_ops:
+            if "scheduler" not in config:
+                config["scheduler"] = {}
+            config["scheduler"]["total_trials"] = opt_ops["trials"]
 
         #####################################################
         #  copy over experiment name

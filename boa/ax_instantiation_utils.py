@@ -10,7 +10,7 @@ Utility functions to instantiate Ax objects
 from __future__ import annotations
 
 import copy
-import time
+from typing import Optional
 
 from ax import Experiment, Runner, SearchSpace
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
@@ -18,8 +18,9 @@ from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrateg
 from ax.modelbridge.registry import Models
 from ax.modelbridge.torch import TorchModelBridge
 from ax.models.torch.botorch_moo import MultiObjectiveBotorchModel
-from ax.service.scheduler import SchedulerOptions
+from ax.service.utils.instantiation import TParameterRepresentation
 
+from boa.config import Config
 from boa.instantiation_base import BoaInstantiationBase
 from boa.logger import get_logger
 from boa.scheduler import Scheduler
@@ -30,7 +31,7 @@ logger = get_logger()
 
 
 def instantiate_search_space_from_json(
-    parameters: list | None = None, parameter_constraints: list | None = None
+    parameters: list[TParameterRepresentation] = None, parameter_constraints: Optional[list[str]] = None
 ) -> SearchSpace:
     parameters = parameters if parameters is not None else []
     parameter_constraints = parameter_constraints if parameter_constraints is not None else []
@@ -59,36 +60,29 @@ def generation_strategy_from_config(config: dict, experiment: Experiment = None)
     return gs
 
 
-def choose_generation_strategy_from_experiment(experiment: Experiment, config: dict, **kwargs) -> GenerationStrategy:
+def choose_generation_strategy_from_experiment(experiment: Experiment, config: Config, **kwargs) -> GenerationStrategy:
     return choose_generation_strategy(
         search_space=experiment.search_space,
         experiment=experiment,
         optimization_config=experiment.optimization_config,
-        **{**get_dictionary_from_callable(choose_generation_strategy, config), **kwargs},
+        **kwargs,
     )
 
 
 def get_scheduler(
     experiment: Experiment,
-    generation_strategy: GenerationStrategy = None,
-    scheduler_options: SchedulerOptions = None,
-    config: dict = None,
+    config: Config = None,
     **kwargs,
 ) -> Scheduler:
-    scheduler_options = scheduler_options or SchedulerOptions(**config["optimization_options"]["scheduler"])
-    if generation_strategy is None:
-        if (
-            "total_trials" in config["optimization_options"]["scheduler"]
-            and "num_trials" not in config["optimization_options"]["generation_strategy"]
-        ):
-            config["optimization_options"]["generation_strategy"]["num_trials"] = config["optimization_options"][
-                "scheduler"
-            ]["total_trials"]
-        generation_strategy = get_generation_strategy(
-            config=config["optimization_options"]["generation_strategy"], experiment=experiment
-        )
 
-        _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy)
+    if config.generation_steps is None:
+        if config.scheduler and config.scheduler.total_trials:
+            kwargs["num_trials"] = config.scheduler.total_trials
+        generation_strategy = choose_generation_strategy_from_experiment(experiment=experiment, config=config, **kwargs)
+
+    else:
+        generation_strategy = GenerationStrategy(steps=config.generation_steps)
+    _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy)
     # db_settings = DBSettings(
     #     url="sqlite:///foo.db",
     #     decoder=Decoder(config=SQAConfig()),
@@ -102,37 +96,30 @@ def get_scheduler(
     return Scheduler(
         experiment=experiment,
         generation_strategy=generation_strategy,
-        options=scheduler_options,
+        options=config.scheduler,
         # db_settings=db_settings,
     )
 
 
-def get_experiment(config: dict, runner: Runner, wrapper: BaseWrapper = None, **kwargs):
-    opt_options = config["optimization_options"]
+def get_experiment(config: Config, runner: Runner, wrapper: BaseWrapper = None, **kwargs):
 
-    search_space = instantiate_search_space_from_json(config.get("parameters"), config.get("parameter_constraints"))
+    search_space = instantiate_search_space_from_json(config.parameters, config.parameter_constraints)
 
     info_only_metrics = BoaInstantiationBase.get_metrics_from_obj_config(
-        **opt_options["objective_options"], wrapper=wrapper, info_only=True
+        config.objective, wrapper=wrapper, info_only=True
     )
 
     optimization_config = BoaInstantiationBase.make_optimization_config(
-        **get_dictionary_from_callable(BoaInstantiationBase.make_optimization_config, opt_options["objective_options"]),
+        config.objective,
         wrapper=wrapper,
     )
-
-    if "name" not in opt_options["experiment"]:
-        if "name" in opt_options:
-            opt_options["experiment"]["name"] = opt_options["name"]
-        else:
-            opt_options["experiment"]["name"] = time.time()
 
     exp = Experiment(
         search_space=search_space,
         optimization_config=optimization_config,
         runner=runner,
         tracking_metrics=info_only_metrics,
-        **get_dictionary_from_callable(Experiment.__init__, opt_options["experiment"]),
+        name=config.name,
     )
     # we use getattr here in case someone subclassed without the proper super calls
     if not getattr(wrapper, "metric_names", None):

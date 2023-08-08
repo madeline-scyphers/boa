@@ -156,6 +156,10 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     def is_available_while_running(cls) -> bool:
         return False
 
+    @property
+    def weight(self):
+        return self._weight
+
     def fetch_trial_data(self, trial: BaseTrial, **kwargs):
         wrapper_kwargs = (
             self.wrapper._fetch_trial_data(

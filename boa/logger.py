@@ -67,7 +67,7 @@ def build_stream_handler(level: int = DEFAULT_LOG_LEVEL) -> logging.StreamHandle
     return handler
 
 
-def build_file_handler(filename: PathLike, level: int = DEFAULT_LOG_LEVEL) -> logging.handlers.QueueHandler:
+def build_file_handler(filename: PathLike, level: int = DEFAULT_LOG_LEVEL) -> logging.FileHandler:
     handler = logging.FileHandler(filename)
     handler.setLevel(level=level)
     formatter = get_formatter()

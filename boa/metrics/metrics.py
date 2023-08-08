@@ -94,6 +94,7 @@ from typing import Iterable, Type
 
 import numpy as np
 
+from boa.config import Metric, MetricType
 from boa.metrics.metric_funcs import get_sklearn_func
 from boa.metrics.metric_funcs import (
     normalized_root_mean_squared_error as normalized_root_mean_squared_error_,
@@ -293,28 +294,19 @@ normalized_root_mean_squared_error = NormalizedRootMeanSquaredError
 success = []
 
 
-def get_metric_from_config(config, instantiate=True, **kwargs):
-    if config.get("metric") and isinstance(config["metric"], dict):  # backwards compatibility format
-        config = config["metric"]
-    # If no name is defined, parse out the name to whatever metric they are defining
-    if "name" not in config and "name" not in kwargs:
-        kwargs["name"] = (
-            config.get("metric")
-            or config.get("boa_metric")
-            or config.get("sklearn_metric")
-            or config.get("synthetic_metric")
-        )
-    if config.get("boa_metric") or config.get("metric"):
-        kwargs["metric_name"] = config.get("boa_metric") or config.get("metric")
-        metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
-    elif config.get("sklearn_metric"):
-        kwargs["metric_name"] = config["sklearn_metric"]
+def get_metric_from_config(config: Metric, instantiate=True, **kwargs) -> ModularMetric:
+    kwargs["lower_is_better"] = config.minimize
+    if config.type_ == MetricType.METRIC or config.type_ == MetricType.BOA_METRIC:
+        kwargs["metric_name"] = config.metric
+        metric = get_metric_by_class_name(instantiate=instantiate, **config.to_dict(), **kwargs)
+    elif config.type_ == MetricType.SKLEARN_METRIC:
+        kwargs["metric_name"] = config.metric
         kwargs["sklearn_"] = True
-        metric = get_metric_by_class_name(instantiate=instantiate, **config, **kwargs)
-    elif config.get("synthetic_metric"):
-        metric = setup_synthetic_metric(instantiate=instantiate, **config, **kwargs)
-    elif config["name"]:  # only name but no metric type
-        metric = PassThroughMetric(**config, **kwargs)
+        metric = get_metric_by_class_name(instantiate=instantiate, **config.to_dict(), **kwargs)
+    elif config.type_ == MetricType.SYNTHETIC_METRIC:
+        metric = setup_synthetic_metric(instantiate=instantiate, **config.to_dict(), **kwargs)
+    elif config.type_ == MetricType.PASSTHROUGH:  # only name but no metric type
+        metric = PassThroughMetric(**config.to_dict(), **kwargs)
     else:
         # TODO link to docs for configuration when it exists
         raise KeyError("No valid configuration for metric found.")
