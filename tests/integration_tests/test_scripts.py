@@ -1,4 +1,4 @@
-from boa import Config, get_metric_from_config, get_trial_dir
+from boa import BOAConfig, get_metric_from_config, get_trial_dir
 
 
 def test_exp_dir_exists(branin_main_run):
@@ -30,7 +30,7 @@ def test_output_file_exists(branin_main_run):
 
 def test_df(branin_main_run):
     scheduler = branin_main_run
-    config: Config = scheduler.runner.wrapper.config
+    config: BOAConfig = scheduler.runner.wrapper.config
     config_metric = config.objective.metrics[0]
 
     df = scheduler.experiment.fetch_data().df

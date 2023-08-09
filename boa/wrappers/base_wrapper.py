@@ -12,7 +12,7 @@ import pathlib
 from ax.core.base_trial import BaseTrial
 from ax.storage.json_store.encoder import object_to_json
 
-from boa.config import Config
+from boa.config import BOAConfig
 from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metaclasses import WrapperRegister
@@ -32,7 +32,7 @@ class BaseWrapper(metaclass=WrapperRegister):
     kwargs
     """
 
-    def __init__(self, config_path: PathLike = None, config: Config = None, setup=True, *args, **kwargs):
+    def __init__(self, config_path: PathLike = None, config: BOAConfig = None, setup=True, *args, **kwargs):
         self.config_path = config_path
         self._experiment_dir = None
         self._working_dir = None
@@ -82,7 +82,7 @@ class BaseWrapper(metaclass=WrapperRegister):
             self._metric_names = []
 
     @property
-    def config(self) -> Config:
+    def config(self) -> BOAConfig:
         return self._config
 
     @config.setter
@@ -139,7 +139,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         """Path of file that the Wrapper class is defined in"""
         return cls._path
 
-    def load_config(self, config_path: PathLike, *args, **kwargs) -> Config:
+    def load_config(self, config_path: PathLike, *args, **kwargs) -> BOAConfig:
         """
         Load config takes a configuration path of either a JSON file or a YAML file and returns
         your configuration dataclass.
@@ -159,11 +159,11 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Returns
         -------
-        Config
+        BOAConfig
             loaded_config
         """
         try:
-            config = Config.from_jsonlike(config_path)
+            config = BOAConfig.from_jsonlike(config_path)
         except ValueError as e:  # return empty config if not json or yaml file
             raise e
 
@@ -352,7 +352,11 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         for name in self._metric_cache[trial.index].keys():
             if self.metric_names and name not in self.metric_names:
-                logger.warning(f"found extra returned metric: {name} in returned metrics from fetch_trial_data")
+                raise ValueError(
+                    f"found extra returned metric: {name} in returned metrics from fetch_trial_data"
+                    "Check the name of your metrics in your config file line up with the metric names "
+                    "you return from your wrapper class or wrapper script."
+                )
         return self._metric_cache[trial.index][metric_name]
 
     def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
@@ -488,7 +492,6 @@ class BaseWrapper(metaclass=WrapperRegister):
                 working_dir=kwargs.get("working_dir"),
                 output_dir=kwargs.get("output_dir"),
                 metric_names=kwargs.get("metric_names"),
-                config=kwargs.get("config", {}),  # TODO this might need work for converting to dataclasses
             ),
             setup=False,
             **kwargs,

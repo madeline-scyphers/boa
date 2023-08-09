@@ -17,6 +17,13 @@ class _ConstructPathlib:
 
 def _add_common_encodes_and_decodes():
     """Add common encodes and decodes all at once when function is ran"""
+    from boa.config import (
+        BOAConfig,
+        BOAMetric,
+        BOAObjective,
+        BOAScriptOptions,
+        MetricType,
+    )
     from boa.wrappers.base_wrapper import BaseWrapper
     from boa.wrappers.script_wrapper import ScriptWrapper
 
@@ -29,7 +36,14 @@ def _add_common_encodes_and_decodes():
         pathlib.PureWindowsPath,
     ]:
         CORE_ENCODER_REGISTRY[obj] = lambda p: dict(__type=obj.__name__, pathsegments=[str(p)])
-    CORE_DECODER_REGISTRY[obj.__name__] = _ConstructPathlib
+        CORE_DECODER_REGISTRY[obj.__name__] = _ConstructPathlib
+
+    for cls in [BOAObjective, BOAMetric, BOAScriptOptions, BOAConfig]:
+        CORE_ENCODER_REGISTRY[cls] = cls.to_dict
+        CORE_DECODER_REGISTRY[cls.__name__] = cls
+
+    # CORE_ENCODER_REGISTRY[MetricType] = str(MetricType)
+    CORE_DECODER_REGISTRY[MetricType.__name__] = MetricType
 
     CORE_ENCODER_REGISTRY[BaseWrapper] = BaseWrapper.to_dict
     CORE_DECODER_REGISTRY[BaseWrapper.__name__] = BaseWrapper.from_dict

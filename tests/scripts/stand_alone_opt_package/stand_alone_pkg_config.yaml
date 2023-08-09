@@ -9,10 +9,10 @@ optimization_options:
     generation_strategy:
         steps:
             - model: SOBOL
-              num_trials: 2
+              num_trials: 5
             - model: GPEI
               num_trials: -1
-    trials: 5
+    n_trials: 10
 #    working_dir: .
 #    experiment_dir: ...
 #    append_timestamp: True

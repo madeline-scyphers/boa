@@ -94,7 +94,7 @@ from typing import Iterable, Type
 
 import numpy as np
 
-from boa.config import Metric, MetricType
+from boa.config import BOAMetric, MetricType
 from boa.metrics.metric_funcs import get_sklearn_func
 from boa.metrics.metric_funcs import (
     normalized_root_mean_squared_error as normalized_root_mean_squared_error_,
@@ -294,7 +294,7 @@ normalized_root_mean_squared_error = NormalizedRootMeanSquaredError
 success = []
 
 
-def get_metric_from_config(config: Metric, instantiate=True, **kwargs) -> ModularMetric:
+def get_metric_from_config(config: BOAMetric, instantiate=True, **kwargs) -> ModularMetric:
     kwargs["lower_is_better"] = config.minimize
     kwargs["metric_name"] = config.metric
     if config.type_ == MetricType.METRIC or config.type_ == MetricType.BOA_METRIC:

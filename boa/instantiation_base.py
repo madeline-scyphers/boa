@@ -4,7 +4,7 @@ from ax import Objective as AxObjective
 from ax.core.objective import ScalarizedObjective
 from ax.service.utils.instantiation import InstantiationBase
 
-from boa.config import Metric, Objective
+from boa.config import BOAMetric, BOAObjective
 from boa.metrics.metrics import get_metric_from_config
 from boa.metrics.modular_metric import ModularMetric
 
@@ -13,7 +13,7 @@ class BoaInstantiationBase(InstantiationBase):
     @classmethod
     def make_optimization_config(
         cls,
-        objective: Objective,
+        objective: BOAObjective,
         status_quo_defined: bool = False,
         **kwargs,
     ):
@@ -24,12 +24,12 @@ class BoaInstantiationBase(InstantiationBase):
         )
 
     @classmethod
-    def get_metric_from_metric_config(cls, metric_conf: Metric, **kwargs) -> ModularMetric:
+    def get_metric_from_metric_config(cls, metric_conf: BOAMetric, **kwargs) -> ModularMetric:
         metric = get_metric_from_config(metric_conf, **kwargs)
         return metric
 
     @classmethod
-    def get_metrics_from_obj_config(cls, objective: Objective, info_only=False, **kwargs) -> list[ModularMetric]:
+    def get_metrics_from_obj_config(cls, objective: BOAObjective, info_only=False, **kwargs) -> list[ModularMetric]:
         """"""
         metrics = []
         for metric_conf in objective.metrics:
@@ -44,7 +44,7 @@ class BoaInstantiationBase(InstantiationBase):
         return metrics
 
     @classmethod
-    def make_objectives(cls, objective: Objective, **kwargs) -> list[AxObjective]:
+    def make_objectives(cls, objective: BOAObjective, **kwargs) -> list[AxObjective]:
 
         metrics = cls.get_metrics_from_obj_config(objective, **kwargs)
 

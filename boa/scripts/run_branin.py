@@ -11,7 +11,7 @@ except ImportError:
     from .script_wrappers import Wrapper
 
 from boa import (
-    Config,
+    BOAConfig,
     WrappedJobRunner,
     get_dt_now_as_str,
     get_experiment,
@@ -30,7 +30,7 @@ def run_opt(exp_dir):
     config_file = Path(__file__).parent / "synth_func_config.yaml"
     start = time.time()
     wrapper = Wrapper(config_path=config_file, experiment_dir=exp_dir)
-    config: Config = wrapper.config
+    config: BOAConfig = wrapper.config
     experiment_dir = wrapper.experiment_dir
     # Copy the experiment config to the experiment directory
     shutil.copyfile(config_file, experiment_dir / Path(config_file).name)

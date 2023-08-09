@@ -3,7 +3,16 @@ import sys
 
 import numpy as np
 import pytest
+from attrs import fields
 from ax import Experiment, Objective, OptimizationConfig
+from ax.storage.json_store.decoder import object_from_json
+from ax.storage.json_store.encoder import object_to_json
+from ax.storage.json_store.registry import (
+    CORE_CLASS_DECODER_REGISTRY,
+    CORE_CLASS_ENCODER_REGISTRY,
+    CORE_DECODER_REGISTRY,
+    CORE_ENCODER_REGISTRY,
+)
 
 import boa.__main__ as dunder_main
 from boa import (
@@ -21,6 +30,42 @@ from boa.__version__ import __version__
 from boa.definitions import ROOT
 
 TEST_DIR = ROOT / "tests"
+
+
+def test_save_load_config(
+    generic_config,
+    synth_config,
+    metric_config,
+    gen_strat1_config,
+    soo_config,
+    moo_config,
+    pass_through_config,
+    scripts_moo,
+    scripts_synth_func,
+):
+    for config in [
+        generic_config,
+        synth_config,
+        metric_config,
+        gen_strat1_config,
+        soo_config,
+        moo_config,
+        pass_through_config,
+        scripts_moo,
+        scripts_synth_func,
+    ]:
+        serialized = object_to_json(
+            config,
+            encoder_registry=CORE_ENCODER_REGISTRY,
+            class_encoder_registry=CORE_CLASS_ENCODER_REGISTRY,
+        )
+
+        c = object_from_json(
+            serialized,
+            decoder_registry=CORE_DECODER_REGISTRY,
+            class_decoder_registry=CORE_CLASS_DECODER_REGISTRY,
+        )
+        assert config == c
 
 
 def test_save_load_scheduler_branin(branin_main_run, tmp_path):

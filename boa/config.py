@@ -6,7 +6,7 @@ from dataclasses import asdict as dc_asdict
 from dataclasses import is_dataclass
 from enum import Enum
 from types import ModuleType
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, ClassVar, Optional, Union
 
 import ax.early_stopping.strategies as early_stopping_strats
 import ax.global_stopping.strategies as global_stopping_strats
@@ -21,18 +21,29 @@ from boa.definitions import PathLike
 from boa.utils import deprecation
 from boa.wrappers.wrapper_utils import load_jsonlike
 
-__all__ = ["Objective", "Metric", "MetricType", "ScriptOptions", "Config"]
+__all__ = ["BOAObjective", "BOAMetric", "MetricType", "BOAScriptOptions", "BOAConfig"]
 
 
 @define
 class ToDict:
+    _filtered_dict_fields: ClassVar[str] = None
+
     def to_dict(self):
         def vs(inst, attrib, val):
             if is_dataclass(val):
                 return dc_asdict(val)
             return val
 
-        return asdict(self, value_serializer=vs)
+        return {
+            "__type": self.__class__.__name__,
+            **asdict(
+                self,
+                filter=lambda attr, value: True
+                if not self._filtered_dict_fields
+                else attr.name not in self._filtered_dict_fields,
+                value_serializer=vs,
+            ),
+        }
 
 
 def _convert_on_type(converter, type_, default_if_none=None) -> Any:
@@ -52,7 +63,7 @@ def _convert_on_dict(converter, *args, **kwargs):
     return _convert_on_type(converter=converter, type_=dict, *args, **kwargs)
 
 
-class MetricType(Enum):
+class MetricType(str, Enum):
     METRIC = "metric"
     BOA_METRIC = "boa_metric"
     SKLEARN_METRIC = "sklearn_metric"
@@ -70,7 +81,7 @@ def _metric_type_converter(type_: MetricType | str) -> MetricType:
 
 
 @define
-class Metric(ToDict):
+class BOAMetric(ToDict):
     metric: Optional[str] = None
     name: Optional[str] = field(default=None, converter=converters.optional(str))
     type_: Optional[MetricType | str] = field(
@@ -98,23 +109,23 @@ class Metric(ToDict):
             self.type_ = MetricType.PASSTHROUGH
 
 
-def _metric_converter(ls: list[Metric | dict]) -> list[Metric]:
+def _metric_converter(ls: list[BOAMetric | dict]) -> list[BOAMetric]:
     for i, metric in enumerate(ls):
         if isinstance(metric, dict):
-            ls[i] = Metric(**metric)
+            ls[i] = BOAMetric(**metric)
     return ls
 
 
 @define
-class Objective(ToDict):
-    metrics: list[Metric] = field(converter=_metric_converter)
+class BOAObjective(ToDict):
+    metrics: list[BOAMetric] = field(converter=_metric_converter)
     outcome_constraints: Optional[list[str]] = Factory(list)
     objective_thresholds: Optional[list[str]] = Factory(list)
     minimize: Optional[bool] = None
 
 
 @define
-class ScriptOptions(ToDict):
+class BOAScriptOptions(ToDict):
     rel_to_config: Optional[bool] = None
     rel_to_launch: Optional[bool] = True
     base_path: Optional[PathLike] = None
@@ -136,12 +147,12 @@ class ScriptOptions(ToDict):
         if not self.base_path:
             if self.rel_to_config:
                 raise TypeError(
-                    "Must specify path to config directory in `ScriptOptions` dataclass when using rel-to-config"
+                    "Must specify path to config directory in `BOAScriptOptions` dataclass when using rel-to-config"
                     "as the `base_path` argument."
                     "If you are an external user, the easiest way to ensure this, is to use the Config.from_jsonlike"
                     "class constructor, with either `rel_to_config` set to true in the config file or rel_to_config"
                     "set to true as an argument (to override what is in the config). This will automatically set "
-                    "the `base_path` argument for `ScriptOptions`."
+                    "the `base_path` argument for `BOAScriptOptions`."
                 )
             self.base_path = pathlib.Path.cwd()
 
@@ -173,9 +184,17 @@ def _gen_step_converter(steps: Optional[list[dict | GenerationStep]]) -> list[Ge
     return gs
 
 
-def _load_stopping_strategy(d: dict, module: ModuleType):
-    if "type" not in d:
+def _load_stopping_strategy(d: Optional[dict], module: ModuleType):
+
+    if (
+        isinstance(
+            d, (early_stopping_strats.BaseEarlyStoppingStrategy, global_stopping_strats.BaseGlobalStoppingStrategy)
+        )  # loading from reserializilization and work already done
+        or not d
+    ):  # option set to None or False truth value
         return d
+    if "type" not in d:
+        raise ValueError("Type missing from stopping strategy key")  # can't work with it if type not set
     type_ = d.pop("type")
     for key, value in d.items():
         if isinstance(value, dict):
@@ -219,8 +238,8 @@ def _parameter_normalization(
 
 
 @define(kw_only=True)
-class Config(ToDict):
-    objective: Objective = field(converter=_convert_on_dict(lambda d: Objective(**d)))  #
+class BOAConfig(ToDict):
+    objective: BOAObjective = field(converter=_convert_on_dict(lambda d: BOAObjective(**d)))  #
     parameters: list[TParameterRepresentation] = field(converter=_parameter_normalization)  #
     generation_steps: Optional[list[GenerationStep]] = field(
         default=None, converter=converters.optional(_gen_step_converter)
@@ -231,24 +250,40 @@ class Config(ToDict):
     name: str = "boa_runs"
     parameter_constraints: list[str] = Factory(list)  #
     model_options: Optional[dict | list] = None  #
-    script_options: Optional[ScriptOptions | dict] = field(
-        default=None, converter=_convert_on_dict(lambda d: ScriptOptions(**d), default_if_none=ScriptOptions)
+    script_options: Optional[BOAScriptOptions | dict] = field(
+        default=None, converter=_convert_on_dict(lambda d: BOAScriptOptions(**d), default_if_none=BOAScriptOptions)
     )  #
     parameter_keys: Optional[str | list[Union[str, list[str], list[Union[str, int]]]]] = None
 
-    _config_path: Optional[PathLike] = None
+    config_path: Optional[PathLike] = None
     mapping: Optional[dict[str, str]] = field(init=False)
-    orig_config: dict = field(init=False)
+    n_trials: Optional[int] = None
+    total_trials: Optional[int] = None
+    # we don't use this key for eq checks because with serialize and deserialize, it then gets all
+    # default options as well
+    orig_config: dict = field(init=False, eq=False)
 
-    def __init__(self, parameter_keys=None, **config):
+    _filtered_dict_fields: ClassVar[str] = ["mapping", "orig_config"]
+
+    def __init__(self, parameter_keys=None, n_trials=None, total_trials=None, **config):
+        if total_trials and n_trials:
+            raise TypeError("You can specifu either n_trials or total_trials, but not both")
+        if total_trials:
+            if "scheduler" not in config:
+                config["scheduler"] = {}
+            config["scheduler"]["total_trials"] = total_trials
+        elif n_trials:
+            if "scheduler" in config:
+                config["scheduler"].pop("total_trials", None)
         self.orig_config = copy.deepcopy(config)
+
         # we instantiate it as None since all defined attributes from above need to exist
         self.mapping = None
         if parameter_keys:
             parameters, mapping = self.wpr_params_to_boa(config, parameter_keys)
             config["parameters"] = parameters
             self.mapping = mapping
-        self.__attrs_init__(**config, parameter_keys=parameter_keys)
+        self.__attrs_init__(**config, parameter_keys=parameter_keys, total_trials=total_trials, n_trials=n_trials)
 
     @classmethod
     def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None):
@@ -259,7 +294,7 @@ class Config(ToDict):
 
         script_options = config.get("script_options") or {}
         rel_to_config = rel_to_config or script_options.get(
-            "rel_to_config", fields_dict(ScriptOptions)["rel_to_config"].default
+            "rel_to_config", fields_dict(BOAScriptOptions)["rel_to_config"].default
         )
         if rel_to_config:
             if "script_options" not in config:
@@ -327,10 +362,8 @@ class Config(ToDict):
         #  copy over scheduler
         if "scheduler" in opt_ops:
             config["scheduler"] = opt_ops["scheduler"]
-        if "trials" in opt_ops:
-            if "scheduler" not in config:
-                config["scheduler"] = {}
-            config["scheduler"]["total_trials"] = opt_ops["trials"]
+        if "trials" in opt_ops or "n_trials" in opt_ops:
+            config["n_trials"] = opt_ops.get("n_trials") or opt_ops.get("trials")
 
         #####################################################
         #  copy over experiment name
@@ -441,4 +474,4 @@ class Config(ToDict):
 if __name__ == "__main__":
     from tests.conftest import TEST_CONFIG_DIR
 
-    c = Config.from_jsonlike(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml"))
+    c = BOAConfig.from_jsonlike(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml"))

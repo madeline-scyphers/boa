@@ -18,7 +18,7 @@ from ax.modelbridge.torch import TorchModelBridge
 from ax.models.torch.botorch_moo import MultiObjectiveBotorchModel
 from ax.service.utils.instantiation import TParameterRepresentation
 
-from boa.config import Config
+from boa.config import BOAConfig
 from boa.instantiation_base import BoaInstantiationBase
 from boa.logger import get_logger
 from boa.scheduler import Scheduler
@@ -35,7 +35,7 @@ def instantiate_search_space_from_json(
     return BoaInstantiationBase.make_search_space(parameters, parameter_constraints)
 
 
-def get_generation_strategy(config: Config, experiment: Experiment = None, **kwargs):
+def get_generation_strategy(config: BOAConfig, experiment: Experiment = None, **kwargs):
     if config.generation_steps is None:
         if config.scheduler and config.scheduler.total_trials:
             kwargs["num_trials"] = config.scheduler.total_trials
@@ -46,7 +46,9 @@ def get_generation_strategy(config: Config, experiment: Experiment = None, **kwa
     return generation_strategy
 
 
-def choose_generation_strategy_from_experiment(experiment: Experiment, config: Config, **kwargs) -> GenerationStrategy:
+def choose_generation_strategy_from_experiment(
+    experiment: Experiment, config: BOAConfig, **kwargs
+) -> GenerationStrategy:
     return choose_generation_strategy(
         search_space=experiment.search_space,
         experiment=experiment,
@@ -57,7 +59,7 @@ def choose_generation_strategy_from_experiment(experiment: Experiment, config: C
 
 def get_scheduler(
     experiment: Experiment,
-    config: Config = None,
+    config: BOAConfig = None,
     **kwargs,
 ) -> Scheduler:
 
@@ -87,7 +89,7 @@ def get_scheduler(
     )
 
 
-def get_experiment(config: Config, runner: Runner, wrapper: BaseWrapper = None, **kwargs):
+def get_experiment(config: BOAConfig, runner: Runner, wrapper: BaseWrapper = None, **kwargs):
 
     search_space = instantiate_search_space_from_json(config.parameters, config.parameter_constraints)
 

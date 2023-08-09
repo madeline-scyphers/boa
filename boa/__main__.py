@@ -5,7 +5,7 @@ from typing import Optional
 
 import click
 
-from boa.config import Config
+from boa.config import BOAConfig
 from boa.controller import Controller
 from boa.wrappers.script_wrapper import ScriptWrapper
 from boa.wrappers.wrapper_utils import cd_and_cd_back
@@ -103,10 +103,10 @@ def run(config_path, scheduler_path, rel_to_here, wrapper_path=None, experiment_
     -------
         Scheduler
     """
-    config: Optional[Config] = None
+    config: Optional[BOAConfig] = None
     if config_path:
         config_path = Path(config_path).resolve()
-        config = Config.from_jsonlike(file=config_path, rel_to_config=not rel_to_here)
+        config = BOAConfig.from_jsonlike(file=config_path, rel_to_config=not rel_to_here)
     if scheduler_path:
         scheduler_path = Path(scheduler_path).resolve()
     if experiment_dir:
@@ -126,8 +126,6 @@ def run(config_path, scheduler_path, rel_to_here, wrapper_path=None, experiment_
     else:
         options = dict(scheduler_path=scheduler_path, working_dir=Path.cwd())
 
-    sys.path.append(str(config.script_options.working_dir))
-    sys.path.append(str(config.script_options.base_path))
     with cd_and_cd_back(options["working_dir"]):
         if scheduler_path:
 
@@ -142,6 +140,12 @@ def run(config_path, scheduler_path, rel_to_here, wrapper_path=None, experiment_
                 **options,
             )
             controller.initialize_scheduler()
+        if not config:
+            config = controller.config
+        if config and config.script_options:
+            sys.path.append(str(config.script_options.working_dir))
+            sys.path.append(str(config.script_options.base_path))
+
         scheduler = controller.run()
         return scheduler
 
