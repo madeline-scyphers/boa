@@ -5,7 +5,7 @@ from boa import get_generation_strategy
 
 
 def test_gen_steps_from_config(gen_strat1_config):
-    gs1 = get_generation_strategy(gen_strat1_config["optimization_options"]["generation_strategy"])
+    gs1 = get_generation_strategy(gen_strat1_config)
 
     gs2 = GenerationStrategy(
         steps=[

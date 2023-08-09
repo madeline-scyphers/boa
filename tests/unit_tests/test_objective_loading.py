@@ -13,8 +13,7 @@ from boa import BoaInstantiationBase
 
 def test_soo_config_loading(soo_config):
     optimization_config = BoaInstantiationBase.make_optimization_config(
-        soo_config["optimization_options"]["objective_options"]["objectives"],
-        minimize=soo_config["optimization_options"]["objective_options"]["minimize"],
+        soo_config.objective,
     )
     assert isinstance(optimization_config, OptimizationConfig)
 
@@ -27,7 +26,7 @@ def test_soo_config_loading(soo_config):
     for metric in obj.metrics:
         assert isinstance(metric, Metric)
 
-    weights = [obj["weight"] for obj in soo_config["optimization_options"]["objective_options"]["objectives"]]
+    weights = [metric.weight for metric in soo_config.objective.metrics]
 
     for w1, w2 in zip(obj.weights, weights):
         assert w1 == w2
@@ -35,7 +34,7 @@ def test_soo_config_loading(soo_config):
 
 def test_moo_config_loading(moo_config):
     optimization_config = BoaInstantiationBase.make_optimization_config(
-        moo_config["optimization_options"]["objective_options"]["objectives"],
+        moo_config.objective,
     )
     assert isinstance(optimization_config, MultiObjectiveOptimizationConfig)
 

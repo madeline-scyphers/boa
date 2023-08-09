@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import pathlib
 from dataclasses import asdict as dc_asdict
 from dataclasses import is_dataclass
@@ -217,7 +218,7 @@ def _parameter_normalization(
     return new_parameters
 
 
-@define
+@define(kw_only=True)
 class Config(ToDict):
     objective: Objective = field(converter=_convert_on_dict(lambda d: Objective(**d)))  #
     parameters: list[TParameterRepresentation] = field(converter=_parameter_normalization)  #
@@ -233,9 +234,21 @@ class Config(ToDict):
     script_options: Optional[ScriptOptions | dict] = field(
         default=None, converter=_convert_on_dict(lambda d: ScriptOptions(**d), default_if_none=ScriptOptions)
     )  #
-    parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None
+    parameter_keys: Optional[str | list[Union[str, list[str], list[Union[str, int]]]]] = None
 
     _config_path: Optional[PathLike] = None
+    mapping: Optional[dict[str, str]] = field(init=False)
+    orig_config: dict = field(init=False)
+
+    def __init__(self, parameter_keys=None, **config):
+        self.orig_config = copy.deepcopy(config)
+        # we instantiate it as None since all defined attributes from above need to exist
+        self.mapping = None
+        if parameter_keys:
+            parameters, mapping = self.wpr_params_to_boa(config, parameter_keys)
+            config["parameters"] = parameters
+            self.mapping = mapping
+        self.__attrs_init__(**config, parameter_keys=parameter_keys)
 
     @classmethod
     def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None):
@@ -329,6 +342,100 @@ class Config(ToDict):
     @classmethod
     def from_deprecated(cls, configd: dict):
         return cls(**cls.convert_deprecated(configd=configd))
+
+    @staticmethod
+    def wpr_params_to_boa(
+        params: dict, parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]]
+    ) -> tuple[dict, dict]:
+        """
+
+        Parameters
+        ----------
+        params
+            dictionary containing parameters
+        parameter_keys
+            str of key to parameters, or list of json paths to key(s) of parameters.
+        """
+        # if only one key is passed in as a str, wrap it in a list
+        if isinstance(parameter_keys, str):
+            parameter_keys = [parameter_keys]
+
+        new_params = {}
+        mapping = {}
+        for maybe_key in parameter_keys:
+            path_type = []
+            if isinstance(maybe_key, str):
+                key = maybe_key
+                d = params[key]
+            elif isinstance(maybe_key, (list, tuple)):
+                d = params[maybe_key[0]]
+                if len(maybe_key) > 1:
+                    for k in maybe_key[1:]:
+                        if isinstance(d, dict):
+                            path_type.append("dict")
+                        else:
+                            path_type.append("list")
+                        d = d[k]
+                path_type.append("dict")  # the last key is always a dict to the param info
+
+                key = "_".join(str(k) for k in maybe_key)
+            else:
+                raise TypeError(
+                    "wpr_params_to_boa accepts str, a list of str, or a list of lists of str "
+                    "\nfor the keys (or paths of keys) to the AX parameters you wish to prepend."
+                )
+            for parameter_name, dct in d.items():
+                new_key = f"{key}_{parameter_name}"
+                key_index = 0
+                while new_key in new_params:
+                    new_key += f"_{key_index}"
+                    if new_key in new_params:
+                        key_index += 1
+                        new_key = new_key[:-2]
+                new_params[new_key] = dct
+                mapping[new_key] = dict(path=maybe_key, original_name=parameter_name, path_type=path_type)
+        for mapped, info in mapping.items():  # remove all old keys
+            params.pop(info["path"][0], None)
+        return new_params, mapping
+
+    @staticmethod
+    def boa_params_to_wpr(params: list[dict], mapping, from_trial=True):
+        new_params = {}
+        for parameter in params:
+            if from_trial:
+                name = parameter
+            else:
+                name = parameter["name"]
+            path = mapping[name]["path"]
+            original_name = mapping[name]["original_name"]
+            path_type = mapping[name]["path_type"]
+
+            p1 = path[0]
+            pt1 = path_type[0]
+
+            if path[0] not in new_params:
+                if pt1 == "dict":
+                    new_params[p1] = {}
+                else:
+                    new_params[p1] = []
+
+            d = new_params[p1]
+            if len(path) > 1:
+                for key, typ in zip(path[1:], path_type[1:]):
+                    if (isinstance(d, list) and key + 1 > len(d)) or (isinstance(d, dict) and key not in d):
+                        if isinstance(d, list):
+                            d.extend([None for _ in range(key + 1 - len(d))])
+                        if typ == "dict":
+                            d[key] = {}
+                        else:
+                            d[key] = []
+                    d = d[key]
+            if from_trial:
+                d[original_name] = params[parameter]
+            else:
+                d[original_name] = {k: v for k, v in parameter.items() if k != "name"}
+
+        return new_params
 
 
 if __name__ == "__main__":

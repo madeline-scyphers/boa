@@ -1,14 +1,5 @@
-import tempfile
-
 import numpy as np
-from ax import (
-    Metric,
-    MultiObjective,
-    MultiObjectiveOptimizationConfig,
-    Objective,
-    OptimizationConfig,
-    OutcomeConstraint,
-)
+from ax import MultiObjectiveOptimizationConfig, OptimizationConfig
 
 from boa import (
     BaseWrapper,

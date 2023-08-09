@@ -9,13 +9,11 @@ Utility functions to instantiate Ax objects
 
 from __future__ import annotations
 
-import copy
 from typing import Optional
 
 from ax import Experiment, Runner, SearchSpace
 from ax.modelbridge.dispatch_utils import choose_generation_strategy
-from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
-from ax.modelbridge.registry import Models
+from ax.modelbridge.generation_strategy import GenerationStrategy
 from ax.modelbridge.torch import TorchModelBridge
 from ax.models.torch.botorch_moo import MultiObjectiveBotorchModel
 from ax.service.utils.instantiation import TParameterRepresentation
@@ -24,7 +22,6 @@ from boa.config import Config
 from boa.instantiation_base import BoaInstantiationBase
 from boa.logger import get_logger
 from boa.scheduler import Scheduler
-from boa.utils import get_dictionary_from_callable
 from boa.wrappers.base_wrapper import BaseWrapper
 
 logger = get_logger()
@@ -38,26 +35,15 @@ def instantiate_search_space_from_json(
     return BoaInstantiationBase.make_search_space(parameters, parameter_constraints)
 
 
-def get_generation_strategy(config: dict, experiment: Experiment = None, **kwargs):
-    if config.get("steps"):  # if they are explicitly defining the steps, use those to make gen strat
-        return generation_strategy_from_config(config=config, experiment=experiment)
-    # else auto generate the gen strat
-    return choose_generation_strategy_from_experiment(experiment=experiment, config=config, **kwargs)
+def get_generation_strategy(config: Config, experiment: Experiment = None, **kwargs):
+    if config.generation_steps is None:
+        if config.scheduler and config.scheduler.total_trials:
+            kwargs["num_trials"] = config.scheduler.total_trials
+        generation_strategy = choose_generation_strategy_from_experiment(experiment=experiment, config=config, **kwargs)
 
-
-def generation_strategy_from_config(config: dict, experiment: Experiment = None):
-    config_ = copy.deepcopy(config)
-    for i, step in enumerate(config_["steps"]):
-        try:
-            step["model"] = Models[step["model"]]
-        except KeyError:
-            step["model"] = Models(step["model"])
-        config_["steps"][i] = GenerationStep(**step)
-
-    gs = GenerationStrategy(**get_dictionary_from_callable(GenerationStrategy.__init__, config_))
-    if experiment:
-        gs.experiment = experiment
-    return gs
+    else:
+        generation_strategy = GenerationStrategy(steps=config.generation_steps)
+    return generation_strategy
 
 
 def choose_generation_strategy_from_experiment(experiment: Experiment, config: Config, **kwargs) -> GenerationStrategy:
