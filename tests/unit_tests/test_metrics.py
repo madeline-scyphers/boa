@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from ax import MultiObjectiveOptimizationConfig, OptimizationConfig
 
 from boa import (
@@ -117,10 +118,9 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_all_data_and_tes
     experiment = controller.experiment
 
     trial = experiment.new_trial(generator_run=scheduler.generation_strategy.gen(experiment))
-    for name, metric in experiment.metrics.items():
-        metric.fetch_trial_data(trial)
-
-    assert "found extra returned metric: " in caplog.text
+    with pytest.raises(ValueError):
+        for name, metric in experiment.metrics.items():
+            metric.fetch_trial_data(trial)
 
 
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_test_sem_passing(moo_config, tmp_path):

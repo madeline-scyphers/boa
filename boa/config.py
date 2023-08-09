@@ -46,21 +46,17 @@ class ToDict:
         }
 
 
-def _convert_on_type(converter, type_, default_if_none=None) -> Any:
+def _convert_noton_type(converter, type_, default_if_none=None) -> Any:
     def type_converter(val):
         if default_if_none is not None and val is None:
             if isinstance(default_if_none, Callable):
                 return default_if_none()
             return default_if_none
-        if isinstance(val, type_):
+        if not isinstance(val, type_):
             return converter(val)
         return val
 
     return type_converter
-
-
-def _convert_on_dict(converter, *args, **kwargs):
-    return _convert_on_type(converter=converter, type_=dict, *args, **kwargs)
 
 
 class MetricType(str, Enum):
@@ -239,19 +235,23 @@ def _parameter_normalization(
 
 @define(kw_only=True)
 class BOAConfig(ToDict):
-    objective: BOAObjective = field(converter=_convert_on_dict(lambda d: BOAObjective(**d)))  #
+    objective: BOAObjective = field(converter=_convert_noton_type(lambda d: BOAObjective(**d), type_=BOAObjective))  #
     parameters: list[TParameterRepresentation] = field(converter=_parameter_normalization)  #
     generation_steps: Optional[list[GenerationStep]] = field(
         default=None, converter=converters.optional(_gen_step_converter)
     )  #
     scheduler: Optional[SchedulerOptions] = field(
-        default=None, converter=_convert_on_dict(_scheduler_converter, default_if_none=SchedulerOptions)
+        default=None,
+        converter=_convert_noton_type(_scheduler_converter, type_=SchedulerOptions, default_if_none=SchedulerOptions),
     )
     name: str = "boa_runs"
     parameter_constraints: list[str] = Factory(list)  #
     model_options: Optional[dict | list] = None  #
     script_options: Optional[BOAScriptOptions | dict] = field(
-        default=None, converter=_convert_on_dict(lambda d: BOAScriptOptions(**d), default_if_none=BOAScriptOptions)
+        default=None,
+        converter=_convert_noton_type(
+            lambda d: BOAScriptOptions(**d), type_=BOAScriptOptions, default_if_none=BOAScriptOptions
+        ),
     )  #
     parameter_keys: Optional[str | list[Union[str, list[str], list[Union[str, int]]]]] = None
 
@@ -267,7 +267,7 @@ class BOAConfig(ToDict):
 
     def __init__(self, parameter_keys=None, n_trials=None, total_trials=None, **config):
         if total_trials and n_trials:
-            raise TypeError("You can specifu either n_trials or total_trials, but not both")
+            raise TypeError("You can specify either n_trials or total_trials, but not both")
         if total_trials:
             if "scheduler" not in config:
                 config["scheduler"] = {}
@@ -375,6 +375,10 @@ class BOAConfig(ToDict):
     @classmethod
     def from_deprecated(cls, configd: dict):
         return cls(**cls.convert_deprecated(configd=configd))
+
+    @property
+    def trials(self):
+        return self.n_trials or self.total_trials or self.scheduler.total_trials
 
     @staticmethod
     def wpr_params_to_boa(
