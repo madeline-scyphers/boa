@@ -136,7 +136,7 @@ def run(config_path, scheduler_path, rel_to_here, wrapper_path=None, experiment_
             else:
                 options["wrapper"] = ScriptWrapper
             controller = Controller(
-                config=config,
+                config_path=config_path,
                 **options,
             )
             controller.initialize_scheduler()

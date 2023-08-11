@@ -11,7 +11,7 @@ from typing import Any, Callable, ClassVar, Optional, Union
 import ax.early_stopping.strategies as early_stopping_strats
 import ax.global_stopping.strategies as global_stopping_strats
 from attr import asdict
-from attrs import Factory, converters, define, field, fields_dict
+from attrs import Factory, converters, define, field, fields, fields_dict
 from ax.modelbridge.generation_node import GenerationStep
 from ax.modelbridge.registry import Models
 from ax.service.scheduler import SchedulerOptions
@@ -221,6 +221,8 @@ def _parameter_normalization(
         return parameters
     new_parameters = []
     for param, d in parameters.items():
+        if not isinstance(d, dict):
+            d = {"value": d, "type": "fixed"}
         d["name"] = param  # Add "name" attribute for each parameter
         # remove bounds on fixed params
         if d.get("type", "") == "fixed" and "bounds" in d:
@@ -233,32 +235,46 @@ def _parameter_normalization(
     return new_parameters
 
 
+obj_comment = "this is a test"
+
+
 @define(kw_only=True)
 class BOAConfig(ToDict):
-    objective: BOAObjective = field(converter=_convert_noton_type(lambda d: BOAObjective(**d), type_=BOAObjective))  #
-    parameters: list[TParameterRepresentation] = field(converter=_parameter_normalization)  #
-    generation_steps: Optional[list[GenerationStep]] = field(
-        default=None, converter=converters.optional(_gen_step_converter)
+    """Base doc string"""
+
+    objective: dict | BOAObjective = field(
+        converter=_convert_noton_type(lambda d: BOAObjective(**d), type_=BOAObjective),
+        metadata={"annotation": "First metadata test"},
+    )
+    # """objective docstring"""
+    parameters: dict[str, dict] | list[TParameterRepresentation] = field(
+        converter=_parameter_normalization, metadata={"doc": "this is a second test"}
     )  #
-    scheduler: Optional[SchedulerOptions] = field(
+    generation_steps: Optional[list[dict] | list[GenerationStep]] = field(
+        default=None,
+        converter=converters.optional(_gen_step_converter),
+        metadata={"doc": "When manually setting steps to generate new trials"},
+    )
+    scheduler: Optional[dict | SchedulerOptions] = field(
         default=None,
         converter=_convert_noton_type(_scheduler_converter, type_=SchedulerOptions, default_if_none=SchedulerOptions),
     )
+    # this is a regular comment test
     name: str = "boa_runs"
     parameter_constraints: list[str] = Factory(list)  #
     model_options: Optional[dict | list] = None  #
-    script_options: Optional[BOAScriptOptions | dict] = field(
+    script_options: Optional[dict | BOAScriptOptions] = field(
         default=None,
         converter=_convert_noton_type(
             lambda d: BOAScriptOptions(**d), type_=BOAScriptOptions, default_if_none=BOAScriptOptions
         ),
-    )  #
+    )
     parameter_keys: Optional[str | list[Union[str, list[str], list[Union[str, int]]]]] = None
 
     config_path: Optional[PathLike] = None
-    mapping: Optional[dict[str, str]] = field(init=False)
     n_trials: Optional[int] = None
     total_trials: Optional[int] = None
+    mapping: Optional[dict[str, str]] = field(init=False)
     # we don't use this key for eq checks because with serialize and deserialize, it then gets all
     # default options as well
     orig_config: dict = field(init=False, eq=False)
@@ -475,7 +491,19 @@ class BOAConfig(ToDict):
         return new_params
 
 
+nl = "\n"
+BOAConfig.__doc__ = BOAConfig.__doc__ + "".join(f'{nl}{f.metadata.get("doc", "")}' for f in fields(BOAConfig))
+
+
 if __name__ == "__main__":
     from tests.conftest import TEST_CONFIG_DIR
 
     c = BOAConfig.from_jsonlike(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml"))
+
+    # import ruamel.yaml
+    # import ruamel.yaml.comments
+    #
+    # yaml = ruamel.yaml.YAML()  # defaults to round-trip
+    # with open(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml", "r")) as f:
+    #     data: ruamel.yaml.comments.CommentedMap = yaml.load(f)
+    # data.yaml_add_eol_comment

@@ -19,6 +19,7 @@ This is where you will find information about :doc:`BOA's </index>` Wrapper clas
     :toctree: api
     :template: custom_module_template_short.rst
 
+    boa.config
     boa.wrappers
     boa.wrappers.base_wrapper
     boa.wrappers.script_wrapper

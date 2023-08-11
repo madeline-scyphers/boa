@@ -2,6 +2,7 @@ name: boa-dev
 channels:
 - pytorch
 - conda-forge
+- domdfcoding
 dependencies:
 - python=3.10
   # mac x86 or apple silicone macs on rosetta python need pytorch>2
@@ -19,7 +20,8 @@ dependencies:
 - notebook>=5.3
 - ipywidgets>=7.5
 - ax-platform==0.3.3
-- PyYAML
+- ruamel.yaml
+- domdfcoding::attr_utils
 - attrs
 
   ## Jupyter and sphinx jupyter
