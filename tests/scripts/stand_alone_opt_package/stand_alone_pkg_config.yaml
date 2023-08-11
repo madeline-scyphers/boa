@@ -23,9 +23,7 @@ parameters:
     x0:
         type: range
         bounds: [-5.0, 10.0]
-    x1:
-        type: range
-        bounds: [0.0, 15.0]
+    x1: 10
 # These are all defaults, so we don't need to specify them in this case
 #script_options:
 #    wrapper_path: ./wrapper.py

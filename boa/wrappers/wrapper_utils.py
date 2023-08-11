@@ -368,6 +368,8 @@ def normalize_config(
         search_space_parameters = []
         for param in config.get("parameters", {}).keys():
             d = deepcopy(config["parameters"][param])
+            if not isinstance(d, dict):
+                d = {"value": d, "type": "fixed"}
             d["name"] = param  # Add "name" attribute for each parameter
             # remove bounds on fixed params
             if d.get("type", "") == "fixed" and "bounds" in d:
