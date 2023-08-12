@@ -11,7 +11,7 @@ from typing import Any, Callable, ClassVar, Optional, Union
 import ax.early_stopping.strategies as early_stopping_strats
 import ax.global_stopping.strategies as global_stopping_strats
 from attr import asdict
-from attrs import Factory, converters, define, field, fields, fields_dict
+from attrs import Factory, converters, define, field, fields_dict
 from ax.modelbridge.generation_node import GenerationStep
 from ax.modelbridge.registry import Models
 from ax.service.scheduler import SchedulerOptions
@@ -21,7 +21,15 @@ from boa.definitions import PathLike
 from boa.utils import deprecation
 from boa.wrappers.wrapper_utils import load_jsonlike
 
-__all__ = ["BOAObjective", "BOAMetric", "MetricType", "BOAScriptOptions", "BOAConfig"]
+__all__ = [
+    "BOAConfig",
+    "BOAObjective",
+    "BOAScriptOptions",
+    "BOAMetric",
+    "MetricType",
+    "SchedulerOptions",
+    "GenerationStep",
+]
 
 
 @define
@@ -114,6 +122,21 @@ def _metric_converter(ls: list[BOAMetric | dict]) -> list[BOAMetric]:
 
 @define
 class BOAObjective(ToDict):
+    """
+    BOAObjective is a dataclass that represents an objective for BOA.
+
+    Parameters
+    ----------
+    metrics:
+        A list of BOAMetric objects that represent the metrics to be used in the objective.
+    outcome_constraints:
+        A list of metric names that represent the outcome constraints.
+    objective_thresholds:
+        A list of metric names that represent the objective thresholds.
+    minimize:
+        A boolean that indicates whether the objective should be minimized or maximized.
+    """
+
     metrics: list[BOAMetric] = field(converter=_metric_converter)
     outcome_constraints: Optional[list[str]] = Factory(list)
     objective_thresholds: Optional[list[str]] = Factory(list)
@@ -246,7 +269,6 @@ class BOAConfig(ToDict):
         converter=_convert_noton_type(lambda d: BOAObjective(**d), type_=BOAObjective),
         metadata={"annotation": "First metadata test"},
     )
-    # """objective docstring"""
     parameters: dict[str, dict] | list[TParameterRepresentation] = field(
         converter=_parameter_normalization, metadata={"doc": "this is a second test"}
     )  #
@@ -259,7 +281,6 @@ class BOAConfig(ToDict):
         default=None,
         converter=_convert_noton_type(_scheduler_converter, type_=SchedulerOptions, default_if_none=SchedulerOptions),
     )
-    # this is a regular comment test
     name: str = "boa_runs"
     parameter_constraints: list[str] = Factory(list)  #
     model_options: Optional[dict | list] = None  #
@@ -489,10 +510,6 @@ class BOAConfig(ToDict):
                 d[original_name] = {k: v for k, v in parameter.items() if k != "name"}
 
         return new_params
-
-
-nl = "\n"
-BOAConfig.__doc__ = BOAConfig.__doc__ + "".join(f'{nl}{f.metadata.get("doc", "")}' for f in fields(BOAConfig))
 
 
 if __name__ == "__main__":

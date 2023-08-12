@@ -16,7 +16,9 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("../boa/"))
 
+import attrs
 
+import boa
 from boa._doc_utils import add_ref_to_all_submodules_inits
 
 # -- Project information -----------------------------------------------------
@@ -35,7 +37,6 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
-    "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.intersphinx",
@@ -123,7 +124,22 @@ html_theme = "pydata_sphinx_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ["_static"]
 
+# version = '%s r%s' % (pandas.__version__, svn_version())
+version = str(boa.__version__)
+
+switcher_version = version
+if ".dev" in version:
+    switcher_version = "dev"
+elif "rc" in version:
+    switcher_version = version.split("rc", maxsplit=1)[0] + " (rc)"
+
+
 html_theme_options = {
+    "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
+    "switcher": {
+        "json_url": "https://pandas.pydata.org/versions.json",
+        "version_match": switcher_version,
+    },
     "icon_links": [
         {
             # Label for this link
@@ -134,7 +150,7 @@ html_theme_options = {
             "icon": "fab fa-github-square",
             # Whether icon should be a FontAwesome class, or a local file
         }
-    ]
+    ],
 }
 
 
@@ -157,3 +173,19 @@ intersphinx_mapping = {
 
 # add a reference to the relative __init__.py of all files __doc__ in a submodules
 add_ref_to_all_submodules_inits()
+
+
+def autodoc_process_docstring(app, what, name, obj, options, lines):
+    if what == "attribute" and not lines:
+        path = name.split(".")
+        attribute_name = path[-1]
+        cls_name = path[-2]
+        cls = getattr(boa, cls_name)
+        if attrs.has(cls):
+            new_doc = attrs.fields_dict(cls)[attribute_name].metadata.get("doc", "")
+            if new_doc:
+                lines.append(new_doc)
+
+
+def setup(app):
+    app.connect("autodoc-process-docstring", autodoc_process_docstring)
