@@ -78,16 +78,16 @@ class MetricType(str, Enum):
     PASSTHROUGH = "PassThrough"
 
 
-def _metric_type_converter(type_: MetricType | str) -> MetricType:
-    if isinstance(type_, MetricType):
-        return type_
+def _metric_type_converter(metric_type: MetricType | str) -> MetricType:
+    if isinstance(metric_type, MetricType):
+        return metric_type
     try:
-        return MetricType[type_]
+        return MetricType[metric_type]
     except KeyError:
-        return MetricType(type_)
+        return MetricType(metric_type)
 
 
-@define
+@define(kw_only=True)
 class BOAMetric(ToDict):
     metric: Optional[str] = field(
         default=None,
@@ -107,7 +107,7 @@ class BOAMetric(ToDict):
         converter=converters.optional(str),
         metadata={"doc": "Name of the metric. This is used to identify the metric in in your wrapper script."},
     )
-    type_: Optional[MetricType | str] = field(
+    metric_type: Optional[MetricType | str] = field(
         default=MetricType.METRIC,
         converter=converters.optional(_metric_type_converter),
         metadata={
@@ -118,11 +118,47 @@ class BOAMetric(ToDict):
             "You can also specify `PassThrough` to use a metric that is computed by the user."
         },
     )
-    noise_sd: Optional[float] = 0
-    minimize: Optional[bool] = field(default=True, kw_only=True)
-    info_only: bool = False
-    weight: Optional[float] = None
-    properties: Optional[dict] = None
+    noise_sd: Optional[float] = field(
+        default=0,
+        metadata={
+            "doc": "Standard deviation of the noise to be added to the metric. "
+            "This is useful when you want to simulate noisy metrics."
+            "If None, interpret the function as noisy with unknown noise level."
+            "Defaults to `0` (noiseless)."
+        },
+    )
+    minimize: Optional[bool] = field(
+        default=True,
+        metadata={
+            "doc": "Whether to minimize or maximize the metric. "
+            "Defaults to `True` (minimize) for a general metric, "
+            "but every in built metric in BOA (Mean, RMSE, etc.) has its own default value."
+        },
+    )
+    info_only: bool = field(
+        default=False,
+        metadata={
+            "doc": "Whether the metric is only used for information purposes only but will still be reported. "
+            "This means that the metric will not be used for optimization. "
+        },
+    )
+    weight: Optional[float] = field(
+        default=None,
+        metadata={
+            "doc": "Weight of the metric. Used in scalarized optimization, which is combining multiple metrics "
+            "into one metric. Scalarized optimization is a way to cheat a multi-objective optimization "
+            "problem into a single objective optimization problem and significantly reduce the computational"
+            "cost."
+        },
+    )
+    properties: Optional[dict] = field(
+        default=None,
+        metadata={
+            "doc": "Arbitrary properties of the metric. This is used to pass additional information about the metric "
+            "to your wrapper. You can pass whatever information you want to your wrapper and use it in your "
+            "wrapper functions."
+        },
+    )
 
     def __init__(self, *args, lower_is_better: Optional[bool] = None, **kwargs):
         if lower_is_better is not None:
@@ -137,7 +173,7 @@ class BOAMetric(ToDict):
         if self.name is None:
             self.name = self.metric
         elif self.metric is None:
-            self.type_ = MetricType.PASSTHROUGH
+            self.metric_type = MetricType.PASSTHROUGH
 
 
 def _metric_converter(ls: list[BOAMetric | dict]) -> list[BOAMetric]:
@@ -195,19 +231,98 @@ class BOAObjective(ToDict):
 
 @define
 class BOAScriptOptions(ToDict):
-    rel_to_config: Optional[bool] = None
-    rel_to_launch: Optional[bool] = True
+    rel_to_config: Optional[bool] = field(
+        default=True,
+        metadata={
+            "doc": "Whether to use the config file as the base path for all relative paths. "
+            "If True, all relative paths will be relative to the config file directory. "
+            "Defaults to True if not specified."
+            "If launched through BOA CLI, this will be set to True automatically."
+            "rel_to_config and rel_to_launch cannot both be specified."
+        },
+    )
+    rel_to_launch: Optional[bool] = field(
+        default=None,
+        metadata={
+            "doc": "Whether to use the CLI launch directory as the base path for all relative paths. "
+            "If True, all relative paths will be relative to the CLI launch directory. "
+            "Defaults to `rel_to_config` argument if not specified. "
+            "rel_to_config and rel_to_launch cannot both be specified."
+        },
+    )
+    wrapper_name: str = field(
+        default="Wrapper",
+        metadata={
+            "doc": "Name of the python wrapper class. Used for python interface only. "
+            "Defaults to `Wrapper` if not specified. "
+        },
+    )
+    wrapper_path: str = field(
+        default="wrapper.py",
+        metadata={
+            "doc": "Path to the python wrapper file. Used for python interface only. "
+            "Defaults to `wrapper.py` if not specified. "
+        },
+    )
+    working_dir: str = field(
+        default=".",
+        metadata={
+            "doc": "Path to the working directory. Defaults to `.` (Current working directory) if not specified. "
+        },
+    )
+    experiment_dir: Optional[PathLike] = field(
+        default=None,
+        metadata={
+            "doc": "Path to the directory for the output of the experiment"
+            "You may specify this or output_dir in your configuration file instead."
+        },
+    )
+    output_dir: Optional[PathLike] = field(
+        default=None,
+        metadata={
+            "doc": "Output directory of project, "
+            "If you specify output_dir, then output will be saved in"
+            "output_dir / experiment_name "
+            "Because of this only either experiment_dir or output_dir may be specified."
+            "(if neither experiment_dir nor output_dir are specified, output_dir defaults"
+            "to whatever pwd returns (and equivalent on windows))"
+        },
+    )
+    append_timestamp: bool = field(
+        default=True,
+        metadata={
+            "doc": "Whether to append a timestamp to the output directory to ensure uniqueness. "
+            "Defaults to `True` if not specified. "
+        },
+    )
+    run_model: Optional[str] = field(
+        default=None,
+        metadata={
+            "doc": "Shell command to run the model. Used for the language-agnostic interface only. "
+            "this is what BOA will do to launch your script. "
+            "it will also pass as a command line argument the current trial directory "
+            "that is be parameterized by BOA. "
+            "`run_model` is the only needed shell command of these 4, because you"
+            "can use it also to write your config, run your model, set your trial status,"
+            "and fetch your trial data all in one script if you so choose. The "
+            "other scripts are provided as a convenience to segment out your logic. "
+            ""
+            "This can either be a relative path or absolute path. "
+        },
+    )
+    write_configs: Optional[str] = field(
+        default=None,
+        metadata={"doc": "Shell command to write your configs out. " "See `run_model` for more details. "},
+    )
+    set_trial_status: Optional[str] = field(
+        default=None,
+        metadata={"doc": "Shell command to set your trial status. " "See `run_model` for more details. "},
+    )
+    fetch_trial_data: Optional[str] = field(
+        default=None,
+        metadata={"doc": "Shell command to fetch your trial data." "See `run_model` for more details. "},
+    )
     base_path: Optional[PathLike] = None
-    wrapper_name: str = "Wrapper"
-    append_timestamp: bool = True
-    wrapper_path: str = "wrapper.py"
-    working_dir: str = "."
-    experiment_dir: Optional[PathLike] = None
-    output_dir: Optional[PathLike] = None
-    write_configs: Optional[str] = None
-    run_model: Optional[str] = None
-    set_trial_status: Optional[str] = None
-    fetch_trial_data: Optional[str] = None
 
     def __attrs_post_init__(self):
         if (self.rel_to_config and self.rel_to_launch) or (not self.rel_to_config and not self.rel_to_launch):
@@ -383,7 +498,7 @@ class BOAConfig(ToDict):
             "rel_to_config", fields_dict(BOAScriptOptions)["rel_to_config"].default
         )
         if rel_to_config:
-            if "script_options" not in config:
+            if not config.get("script_options"):
                 config["script_options"] = {}
             # we set rel_to_config to True in case it was passed in to override config
             config["script_options"]["rel_to_config"] = True
@@ -424,9 +539,9 @@ class BOAConfig(ToDict):
         for metric in config["objective"]["metrics"]:
             for member in MetricType:
                 if member.value in metric and member.value != "metric":
-                    type_ = member.value
-                    metric["metric"] = metric.pop(type_)
-                    metric["type_"] = type_
+                    metric_type = member.value
+                    metric["metric"] = metric.pop(metric_type)
+                    metric["metric_type"] = metric_type
 
         # if weights key is present, then they need to be added to ind metrics
         if "weights" in config["objective"]:

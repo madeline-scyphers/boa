@@ -193,13 +193,11 @@ class BaseWrapper(metaclass=WrapperRegister):
             You may specify this or output_dir in your configuration file instead.
             (Defaults to your configuration file and then None)
         output_dir: PathLike
-            Output directory of project, experiment_dir will be placed inside
-            output dir based on experiment name.
-            Because of this only either experiment_dir or output_dir may be specified.
-            You may specify this or experiment_dir in your configuration file instead.
-            (Defaults to your configuration file and then None, if neither
-            experiment_dir nor output_dir are specified, output_dir defaults
-            to whatever pwd returns (and equivalent on windows))
+            Output directory of project, If you specify output_dir, then output will
+            be saved in output_dir / experiment_name Because of this only either
+            experiment_dir or output_dir may be specified. (if neither experiment_dir
+             nor output_dir are specified, output_dir defaults to whatever pwd returns
+             (and equivalent on windows))
         experiment_name: str
             Name of experiment, used for creating path to experiment dir with the output dir
             (Defaults to your configuration file and then boa_runs)
