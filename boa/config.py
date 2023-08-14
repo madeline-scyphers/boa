@@ -8,14 +8,15 @@ from enum import Enum
 from types import ModuleType
 from typing import Any, Callable, ClassVar, Optional, Union
 
+import attr
 import ax.early_stopping.strategies as early_stopping_strats
 import ax.global_stopping.strategies as global_stopping_strats
 from attr import asdict
 from attrs import Factory, converters, define, field, fields_dict
 from ax.modelbridge.generation_node import GenerationStep
 from ax.modelbridge.registry import Models
-from ax.service.scheduler import SchedulerOptions
 from ax.service.utils.instantiation import TParameterRepresentation
+from ax.service.utils.scheduler_options import SchedulerOptions
 
 from boa.definitions import PathLike
 from boa.utils import deprecation
@@ -27,8 +28,8 @@ __all__ = [
     "BOAScriptOptions",
     "BOAMetric",
     "MetricType",
-    "SchedulerOptions",
-    "GenerationStep",
+    # "SchedulerOptions",
+    # "GenerationStep",
 ]
 
 
@@ -40,6 +41,8 @@ class ToDict:
         def vs(inst, attrib, val):
             if is_dataclass(val):
                 return dc_asdict(val)
+            elif not attr.has(val) and hasattr(val, "to_dict"):
+                return val.to_dict()
             return val
 
         return {
@@ -86,10 +89,34 @@ def _metric_type_converter(type_: MetricType | str) -> MetricType:
 
 @define
 class BOAMetric(ToDict):
-    metric: Optional[str] = None
-    name: Optional[str] = field(default=None, converter=converters.optional(str))
+    metric: Optional[str] = field(
+        default=None,
+        metadata={
+            "doc": "metrics to be used for optimization. You can use list any metric in built into BOA."
+            "Those metrics can be found here: :mod:`Metrics <boa.metrics.metrics>`. "
+            "If no metric is specified, a :class:`pass through<.PassThrough>` metric will be used."
+            "Which means that the metric will be computed by the user and passed to BOA."
+            "You can also use any metric from sklearn by passing in the name of the metric "
+            "and metric type as `sklearn_metric`."
+            "You can also use any metric from the Ax's or BoTorch's synthetic metrics modules by "
+            "passing in the name of the metric and metric type as `synthetic_metric`."
+        },
+    )
+    name: Optional[str] = field(
+        default=None,
+        converter=converters.optional(str),
+        metadata={"doc": "Name of the metric. This is used to identify the metric in in your wrapper script."},
+    )
     type_: Optional[MetricType | str] = field(
-        default=MetricType.METRIC, converter=converters.optional(_metric_type_converter)
+        default=MetricType.METRIC,
+        converter=converters.optional(_metric_type_converter),
+        metadata={
+            "doc": "Type of metric. In built BOA metrics are of type `metric`, "
+            "by using `sklearn_metric` you can use any metric from sklearn.metrics module, "
+            "by using `synthetic_metric` you can use any synthetic function from Ax's or BoTorch's "
+            "synthetic metrics modules."
+            "You can also specify `PassThrough` to use a metric that is computed by the user."
+        },
     )
     noise_sd: Optional[float] = 0
     minimize: Optional[bool] = field(default=True, kw_only=True)
@@ -123,24 +150,47 @@ def _metric_converter(ls: list[BOAMetric | dict]) -> list[BOAMetric]:
 @define
 class BOAObjective(ToDict):
     """
-    BOAObjective is a dataclass that represents an objective for BOA.
-
-    Parameters
-    ----------
-    metrics:
-        A list of BOAMetric objects that represent the metrics to be used in the objective.
-    outcome_constraints:
-        A list of metric names that represent the outcome constraints.
-    objective_thresholds:
-        A list of metric names that represent the objective thresholds.
-    minimize:
-        A boolean that indicates whether the objective should be minimized or maximized.
+    Dataclass that representing the objective to be optimized by BOA.
+    This can be a single objective, scalarized objective, or a multi-objective (pareto objective).
+    For a single objective, list a single metric in the metrics field.
+    For a multi-objective, list multiple metrics in the metrics field.
+    For a scalarized objective, list multiple metrics in the metrics field and specify the
+    weights for each metric in each metrics weight field.
     """
 
-    metrics: list[BOAMetric] = field(converter=_metric_converter)
-    outcome_constraints: Optional[list[str]] = Factory(list)
-    objective_thresholds: Optional[list[str]] = Factory(list)
-    minimize: Optional[bool] = None
+    metrics: list[BOAMetric] = field(
+        converter=_metric_converter,
+        metadata={"doc": "A list of BOAMetric objects that represent the metrics to be used in the objective."},
+    )
+    outcome_constraints: Optional[list[str]] = field(
+        factory=list,
+        metadata={
+            "doc": "String representation of outcome constraint of metrics."
+            "This bounds a metric (or linear combination of metrics)"
+            "by some bound (>= or <=)."
+            "(ex. ['metric1 >= 0.0', 'metric2 <= 1.0', '2*metric1 + .5*metric2 <= 1.0'])"
+        },
+    )
+    objective_thresholds: Optional[list[str]] = field(
+        factory=list,
+        metadata={
+            "doc": "String representation of Objective Thresholds for multi-objective optimization."
+            "An objective threshold represents the threshold for an objective metric"
+            "to contribute to hypervolume calculations. A list containing the objective"
+            "threshold for each metric collectively form a reference point."
+            "Because the objective thresholds are used to calculate hypervolume, they"
+            "can only be used for multi-objective optimization."
+            "(ex. ['metric1 >= 0.0', 'metric2 <= 1.0'])"
+        },
+    )
+    minimize: Optional[bool] = field(
+        default=None,
+        metadata={
+            "doc": "A boolean that indicates whether the scalarized objective should be minimized or maximized."
+            "Only used for scalarized objectives because each metric can have its own minimize flag."
+            "Will be ignored for non scalarized objectives."
+        },
+    )
 
 
 @define
@@ -258,16 +308,15 @@ def _parameter_normalization(
     return new_parameters
 
 
-obj_comment = "this is a test"
-
-
 @define(kw_only=True)
 class BOAConfig(ToDict):
     """Base doc string"""
 
     objective: dict | BOAObjective = field(
         converter=_convert_noton_type(lambda d: BOAObjective(**d), type_=BOAObjective),
-        metadata={"annotation": "First metadata test"},
+        metadata={
+            "doc": BOAObjective.__doc__,
+        },
     )
     parameters: dict[str, dict] | list[TParameterRepresentation] = field(
         converter=_parameter_normalization, metadata={"doc": "this is a second test"}
