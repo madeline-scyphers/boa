@@ -368,9 +368,9 @@ def _gen_step_converter(steps: Optional[list[dict | GenerationStep]]) -> list[Ge
     return gs
 
 
-def _gen_strat_converter(gs: Optional[dict | GenerationStrategy] = None) -> GenerationStrategy:
-    if isinstance(gs, GenerationStrategy):
-        return gs
+def _gen_strat_converter(gs: Optional[dict] = None) -> dict:
+    if len(gs) > 1 and "steps" in gs:
+        raise ValueError("Cannot specify both `steps` and options for automatic generation strategy.")
     if gs.get("steps"):
         steps = []
         for i, step in enumerate(gs["steps"]):
@@ -383,7 +383,7 @@ def _gen_strat_converter(gs: Optional[dict | GenerationStrategy] = None) -> Gene
             except KeyError:
                 step["model"] = Models(step["model"])
             gs["steps"][i] = GenerationStep(**step)
-    return GenerationStrategy(**gs)
+    return gs
 
 
 def _load_stopping_strategy(d: Optional[dict], module: ModuleType):
@@ -447,7 +447,7 @@ class GenerationStrategy(ToDict):
         default=None, converter=converters.optional(_gen_step_converter), metadata={"doc": """"""}
     )
     auto_strat_args: Optional[dict] = field(
-        default=None,
+        factory=dict,
         metadata={
             "doc": "Arugments to Ax's `choose_generation_strategy` function. "
             "See `https://ax.dev/tutorials/generation_strategy.html` and "
@@ -518,12 +518,56 @@ parameter and the value is the dictionary representing the parameter.
 """  # noqa: W291
         },
     )
-    generation_strategy: Optional[dict | GenerationStrategy] = field(
-        factory=GenerationStrategy, converter=_gen_strat_converter
+    generation_strategy: Optional[dict] = field(
+        factory=dict,
+        converter=_gen_strat_converter,
+        metadata={
+            "doc": """
+Your generation strategy is how new trials will be generated, that is, what acquisition function
+will be used to select the next trial, what kernel will be used to model the objective function,
+as well as other options such as max parallelism.
+
+This is an optional section. If not specified, Ax will choose a generation strategy for you.
+Based on your objective, parameters, and other options. You can pass options to how Ax chooses
+a generation strategy by passing options under `generation_strategy`.
+
+See https://ax.dev/tutorials/generation_strategy.html and 
+https://ax.dev/api/modelbridge.html#ax.modelbridge.dispatch_utils.choose_generation_strategy 
+For specific options. 
+
+If you want to specify your own generation strategy, you can do so by passing a list of
+steps under `generation_strategy.steps`
+
+.. code-block:: yaml
+
+    generation_strategy:
+        # Use Ax's SAASBO algorithm, which is particularly well suited for high dimensional problems
+        use_saasbo: true
+        max_parallelism_cap: 10  # Maximum number of trials allowed to run in parallel
+
+Other options are possible, 
+see https://ax.dev/tutorials/generation_strategy.html#1A.-Manually-configured-generation-strategy
+and Models from ax.modelbridge.registry.py for more options
+Some options include SOBOL, GPEI, Thompson, GPKG (knowledge gradient), and others.
+See https://ax.dev/api/modelbridge.html#ax.modelbridge.generation_node.GenerationStep
+For specific options you can pass to each step
+
+.. code-block:: yaml
+
+    generation_strategy:
+    steps:
+        -   model: SOBOL
+            num_trials: 20
+        -   model: GPEI  # Gaussian Process with Expected Improvement
+            num_trials: -1
+            max_parallelism: 10  # Maximum number of trials allowed to run in parallel
+"""  # noqa: W291
+        },
     )
     scheduler: Optional[dict | SchedulerOptions] = field(
         default=None,
         converter=_convert_noton_type(_scheduler_converter, type_=SchedulerOptions, default_if_none=SchedulerOptions),
+        metadata={"doc": SchedulerOptions.__doc__},
     )
     name: str = "boa_runs"
     parameter_constraints: list[str] = Factory(list)  #

@@ -41,6 +41,12 @@ def gen_strat1_config():
 
 
 @pytest.fixture
+def saasbo_config():
+    config_path = TEST_CONFIG_DIR / "test_config_saasbo.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
 def soo_config():
     """ScalarizedObjective Optimization config"""
     config_path = TEST_CONFIG_DIR / "test_config_soo.yaml"

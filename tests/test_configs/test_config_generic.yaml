@@ -54,10 +54,10 @@ generation_strategy:
     steps:
         # Other options are possible, see Ax GenerationStrategy
         # for more information
-        - model: SOBOL
-          num_trials: 5
-        - model: GPEI
-          num_trials: -1
+        -   model: SOBOL
+            num_trials: 5
+        -   model: GPEI
+            num_trials: -1
 
 scheduler:
     total_trials: 10
