@@ -312,15 +312,15 @@ class BOAScriptOptions(ToDict):
     )
     write_configs: Optional[str] = field(
         default=None,
-        metadata={"doc": "Shell command to write your configs out. " "See `run_model` for more details. "},
+        metadata={"doc": "Shell command to write your configs out. See `run_model` for more details. "},
     )
     set_trial_status: Optional[str] = field(
         default=None,
-        metadata={"doc": "Shell command to set your trial status. " "See `run_model` for more details. "},
+        metadata={"doc": "Shell command to set your trial status. See `run_model` for more details. "},
     )
     fetch_trial_data: Optional[str] = field(
         default=None,
-        metadata={"doc": "Shell command to fetch your trial data." "See `run_model` for more details. "},
+        metadata={"doc": "Shell command to fetch your trial data. See `run_model` for more details. "},
     )
     base_path: Optional[PathLike] = None
 
@@ -366,6 +366,24 @@ def _gen_step_converter(steps: Optional[list[dict | GenerationStep]]) -> list[Ge
             step["model"] = Models(step["model"])
         gs.append(GenerationStep(**step))
     return gs
+
+
+def _gen_strat_converter(gs: Optional[dict | GenerationStrategy] = None) -> GenerationStrategy:
+    if isinstance(gs, GenerationStrategy):
+        return gs
+    if gs.get("steps"):
+        steps = []
+        for i, step in enumerate(gs["steps"]):
+            if isinstance(step, GenerationStep):
+                gs["steps"][i] = step
+                steps.append(step)
+                continue
+            try:
+                step["model"] = Models[step["model"]]
+            except KeyError:
+                step["model"] = Models(step["model"])
+            gs["steps"][i] = GenerationStep(**step)
+    return GenerationStrategy(**gs)
 
 
 def _load_stopping_strategy(d: Optional[dict], module: ModuleType):
@@ -424,6 +442,22 @@ def _parameter_normalization(
 
 
 @define(kw_only=True)
+class GenerationStrategy(ToDict):
+    steps: Optional[list[dict | GenerationStep]] = field(
+        default=None, converter=converters.optional(_gen_step_converter), metadata={"doc": """"""}
+    )
+    auto_strat_args: Optional[dict] = field(
+        default=None,
+        metadata={
+            "doc": "Arugments to Ax's `choose_generation_strategy` function. "
+            "See `https://ax.dev/tutorials/generation_strategy.html` and "
+            "`https://ax.dev/api/modelbridge.html#ax.modelbridge.dispatch_utils.choose_generation_strategy` "
+            "for more details."
+        },
+    )
+
+
+@define(kw_only=True)
 class BOAConfig(ToDict):
     """Base doc string"""
 
@@ -433,13 +467,59 @@ class BOAConfig(ToDict):
             "doc": BOAObjective.__doc__,
         },
     )
+
     parameters: dict[str, dict] | list[TParameterRepresentation] = field(
-        converter=_parameter_normalization, metadata={"doc": "this is a second test"}
-    )  #
-    generation_steps: Optional[list[dict] | list[GenerationStep]] = field(
-        default=None,
-        converter=converters.optional(_gen_step_converter),
-        metadata={"doc": "When manually setting steps to generate new trials"},
+        converter=_parameter_normalization,
+        metadata={
+            "doc": """
+Parameters to optimize over. This can be expressed in two ways. The first is a list of dictionaries, where each
+dictionary represents a parameter. The second is a dictionary of dictionaries, where the key is the name of the
+parameter and the value is the dictionary representing the parameter.
+
+.. code-block:: yaml
+
+    ##############################
+    # Dictionary of dictionaries #
+    ##############################
+    x1:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+    x2:
+        type: range
+        bounds: [0.0, 1.0]  # value_type is inferred from bounds
+
+.. code-block:: yaml
+
+    ########################
+    # List of dictionaries #
+    ########################
+    -   name: x1
+        type: range
+        bounds: [0, 1]
+        value_type: float
+
+.. code-block:: yaml    
+
+    ###############
+    # Fixed Types #
+    ###############
+    x3: 4.0  # Fixed type, value is 4.0
+    x4:
+        type: fixed
+        value: "some string"  # Fixed type, value is "some string"
+
+    ##################
+    # Choice Options #
+    ##################
+    x5:
+        type: choice
+        "values": ["a", "b"]
+"""  # noqa: W291
+        },
+    )
+    generation_strategy: Optional[dict | GenerationStrategy] = field(
+        factory=GenerationStrategy, converter=_gen_strat_converter
     )
     scheduler: Optional[dict | SchedulerOptions] = field(
         default=None,
@@ -547,7 +627,7 @@ class BOAConfig(ToDict):
         if "weights" in config["objective"]:
             if len(config["objective"]["weights"]) != len(config["objective"]["metrics"]):
                 raise ValueError(
-                    "Weights need to be the same length as objectives! " "You must have 1 weight for each objective"
+                    "Weights need to be the same length as objectives! You must have 1 weight for each objective"
                 )
             for metric, weight in zip(config["objective"]["metrics"], config["objective"]["weights"]):
                 metric["weight"] = weight
@@ -555,9 +635,9 @@ class BOAConfig(ToDict):
             del config["objective"]["weights"]
 
         #####################################################
-        # restructure generation_strategy to streamlined generation_steps format
+        # copy over generation strategy
         if "generation_strategy" in opt_ops:
-            config["generation_steps"] = opt_ops["generation_strategy"]["steps"]
+            config["generation_strategy"] = opt_ops["generation_strategy"]
 
         #####################################################
         #  copy over scheduler

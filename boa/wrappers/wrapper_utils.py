@@ -236,9 +236,7 @@ def load_jsonlike(file: PathLike, *args, **kwargs):
     elif file.suffix.lstrip(".").lower() == "json":
         return load_json(file, *args, **kwargs)
     else:
-        raise ValueError(
-            f"Invalid config file format for config file {file}" "\nAccepted file formats are YAML and JSON."
-        )
+        raise ValueError(f"Invalid config file format for config file {file}\nAccepted file formats are YAML and JSON.")
 
 
 def normalize_config(

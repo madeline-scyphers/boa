@@ -36,13 +36,13 @@ def instantiate_search_space_from_json(
 
 
 def get_generation_strategy(config: BOAConfig, experiment: Experiment = None, **kwargs):
-    if config.generation_steps is None:
+    if config.generation_strategy.steps is None:
         if config.scheduler and config.scheduler.total_trials:
             kwargs["num_trials"] = config.scheduler.total_trials
         generation_strategy = choose_generation_strategy_from_experiment(experiment=experiment, config=config, **kwargs)
 
     else:
-        generation_strategy = GenerationStrategy(steps=config.generation_steps)
+        generation_strategy = GenerationStrategy(steps=config.generation_strategy.steps)
     return generation_strategy
 
 
@@ -63,13 +63,13 @@ def get_scheduler(
     **kwargs,
 ) -> Scheduler:
 
-    if config.generation_steps is None:
+    if config.generation_strategy.steps is None:
         if config.scheduler and config.scheduler.total_trials:
             kwargs["num_trials"] = config.scheduler.total_trials
         generation_strategy = choose_generation_strategy_from_experiment(experiment=experiment, config=config, **kwargs)
 
     else:
-        generation_strategy = GenerationStrategy(steps=config.generation_steps)
+        generation_strategy = GenerationStrategy(steps=config.generation_strategy.steps)
     _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy)
     # db_settings = DBSettings(
     #     url="sqlite:///foo.db",

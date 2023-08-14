@@ -50,13 +50,14 @@ parameter_constraints:
 # Here we say we want for first 5 trials
 # To be a random sobol survey,
 # and then the rest be Gaussian process expected improvement
-generation_steps:
-    # Other options are possible, see Ax GenerationStrategy
-    # for more information
-    - model: SOBOL
-      num_trials: 5
-    - model: GPEI
-      num_trials: -1
+generation_strategy:
+    steps:
+        # Other options are possible, see Ax GenerationStrategy
+        # for more information
+        - model: SOBOL
+          num_trials: 5
+        - model: GPEI
+          num_trials: -1
 
 scheduler:
     total_trials: 10
