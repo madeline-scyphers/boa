@@ -19,7 +19,7 @@ from copy import deepcopy
 from functools import wraps
 from typing import TYPE_CHECKING, Type, Union
 
-import yaml
+import ruamel.yaml as yaml
 from ax.core.base_trial import BaseTrial
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
 from ax.exceptions.core import AxError

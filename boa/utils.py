@@ -16,8 +16,9 @@ import sys
 import types
 import warnings
 from collections.abc import Iterable, Mapping
+from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Optional, Type, Union
 
 import torch
 
@@ -248,3 +249,40 @@ def deprecation(message, version_to_remove=None):
     if version_to_remove:
         message += "\nScheduled to be removed on version {version}".format(version=version_to_remove)
     warnings.warn(message, DeprecationWarning, stacklevel=2)
+
+
+class StrEnum(str, Enum):
+    """
+    Enum where members are also (and must be) strings
+    """
+
+    def __new__(cls, *values):
+        "values must already be of type `str`"
+        if len(values) > 3:
+            raise TypeError("too many arguments for str(): %r" % (values,))
+        if len(values) == 1:
+            # it must be a string
+            if not isinstance(values[0], str):
+                raise TypeError("%r is not a string" % (values[0],))
+        if len(values) >= 2:
+            # check that encoding argument is a string
+            if not isinstance(values[1], str):
+                raise TypeError("encoding must be a string, not %r" % (values[1],))
+        if len(values) == 3:
+            # check that errors argument is a string
+            if not isinstance(values[2], str):
+                raise TypeError("errors must be a string, not %r" % (values[2]))
+        value = str(*values)
+        member = str.__new__(cls, value)
+        member._value_ = value
+        return member
+
+    def _generate_next_value_(name, start, count, last_values):
+        """
+        Return the lower-cased version of the member name.
+        """
+        return name.lower()
+
+    @classmethod
+    def from_str_or_enum(cls, value: Union[str, "StrEnum"]) -> "StrEnum":
+        return cls(value)

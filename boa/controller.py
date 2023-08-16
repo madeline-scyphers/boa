@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 from typing import Type
 
-import yaml
+import ruamel.yaml as yaml
 from ax import Experiment
 from ax.service.utils.report_utils import exp_to_df
 
