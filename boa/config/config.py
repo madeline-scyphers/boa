@@ -12,6 +12,7 @@ import ruamel.yaml
 import ruamel.yaml.comments
 from attr import asdict
 from attrs import Factory, converters, define, field, fields_dict
+from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.service.utils.instantiation import TParameterRepresentation
 from ax.service.utils.scheduler_options import SchedulerOptions
 from ax.storage.json_store.encoder import object_to_json
@@ -40,6 +41,20 @@ __all__ = [
 
 
 NL = "\n"
+
+
+def strip_white_space(s: str, strip_all=True):
+    if not s:
+        return s
+    if strip_all:
+        return NL.join(ln.strip() for ln in s.splitlines())
+    s_ls = s.splitlines()
+    min_indent = min([len(ln) - len(ln.lstrip()) for ln in s_ls if ln])
+    return NL.join(ln[min_indent:] for ln in s_ls)
+
+
+# def strip_white_space(s: str):
+#     return NL.join(ln.strip() for ln in s.splitlines())
 
 
 @define
@@ -233,7 +248,8 @@ class BOAScriptOptions(_Utils):
     rel_to_config: Optional[bool] = field(
         default=True,
         metadata={
-            "doc": """Whether to use the config file as the base path for all relative paths.
+            "doc": """
+            Whether to use the config file as the base path for all relative paths.
             If True, all relative paths will be relative to the config file directory.
             Defaults to True if not specified.
             If launched through BOA CLI, this will be set to True automatically.
@@ -243,7 +259,8 @@ class BOAScriptOptions(_Utils):
     rel_to_launch: Optional[bool] = field(
         default=None,
         metadata={
-            "doc": """Whether to use the CLI launch directory as the base path for all relative paths.
+            "doc": """
+            Whether to use the CLI launch directory as the base path for all relative paths.
             If True, all relative paths will be relative to the CLI launch directory.
             Defaults to `rel_to_config` argument if not specified.
             rel_to_config and rel_to_launch cannot both be specified."""
@@ -362,6 +379,7 @@ class BOAConfig(_Utils):
         converter=_convert_noton_type(lambda d: BOAObjective(**d), type_=BOAObjective),
         metadata={
             "default_doc": dict(metrics=[dict(name="metric1", metric="RMSE")]),
+            "doc_strip_all": False,
             "doc": BOAObjective.__doc__,
         },
     )
@@ -374,6 +392,7 @@ class BOAConfig(_Utils):
                 "x2": {"type": "choice", "values": ["a", "b", "c"]},
                 "x3": 4.0,
             },
+            "doc_strip_all": False,
             "doc": """
 Parameters to optimize over. This can be expressed in two ways. The first is a list of dictionaries, where each
 dictionary represents a parameter. The second is a dictionary of dictionaries, where the key is the name of the
@@ -418,7 +437,8 @@ parameter and the value is the dictionary representing the parameter.
         factory=dict,
         converter=_gen_strat_converter,
         metadata={
-            "doc": """
+            "doc_strip_all": False,
+            "doc": f"""
 Your generation strategy is how new trials will be generated, that is, what acquisition function
 will be used to select the next trial, what kernel will be used to model the objective function,
 as well as other options such as max parallelism.
@@ -426,6 +446,9 @@ as well as other options such as max parallelism.
 This is an optional section. If not specified, Ax will choose a generation strategy for you.
 Based on your objective, parameters, and other options. You can pass options to how Ax chooses
 a generation strategy by passing options under `generation_strategy`.
+
+Taken from Ax's documentation:
+{strip_white_space(choose_generation_strategy.__doc__, strip_all=False)}
 
 See https://ax.dev/tutorials/generation_strategy.html and 
 https://ax.dev/api/modelbridge.html#ax.modelbridge.dispatch_utils.choose_generation_strategy 
@@ -457,7 +480,7 @@ For specific options you can pass to each step
         -   model: GPEI  # Gaussian Process with Expected Improvement
             num_trials: -1
             max_parallelism: 10  # Maximum number of trials allowed to run in parallel
-"""  # noqa: W291
+""",  # noqa: W291
         },
     )
     scheduler: Optional[dict | SchedulerOptions] = field(
@@ -465,6 +488,7 @@ For specific options you can pass to each step
         converter=_convert_noton_type(_scheduler_converter, type_=SchedulerOptions, default_if_none=SchedulerOptions),
         metadata={
             "default_doc": dict(n_trials=100),
+            "doc_strip_all": False,
             "doc": SchedulerOptions.__doc__
             + (
                 """
@@ -722,10 +746,6 @@ For specific options you can pass to each step
         return new_params
 
 
-def strip_white_space(s: str):
-    return NL.join(ln.strip() for ln in s.splitlines())
-
-
 def generate_default_doc_config():
 
     config = BOAConfig(
@@ -773,12 +793,13 @@ def add_comment_recurse(d: ruamel.yaml.comments.CommentedMap, config=None, where
     if isinstance(d, dict):
         for key in d:
             if key in fields:
-                doc = fields[key].metadata.get("doc")
+                doc = strip_white_space(
+                    fields[key].metadata.get("doc", ""), strip_all=fields[key].metadata.get("doc_strip_all", True)
+                )
                 if depth == 0:
-                    intro = "\n##" + "#" * len(key) + "\n" + key + " #\n" + "#" * len(key) + "##"
-                    doc = intro + "\n" + doc if doc else intro
+                    intro = "\n##" + "#" * len(key) + "\n" + key + " #\n" + "#" * len(key) + "##\n"
+                    doc = intro + doc if doc else intro + "\n"
                 if doc:
-                    doc = strip_white_space(doc)
 
                     if where == "end" and len(doc.splitlines()) == 1:
                         d.yaml_add_eol_comment(comment=doc, key=key)

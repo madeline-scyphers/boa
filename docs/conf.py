@@ -126,7 +126,6 @@ html_theme = "pydata_sphinx_theme"
 
 
 html_theme_options = {
-    "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
     "icon_links": [
         {
             # Label for this link
@@ -137,7 +136,7 @@ html_theme_options = {
             "icon": "fab fa-github-square",
             # Whether icon should be a FontAwesome class, or a local file
         }
-    ],
+    ]
 }
 
 
