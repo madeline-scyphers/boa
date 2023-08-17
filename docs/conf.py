@@ -135,11 +135,6 @@ elif "rc" in version:
 
 
 html_theme_options = {
-    "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
-    "switcher": {
-        "json_url": "https://pandas.pydata.org/versions.json",
-        "version_match": switcher_version,
-    },
     "icon_links": [
         {
             # Label for this link
@@ -150,7 +145,7 @@ html_theme_options = {
             "icon": "fab fa-github-square",
             # Whether icon should be a FontAwesome class, or a local file
         }
-    ],
+    ]
 }
 
 
