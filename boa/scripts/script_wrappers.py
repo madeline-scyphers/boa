@@ -24,7 +24,7 @@ class Wrapper(boa.BaseWrapper):
 
         cmd = (
             f"python -m boa.scripts.synth_func_cli --output_dir {trial_dir}"
-            f" --standard_dev {self.ex_settings['objective_options']['objectives'][0]['noise_sd']}"
+            f" --standard_dev {self.config.objective.metrics[0].noise_sd}"
             f" --input_size {self.model_settings['input_size']}"
             f" -- {' '.join(str(val) for val in trial.arm.parameters.values())}"
         )

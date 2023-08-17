@@ -1,0 +1,76 @@
+objective:
+    metrics:
+        # List all of your metrics here,
+        # only list 1 metric for a single objective optimization
+        -   name: rmse
+            metric: RootMeanSquaredError
+        # We can mark metrics as info only just so we can track their results later
+        # without it impacting our optimization
+        -   name: Meanyyy
+            metric: Mean
+            info_only: True
+
+    outcome_constraints: []
+    minimize: true
+
+parameters:
+    x1:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+
+    x2:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+
+    x3:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+
+    x4:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+
+    x5:
+        type: fixed
+        value: .5
+        value_type: float
+
+parameter_constraints:
+    - x2 + x1 >= .1
+    - x2 + x1 + .6*x1 <= .6
+
+# Here we explicitly define a generation strategy
+# for our trials.
+# This can always be done, but if left off,
+# Will be autoselected.
+# Here we say we want for first 5 trials
+# To be a random sobol survey,
+# and then the rest be Gaussian process expected improvement
+generation_strategy:
+    steps:
+        # Other options are possible, see Ax GenerationStrategy
+        # for more information
+        -   model: SOBOL
+            num_trials: 5
+        -   model: GPEI
+            num_trials: -1
+
+scheduler:
+    total_trials: 10
+    global_stopping_strategy:
+        type: ImprovementGlobalStoppingStrategy
+        min_trials: 7
+    early_stopping_strategy:
+        type: AndEarlyStoppingStrategy
+        left:
+            type: PercentileEarlyStoppingStrategy
+            metric_names:
+                - rmse
+        right:
+            type: PercentileEarlyStoppingStrategy
+            metric_names:
+                - rmse

@@ -1,14 +1,6 @@
-import tempfile
-
 import numpy as np
-from ax import (
-    Metric,
-    MultiObjective,
-    MultiObjectiveOptimizationConfig,
-    Objective,
-    OptimizationConfig,
-    OutcomeConstraint,
-)
+import pytest
+from ax import MultiObjectiveOptimizationConfig, OptimizationConfig
 
 from boa import (
     BaseWrapper,
@@ -75,16 +67,16 @@ def test_load_metric_by_name():
 
 
 def test_load_metric_from_config(synth_config, metric_config):
-    objectives = synth_config["optimization_options"]["objective_options"]["objectives"]
-    for objective in objectives:
-        metric = get_metric_from_config(objective)
+    metrics = synth_config.objective.metrics
+    for metric_c in metrics:
+        metric = get_metric_from_config(metric_c)
         assert metric.name == "Hartmann4"
         assert metric.metric_to_eval.name == "FromBotorch_Hartmann4"
 
-    objectives = metric_config["optimization_options"]["objective_options"]["objectives"]
-    for objective in objectives:
-        if "info_only" not in objective or objective["info_only"] is False:
-            metric = get_metric_from_config(objective)
+    metrics = metric_config.objective.metrics
+    for metric_c in metrics:
+        if not metric_c.info_only:
+            metric = get_metric_from_config(metric_c)
             assert metric.name == "rmse"
             assert metric.metric_to_eval.__name__ == "mean_squared_error"
 
@@ -117,8 +109,8 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_and_test_se
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_all_data_and_test_sem_fails_with_wrong_metrics(
     moo_config, caplog, tmp_path
 ):
-    orig_metrics = moo_config["optimization_options"]["objective_options"]["objectives"]
-    moo_config["optimization_options"]["objective_options"]["objectives"] = orig_metrics[:1]
+    orig_metrics = moo_config.objective.metrics
+    moo_config.objective.metrics = orig_metrics[:1]
     controller = Controller(config=moo_config, wrapper=Wrapper, experiment_dir=tmp_path)
     controller.initialize_scheduler()
 
@@ -126,10 +118,9 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_all_data_and_tes
     experiment = controller.experiment
 
     trial = experiment.new_trial(generator_run=scheduler.generation_strategy.gen(experiment))
-    for name, metric in experiment.metrics.items():
-        metric.fetch_trial_data(trial)
-
-    assert "found extra returned metric: " in caplog.text
+    with pytest.raises(ValueError):
+        for name, metric in experiment.metrics.items():
+            metric.fetch_trial_data(trial)
 
 
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_test_sem_passing(moo_config, tmp_path):

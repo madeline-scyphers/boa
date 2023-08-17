@@ -10,7 +10,13 @@ try:
 except ImportError:
     from .script_wrappers import Wrapper
 
-from boa import WrappedJobRunner, get_dt_now_as_str, get_experiment, get_scheduler
+from boa import (
+    BOAConfig,
+    WrappedJobRunner,
+    get_dt_now_as_str,
+    get_experiment,
+    get_scheduler,
+)
 from boa.logger import get_logger
 
 
@@ -24,7 +30,7 @@ def run_opt(exp_dir):
     config_file = Path(__file__).parent / "synth_func_config.yaml"
     start = time.time()
     wrapper = Wrapper(config_path=config_file, experiment_dir=exp_dir)
-    config = wrapper.config
+    config: BOAConfig = wrapper.config
     experiment_dir = wrapper.experiment_dir
     # Copy the experiment config to the experiment directory
     shutil.copyfile(config_file, experiment_dir / Path(config_file).name)
@@ -33,7 +39,7 @@ def run_opt(exp_dir):
 
     experiment = get_experiment(config, WrappedJobRunner(wrapper=wrapper), wrapper)
     scheduler = get_scheduler(experiment, config=config)
-    total_trials = config["optimization_options"]["scheduler"]["total_trials"]
+    total_trials = config.scheduler.total_trials
     # we leave some trials off for use in unit tests
     scheduler.run_n_trials(total_trials - 5)
 

@@ -3,7 +3,16 @@ import sys
 
 import numpy as np
 import pytest
+from attrs import fields
 from ax import Experiment, Objective, OptimizationConfig
+from ax.storage.json_store.decoder import object_from_json
+from ax.storage.json_store.encoder import object_to_json
+from ax.storage.json_store.registry import (
+    CORE_CLASS_DECODER_REGISTRY,
+    CORE_CLASS_ENCODER_REGISTRY,
+    CORE_DECODER_REGISTRY,
+    CORE_ENCODER_REGISTRY,
+)
 
 import boa.__main__ as dunder_main
 from boa import (
@@ -23,10 +32,45 @@ from boa.definitions import ROOT
 TEST_DIR = ROOT / "tests"
 
 
+def test_save_load_config(
+    generic_config,
+    synth_config,
+    metric_config,
+    gen_strat1_config,
+    soo_config,
+    moo_config,
+    pass_through_config,
+    scripts_moo,
+    scripts_synth_func,
+):
+    for config in [
+        generic_config,
+        synth_config,
+        metric_config,
+        gen_strat1_config,
+        soo_config,
+        moo_config,
+        pass_through_config,
+        scripts_moo,
+        scripts_synth_func,
+    ]:
+        serialized = object_to_json(
+            config,
+            encoder_registry=CORE_ENCODER_REGISTRY,
+            class_encoder_registry=CORE_CLASS_ENCODER_REGISTRY,
+        )
+
+        c = object_from_json(
+            serialized,
+            decoder_registry=CORE_DECODER_REGISTRY,
+            class_decoder_registry=CORE_CLASS_DECODER_REGISTRY,
+        )
+        assert config == c
+
+
 def test_save_load_scheduler_branin(branin_main_run, tmp_path):
     file_out = tmp_path / "scheduler.json"
     scheduler = branin_main_run
-    config = scheduler.runner.wrapper.config
     scheduler_to_json_file(scheduler, file_out)
 
     pre_num_trials = len(scheduler.experiment.trials)
@@ -62,7 +106,6 @@ def test_can_pass_custom_wrapper_path_when_loading_scheduler(branin_main_run, tm
 
 def test_can_pass_custom_wrapper_path_when_loading_scheduler_from_cli(stand_alone_opt_package_run, tmp_path_factory):
     scheduler = stand_alone_opt_package_run
-    wrapper = scheduler.experiment.runner.wrapper
 
     temp_dir = tmp_path_factory.mktemp("temp_dir")
     file_out = temp_dir / "scheduler.json"

@@ -11,7 +11,7 @@ Creating a configuration File
 
 Configuration is usually done through a configuration file in YAML or json format. The goal of :doc:`BOA </index>` is allow as much functionality of the bayesian optimization through the configuration as possible. Allowing users to worry mostly about their model itself instead of the optimization. In the configuration file you can do a single objective, multi objective, or scalarized objective optimization. You can specify different acquisition functions, or let them be selected for you, what parameters you are optimizing, parameter constraints, outcome constraints, and more.
 
-See the :doc:`instructions for configurations files<configuration>` for details.
+See the :doc:`instructions for configurations files</api/boa.config>` for details.
 
 .. note::
     We are adding more and more functionality to the configuration directly, but if there are features not supported in the boa configuration file yet, but are support in the underlying Ax or BoTorch libraries, you can customize things further  with your run script. See below.
