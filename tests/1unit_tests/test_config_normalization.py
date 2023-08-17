@@ -1,7 +1,5 @@
 from unittest import TestCase
 
-from boa import boa_params_to_wpr, normalize_config
-
 
 def test_wpr_params_to_boa(denormed_param_parse_config):
     # parameter_keys = denormed_param_parse_config.parameter_keys

@@ -245,13 +245,13 @@ def _convert_type(item, conversion: dict):
     return item
 
 
-def deprecation(message, version_to_remove=None):
+def deprecation(message, version_to_remove=None):  # pragma: no cover  # copied from numpy
     if version_to_remove:
         message += "\nScheduled to be removed on version {version}".format(version=version_to_remove)
     warnings.warn(message, DeprecationWarning, stacklevel=2)
 
 
-class StrEnum(str, Enum):
+class StrEnum(str, Enum):  # pragma: no cover  # copied from python 3.11
     """
     Enum where members are also (and must be) strings
     """

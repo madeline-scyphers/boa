@@ -15,9 +15,8 @@ import os
 import pathlib
 import shlex
 from contextlib import contextmanager
-from copy import deepcopy
 from functools import wraps
-from typing import TYPE_CHECKING, Type, Union
+from typing import TYPE_CHECKING, Type
 
 import ruamel.yaml as yaml
 from ax.core.base_trial import BaseTrial
@@ -176,7 +175,7 @@ def split_shell_command(cmd: str):
     return shlex.split(cmd, posix=not IS_WINDOWS)
 
 
-def load_json(file: PathLike, normalize: bool = True, *args, **kwargs) -> dict:
+def load_json(file: PathLike) -> dict:
     """
     Read experiment configuration file for setting up the optimization.
     The configuration file contains the list of parameters, and whether each parameter is a fixed
@@ -212,268 +211,26 @@ def load_json(file: PathLike, normalize: bool = True, *args, **kwargs) -> dict:
     with open(file, "r") as f:
         config = json.load(f)
 
-    if normalize:
-        return normalize_config(config, *args, **kwargs)
     return config
 
 
 @copy_doc(load_json)
-def load_yaml(file: PathLike, normalize: bool = True, *args, **kwargs) -> dict:
+def load_yaml(file: PathLike) -> dict:
     file = pathlib.Path(file).expanduser()
     with open(file, "r") as f:
         config: dict = yaml.safe_load(f)
-
-    if normalize:
-        return normalize_config(config, *args, **kwargs)
     return config
 
 
 @copy_doc(load_json)
-def load_jsonlike(file: PathLike, *args, **kwargs):
+def load_jsonlike(file: PathLike):
     file = pathlib.Path(file)
     if file.suffix.lstrip(".").lower() in {"yaml", "yml"}:
-        return load_yaml(file, *args, **kwargs)
+        return load_yaml(file)
     elif file.suffix.lstrip(".").lower() == "json":
-        return load_json(file, *args, **kwargs)
+        return load_json(file)
     else:
         raise ValueError(f"Invalid config file format for config file {file}\nAccepted file formats are YAML and JSON.")
-
-
-def normalize_config(
-    config: dict, parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]] = None
-) -> dict:
-    """
-    Normalize config dictionary passed in.
-
-    Perform a series of minor convenience normalizations to your configuration dictionary.
-    These include adding empty sections for certain optional sections you don't include.
-    Defaulting you experiment name to boa_runs if you don't include it.
-    And any pathing you include under the parameter_keys section, will get prepended with its
-    path, and will get added to your parameters section.
-
-    Instead of putting all of your parameters under the parameters key,
-    You can put them under different keys, and then
-    pass a list of lists where each list is the json/yaml pathing to the
-    additional parameters key section.
-
-    Useful for if you have multiple sections of parameters that you
-    want to keep logically separated but you are still optimizing over
-    them all, such as different plant species in a multi-species plant model.
-
-    Parameters
-    ----------
-    config: dict
-        your configuration dictionary (jsonlike)
-    parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]]
-        This needs to be a json path to a key or keys where parameters or stored. So
-        either a single string (the key) or a list of strings and ints (the keys and list indices),
-        or a list of those lists for multiple paths.
-
-    Returns
-    -------
-    config: dict
-        normalized configuration
-
-    Examples
-    --------
-    .. code-block:: yaml
-
-        optimization_options:
-            parameter_keys: [
-                ["params", "a"],
-            ]
-
-            # Alternatively, these keys can be expressed in more traditional YAML
-            # syntax, but the above more traditional json like syntax might be easier
-            # to understand. They both mean the same thing, a list of lists
-            #    -
-            #        - "params"
-            #        - "a"
-
-        params:
-            a:
-                x1:
-                    type: range
-                    bounds: [0, 1]
-                x2:
-                    type: fixed
-                    value: 0.5
-
-        # This would get normalized to
-
-        parameters:
-            params_a_x2:
-                type: range
-                bounds: [0, 1]
-            params_a_x1:
-                type: fixed
-                value: 0.5
-
-    # A more complicated working example
-        >>> from boa import normalize_config
-        >>> from pprint import pprint
-        >>> config = {
-        ...     "params": {
-        ...         "a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
-        ...         "b": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
-        ...     },
-        ...     "params2": [
-        ...         {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
-        ...         {0: {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}}},
-        ...     ],
-        ...     "params_a": {"x1": {"bounds": [0, 1], "type": "range"}, "x2": {"type": "fixed", "value": 0.5}},
-        ... }
-        >>> parameter_keys = [
-        ...     ["params", "a"],
-        ...     ["params", "b"],
-        ...     ["params_a"],
-        ...     ["params2", 0, 0],
-        ...     ["params2", 1, 0],
-        ... ]
-        >>> config = normalize_config(config, parameter_keys)
-        >>> pprint(config["parameters"])
-        [{'bounds': [0, 1], 'name': 'params_a_x1', 'type': 'range'},
-         {'name': 'params_a_x2', 'type': 'fixed', 'value': 0.5},
-         {'bounds': [0, 1], 'name': 'params_b_x1', 'type': 'range'},
-         {'name': 'params_b_x2', 'type': 'fixed', 'value': 0.5},
-         {'bounds': [0, 1], 'name': 'params_a_x1_0', 'type': 'range'},
-         {'name': 'params_a_x2_0', 'type': 'fixed', 'value': 0.5},
-         {'bounds': [0, 1], 'name': 'params2_0_0_x1', 'type': 'range'},
-         {'name': 'params2_0_0_x2', 'type': 'fixed', 'value': 0.5},
-         {'bounds': [0, 1], 'name': 'params2_1_0_x1', 'type': 'range'},
-         {'name': 'params2_1_0_x2', 'type': 'fixed', 'value': 0.5}]
-    """
-    config["optimization_options"] = config.get("optimization_options", {})
-    for key in ["experiment", "generation_strategy", "scheduler"]:
-        config["optimization_options"][key] = config["optimization_options"].get(key, {})
-    # Experiment name will default to the "boa_runs" if no name is provided
-    config["optimization_options"]["experiment"]["name"] = config["optimization_options"]["experiment"].get(
-        "name", "boa_runs"
-    )
-
-    if parameter_keys:
-        parameters, mapping = wpr_params_to_boa(config, parameter_keys)
-        config["parameters"] = parameters
-        config["optimization_options"]["mapping"] = mapping
-
-    # Format parameters for Ax experiment
-    config["parameters_orig"] = deepcopy(config.get("parameters", {}))
-    config["parameter_constraints_orig"] = deepcopy(config.get("parameter_constraints", []))
-
-    parameters = config.get("parameters", {})
-    # parameters in the form of name: options, normalize to a list form: [{name: x, bounds: (1, 2), etc}]
-    if isinstance(parameters, dict):
-        search_space_parameters = []
-        for param in config.get("parameters", {}).keys():
-            d = deepcopy(config["parameters"][param])
-            if not isinstance(d, dict):
-                d = {"value": d, "type": "fixed"}
-            d["name"] = param  # Add "name" attribute for each parameter
-            # remove bounds on fixed params
-            if d.get("type", "") == "fixed" and "bounds" in d:
-                del d["bounds"]
-            # Remove value on range params
-            if d.get("type", "") == "range" and "value" in d:
-                del d["value"]
-
-            search_space_parameters.append(d)
-
-        config["parameters"] = search_space_parameters
-
-    return config
-
-
-def wpr_params_to_boa(
-    params: dict, parameter_keys: str | list[Union[str, list[str], list[Union[str, int]]]]
-) -> tuple[dict, dict]:
-    """
-
-    Parameters
-    ----------
-    params
-        dictionary containing parameters
-    parameter_keys
-        str of key to parameters, or list of json paths to key(s) of parameters.
-    """
-    # if only one key is passed in as a str, wrap it in a list
-    if isinstance(parameter_keys, str):
-        parameter_keys = [parameter_keys]
-
-    new_params = {}
-    mapping = {}
-    for maybe_key in parameter_keys:
-        path_type = []
-        if isinstance(maybe_key, str):
-            key = maybe_key
-            d = params[key]
-        elif isinstance(maybe_key, (list, tuple)):
-            d = params[maybe_key[0]]
-            if len(maybe_key) > 1:
-                for k in maybe_key[1:]:
-                    if isinstance(d, dict):
-                        path_type.append("dict")
-                    else:
-                        path_type.append("list")
-                    d = d[k]
-            path_type.append("dict")  # the last key is always a dict to the param info
-
-            key = "_".join(str(k) for k in maybe_key)
-        else:
-            raise TypeError(
-                "wpr_params_to_boa accepts str, a list of str, or a list of lists of str "
-                "\nfor the keys (or paths of keys) to the AX parameters you wish to prepend."
-            )
-        for parameter_name, dct in d.items():
-            new_key = f"{key}_{parameter_name}"
-            key_index = 0
-            while new_key in new_params:
-                new_key += f"_{key_index}"
-                if new_key in new_params:
-                    key_index += 1
-                    new_key = new_key[:-2]
-            new_params[new_key] = dct
-            mapping[new_key] = dict(path=maybe_key, original_name=parameter_name, path_type=path_type)
-
-    return new_params, mapping
-
-
-def boa_params_to_wpr(params: list[dict], mapping, from_trial=True):
-    new_params = {}
-    for parameter in params:
-        if from_trial:
-            name = parameter
-        else:
-            name = parameter["name"]
-        path = mapping[name]["path"]
-        original_name = mapping[name]["original_name"]
-        path_type = mapping[name]["path_type"]
-
-        p1 = path[0]
-        pt1 = path_type[0]
-
-        if path[0] not in new_params:
-            if pt1 == "dict":
-                new_params[p1] = {}
-            else:
-                new_params[p1] = []
-
-        d = new_params[p1]
-        if len(path) > 1:
-            for key, typ in zip(path[1:], path_type[1:]):
-                if (isinstance(d, list) and key + 1 > len(d)) or (isinstance(d, dict) and key not in d):
-                    if isinstance(d, list):
-                        d.extend([None for _ in range(key + 1 - len(d))])
-                    if typ == "dict":
-                        d[key] = {}
-                    else:
-                        d[key] = []
-                d = d[key]
-        if from_trial:
-            d[original_name] = params[parameter]
-        else:
-            d[original_name] = {k: v for k, v in parameter.items() if k != "name"}
-
-    return new_params
 
 
 def get_dt_now_as_str(fmt: str = "%Y%m%dT%H%M%S") -> str:
