@@ -26,6 +26,7 @@ optimization_options:
     # To be a random sobol survey,
     # and then the rest be Gaussian process expected improvement
     generation_strategy:
+#        use_saasbo: true
         steps:
             # Other options are possible, see Ax GenerationStrategy
             # for more information
@@ -33,6 +34,9 @@ optimization_options:
               num_trials: 5
             - model: GPEI
               num_trials: -1
+
+
+
     # experiment options we wish to use
     # we specify an experiment name, which we can
     # also use to name our experiment running and output directory

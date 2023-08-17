@@ -13,12 +13,13 @@ import time
 from pathlib import Path
 from typing import Type
 
-import yaml
+import ruamel.yaml as yaml
 from ax import Experiment
 from ax.service.utils.report_utils import exp_to_df
 
 from boa.__version__ import __version__ as VERSION
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
+from boa.config import BOAConfig
 from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
@@ -64,7 +65,7 @@ class Controller:
         self,
         wrapper: Type[BaseWrapper] | BaseWrapper | PathLike,
         config_path: PathLike = None,
-        config: dict = None,
+        config: BOAConfig = None,
         **kwargs,
     ):
         if not (config or config_path or isinstance(wrapper, BaseWrapper)):
@@ -180,9 +181,8 @@ class Controller:
 
         try:
             final_msg = "Trials Completed!"
-            if "trials" in self.config["optimization_options"]:
-                n_trials = self.config["optimization_options"]["trials"]
-                scheduler.run_n_trials(n_trials)
+            if self.config.n_trials:
+                scheduler.run_n_trials(self.config.n_trials)
             else:
                 scheduler.run_all_trials()
         except BaseException as e:

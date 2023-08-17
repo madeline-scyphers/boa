@@ -6,14 +6,7 @@ optimization_options:
         metric: RootMeanSquaredError
         properties:
           obs_file: path
-#        upper_bound:
-#          bound: 100
-#          relative: false
-#        lower_bound:
-#          bound: 0
-#          relative: false
-      - name: r2
-        metric: R2
+      - metric: R2
     weights:
       - 1
       - 2
@@ -34,8 +27,8 @@ optimization_options:
         num_trials: -1
   scheduler:
     total_trials: 10
-    experiment:
-        name: "test_experiment"
+  experiment:
+      name: "test_experiment"
 
 model_options:
   model_specific_options:

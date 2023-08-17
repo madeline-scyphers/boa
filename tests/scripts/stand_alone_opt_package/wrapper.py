@@ -15,7 +15,7 @@ class Wrapper(boa.BaseWrapper):
         self.data[trial.index] = run_branin_from_trial(trial)
 
     def set_trial_status(self, trial: Trial) -> None:
-        data_exists = self.data.get(trial.index)
+        data_exists = self.data.get(trial.index) is not None
         if data_exists:
             trial.mark_completed()
 

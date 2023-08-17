@@ -130,6 +130,8 @@ Running Sphinx to test the docs building
     shutil.rmtree("docs/api", ignore_errors=True)
     shutil.rmtree("docs/code_reference/api", ignore_errors=True)
     shutil.rmtree("docs/jupyter_execute", ignore_errors=True)
+    shutil.rmtree("docs/examples/default_config.yaml", ignore_errors=True)
+    command.run("python -m boa.config --output-path docs/examples/default_config.yaml", echo=True, pty=POSIX)
     command.run(f"sphinx-build {options} -b html docs docs/_build", echo=True, pty=POSIX)
 
 

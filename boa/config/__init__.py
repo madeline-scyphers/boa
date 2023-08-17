@@ -1,4 +1,4 @@
-.. _configuration:
+"""
 
 ###################
 Configuration Guide
@@ -15,10 +15,18 @@ This configuration can be generated from BOA with the following command::
 Default Configuration
 ==============================
 
-.. literalinclude:: ../examples/default_config.yaml
+.. literalinclude:: ../../docs/examples/default_config.yaml
     :language: YAML
 
+"""
+from boa.config.config import *  # noqa: F401, F403
 
-********************************
-Configuration Detailed Reference
-********************************
+__all__ = [  # noqa: F405
+    "BOAConfig",
+    "BOAObjective",
+    "BOAScriptOptions",
+    "BOAMetric",
+    "MetricType",
+    # "SchedulerOptions",
+    # "GenerationStep",
+]

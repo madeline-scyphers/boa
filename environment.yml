@@ -19,5 +19,6 @@ dependencies:
 - notebook>=5.3
 - ipywidgets>=7.5
 - ax-platform==0.3.3
-- PyYAML
+- ruamel.yaml
+- attrs
 

@@ -7,8 +7,8 @@ import pytest
 import boa.__main__ as dunder_main
 import boa.scripts.moo as run_moo
 import boa.scripts.run_branin as run_branin
-from boa import cd_and_cd_back, load_yaml, split_shell_command
-from boa.definitions import ROOT
+from boa import BOAConfig, cd_and_cd_back, load_yaml, split_shell_command
+from boa.definitions import ROOT, TEST_SCRIPTS_DIR
 
 logger = logging.getLogger(__file__)
 
@@ -17,49 +17,75 @@ TEST_CONFIG_DIR = TEST_DIR / "test_configs"
 
 
 @pytest.fixture
+def generic_config():
+    config_path = TEST_CONFIG_DIR / "test_config_generic.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
 def synth_config():
     config_path = TEST_CONFIG_DIR / "test_config_synth.yaml"
-    return load_yaml(config_path)
+    return BOAConfig.from_jsonlike(file=config_path)
 
 
 @pytest.fixture
 def metric_config():
     config_path = TEST_CONFIG_DIR / "test_config_metric.yaml"
-    return load_yaml(config_path)
+    return BOAConfig.from_jsonlike(file=config_path)
 
 
 @pytest.fixture
 def gen_strat1_config():
     config_path = TEST_CONFIG_DIR / "test_config_gen_strat1.yaml"
-    return load_yaml(config_path)
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
+def saasbo_config():
+    config_path = TEST_CONFIG_DIR / "test_config_saasbo.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
 
 
 @pytest.fixture
 def soo_config():
     """ScalarizedObjective Optimization config"""
     config_path = TEST_CONFIG_DIR / "test_config_soo.yaml"
-    return load_yaml(config_path)
+    return BOAConfig.from_jsonlike(file=config_path)
 
 
 @pytest.fixture
 def moo_config():
     """MultiObjective Optimization config"""
     config_path = TEST_CONFIG_DIR / "test_config_moo.yaml"
-    return load_yaml(config_path)
+    return BOAConfig.from_jsonlike(file=config_path)
 
 
 @pytest.fixture
 def pass_through_config():
     """PassThrough Optimization config"""
     config_path = TEST_CONFIG_DIR / "test_config_pass_through_metric.yaml"
-    return load_yaml(config_path)
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
+def scripts_moo():
+    """PassThrough Optimization config"""
+    config_path = TEST_SCRIPTS_DIR / "moo.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
+def scripts_synth_func():
+    """PassThrough Optimization config"""
+    config_path = TEST_SCRIPTS_DIR / "synth_func_config.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
 
 
 @pytest.fixture
 def denormed_param_parse_config():
     """MultiObjective Optimization config"""
     config_path = TEST_CONFIG_DIR / "test_config_param_parse.yaml"
-    return load_yaml(config_path)
+    return BOAConfig.from_jsonlike(file=config_path)
 
 
 @pytest.fixture
@@ -100,15 +126,11 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
     if getattr(request, "param", None) == "absolute":
         wrapper_path = (TEST_DIR / "scripts/stand_alone_opt_package/wrapper.py").resolve()
         config = {
-            "optimization_options": {
-                "generation_strategy": {
-                    "steps": [{"model": "SOBOL", "num_trials": 2}, {"model": "GPEI", "num_trials": -1}]
-                },
-                "objective_options": {
-                    "objectives": [{"metric": "mean", "name": "Mean"}, {"metric": "RMSE", "info_only": True}]
-                },
-                "trials": 5,
+            "objective": {"metrics": [{"metric": "mean", "name": "Mean"}, {"metric": "RMSE", "info_only": True}]},
+            "generation_strategy": {
+                "steps": [{"model": "SOBOL", "num_trials": 2}, {"model": "GPEI", "num_trials": -1}]
             },
+            "scheduler": {"total_trials": 5},
             "parameters": [
                 {"bounds": [-5.0, 10.0], "name": "x0", "type": "range"},
                 {"bounds": [0.0, 15.0], "name": "x1", "type": "range"},

@@ -171,6 +171,11 @@ def scheduler_from_json_snapshot(
     wrapper = None
     if "wrapper" in serialized:
         wrapper_dict = serialized.pop("wrapper", {})
+        config = object_from_json(
+            wrapper_dict["config"],
+            decoder_registry=decoder_registry,
+            class_decoder_registry=class_decoder_registry,
+        )
         # sometimes the way people write their to_dict methods wrap it in a list
         if isinstance(wrapper_dict, list) and len(wrapper_dict) == 1:
             wrapper_dict = wrapper_dict[0]
@@ -196,13 +201,13 @@ def scheduler_from_json_snapshot(
                 try:
                     module = _load_module_from_path(path)
                     WrapperCls: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_dict["name"])
-                    wrapper = WrapperCls.from_dict(**wrapper_dict)
+                    wrapper = WrapperCls.from_dict(**{**wrapper_dict, "config": config})
                 except Exception:
                     logger.exception(
                         f"Failed to deserialize wrapper because of: {e!r}" f"\n\nUsing basic ScriptWrapper as back up"
                     )
                     wrapper = ScriptWrapper.from_dict(
-                        **get_dictionary_from_callable(ScriptWrapper.from_dict, wrapper_dict)
+                        **{**get_dictionary_from_callable(ScriptWrapper.from_dict, wrapper_dict), "config": config}
                     )
 
             else:
