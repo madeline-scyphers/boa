@@ -184,7 +184,7 @@ def autodoc_process_docstring(app, what, name, obj, options, lines):
         if attrs.has(cls):
             new_doc = attrs.fields_dict(cls)[attribute_name].metadata.get("doc", "")
             if new_doc:
-                lines.append(new_doc)
+                lines.extend(new_doc.splitlines())
 
 
 def setup(app):

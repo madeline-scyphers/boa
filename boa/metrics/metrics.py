@@ -297,14 +297,14 @@ success = []
 def get_metric_from_config(config: BOAMetric, instantiate=True, **kwargs) -> ModularMetric:
     kwargs["lower_is_better"] = config.minimize
     kwargs["metric_name"] = config.metric
-    if config.type_ == MetricType.METRIC or config.type_ == MetricType.BOA_METRIC:
+    if config.metric_type == MetricType.METRIC or config.metric_type == MetricType.BOA_METRIC:
         metric = get_metric_by_class_name(instantiate=instantiate, **config.to_dict(), **kwargs)
-    elif config.type_ == MetricType.SKLEARN_METRIC:
+    elif config.metric_type == MetricType.SKLEARN_METRIC:
         kwargs["sklearn_"] = True
         metric = get_metric_by_class_name(instantiate=instantiate, **config.to_dict(), **kwargs)
-    elif config.type_ == MetricType.SYNTHETIC_METRIC:
+    elif config.metric_type == MetricType.SYNTHETIC_METRIC:
         metric = setup_synthetic_metric(instantiate=instantiate, **config.to_dict(), **kwargs)
-    elif config.type_ == MetricType.PASSTHROUGH:  # only name but no metric type
+    elif config.metric_type == MetricType.PASSTHROUGH:  # only name but no metric type
         metric = PassThroughMetric(**config.to_dict(), **kwargs)
     else:
         # TODO link to docs for configuration when it exists

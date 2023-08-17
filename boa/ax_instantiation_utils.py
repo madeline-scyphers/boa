@@ -36,13 +36,12 @@ def instantiate_search_space_from_json(
 
 
 def get_generation_strategy(config: BOAConfig, experiment: Experiment = None, **kwargs):
-    if config.generation_steps is None:
-        if config.scheduler and config.scheduler.total_trials:
-            kwargs["num_trials"] = config.scheduler.total_trials
-        generation_strategy = choose_generation_strategy_from_experiment(experiment=experiment, config=config, **kwargs)
-
+    if config.generation_strategy.get("steps"):
+        generation_strategy = GenerationStrategy(steps=config.generation_strategy["steps"])
     else:
-        generation_strategy = GenerationStrategy(steps=config.generation_steps)
+        if config.trials:
+            kwargs["num_trials"] = config.trials
+        generation_strategy = choose_generation_strategy_from_experiment(experiment=experiment, config=config, **kwargs)
     return generation_strategy
 
 
@@ -53,7 +52,7 @@ def choose_generation_strategy_from_experiment(
         search_space=experiment.search_space,
         experiment=experiment,
         optimization_config=experiment.optimization_config,
-        **kwargs,
+        **config.generation_strategy,
     )
 
 
@@ -62,14 +61,8 @@ def get_scheduler(
     config: BOAConfig = None,
     **kwargs,
 ) -> Scheduler:
+    generation_strategy = get_generation_strategy(config=config, experiment=experiment, **kwargs)
 
-    if config.generation_steps is None:
-        if config.scheduler and config.scheduler.total_trials:
-            kwargs["num_trials"] = config.scheduler.total_trials
-        generation_strategy = choose_generation_strategy_from_experiment(experiment=experiment, config=config, **kwargs)
-
-    else:
-        generation_strategy = GenerationStrategy(steps=config.generation_steps)
     _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy)
     # db_settings = DBSettings(
     #     url="sqlite:///foo.db",
