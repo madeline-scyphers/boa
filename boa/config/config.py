@@ -533,7 +533,7 @@ For specific options you can pass to each step
     @classmethod
     def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None):
         config_path = pathlib.Path(file).resolve()
-        config = load_jsonlike(config_path, normalize=False)
+        config = load_jsonlike(config_path)
 
         config = cls.convert_deprecated(configd=config)
 

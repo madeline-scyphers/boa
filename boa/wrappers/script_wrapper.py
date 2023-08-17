@@ -320,5 +320,5 @@ class ScriptWrapper(BaseWrapper):
             elif len(json_output_files) == 1:
                 output_file = json_output_files[0]
                 if output_file.exists():
-                    return load_jsonlike(output_file, normalize=False)
+                    return load_jsonlike(output_file)
         return None
