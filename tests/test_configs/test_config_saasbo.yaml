@@ -19,3 +19,5 @@ parameters:
 generation_strategy:
     use_saasbo: true
 
+scheduler:
+    n_trials: 10

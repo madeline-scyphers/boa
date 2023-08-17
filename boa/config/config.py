@@ -16,8 +16,6 @@ from ax.service.utils.instantiation import TParameterRepresentation
 from ax.service.utils.scheduler_options import SchedulerOptions
 from ax.storage.json_store.encoder import object_to_json
 from ax.utils.common.base import Base as AxBase
-from ruamel.yaml import YAML
-from ruamel.yaml.compat import StringIO
 
 from boa.config.converters import (
     _convert_noton_type,
@@ -42,17 +40,6 @@ __all__ = [
 
 
 NL = "\n"
-
-
-class YAMLLoader(YAML):
-    def dump(self, data, stream=None, **kw):
-        inefficient = False
-        if stream is None:
-            inefficient = True
-            stream = StringIO()
-        YAML.dump(self, data, stream, **kw)
-        if inefficient:
-            return stream.getvalue()
 
 
 @define
@@ -318,7 +305,6 @@ class BOAScriptOptions(_Utils):
             can use it also to write your config, run your model, set your trial status,
             and fetch your trial data all in one script if you so choose. The
             other scripts are provided as a convenience to segment out your logic.
-
             This can either be a relative path or absolute path. """
         },
     )
@@ -478,8 +464,16 @@ For specific options you can pass to each step
         default=None,
         converter=_convert_noton_type(_scheduler_converter, type_=SchedulerOptions, default_if_none=SchedulerOptions),
         metadata={
-            "doc": """See https://ax.dev/api/service.html#ax.service.utils.scheduler_options.SchedulerOptions
-            for options"""
+            "default_doc": dict(n_trials=100),
+            "doc": SchedulerOptions.__doc__
+            + (
+                """
+        n_trials: Only run this many trials,
+            in contrast to `total_trials` which is a hard limit, even after reloading the
+            scheduler, this will run n_trials trials every time you reload the scheduler.
+            Making it easier to use when reloading the scheduler and continuing to run trials.
+"""
+            ),
         },
     )
     name: str = "boa_runs"
@@ -495,7 +489,6 @@ For specific options you can pass to each step
 
     config_path: Optional[PathLike] = None
     n_trials: Optional[int] = None
-    total_trials: Optional[int] = None
     mapping: Optional[dict[str, str]] = field(init=False)
     # we don't use this key for eq checks because with serialize and deserialize, it then gets all
     # default options as well
@@ -503,14 +496,20 @@ For specific options you can pass to each step
 
     _filtered_dict_fields: ClassVar[str] = ["mapping", "orig_config"]
 
-    def __init__(self, parameter_keys=None, n_trials=None, total_trials=None, **config):
+    def __init__(self, parameter_keys=None, **config):
+        scheduler = config.get("scheduler", {})
+        n_trials = config.get("n_trials", None)
+        if isinstance(scheduler, dict):
+            n_trials = scheduler.pop("n_trials", n_trials)  # n_trials is not a valid scheduler option so we pop it
+            total_trials = scheduler.get("total_trials", None)
+        else:
+            total_trials = scheduler.total_trials
         if total_trials and n_trials:
             raise TypeError("You can specify either n_trials or total_trials, but not both")
-        if total_trials:
-            if "scheduler" not in config:
-                config["scheduler"] = {}
-            config["scheduler"]["total_trials"] = total_trials
-        elif n_trials:
+        if not total_trials and not n_trials:
+            raise TypeError("You must specify either n_trials or total_trials")
+        if n_trials:
+            config["n_trials"] = n_trials
             if "scheduler" in config:
                 if isinstance(config["scheduler"], dict):
                     config["scheduler"].pop("total_trials", None)
@@ -529,7 +528,7 @@ For specific options you can pass to each step
             parameters, mapping = self.wpr_params_to_boa(config, parameter_keys)
             config["parameters"] = parameters
             self.mapping = mapping
-        self.__attrs_init__(**config, parameter_keys=parameter_keys, total_trials=total_trials, n_trials=n_trials)
+        self.__attrs_init__(**config, parameter_keys=parameter_keys)
 
     @classmethod
     def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None):
@@ -609,7 +608,9 @@ For specific options you can pass to each step
         if "scheduler" in opt_ops:
             config["scheduler"] = opt_ops["scheduler"]
         if "trials" in opt_ops or "n_trials" in opt_ops:
-            config["n_trials"] = opt_ops.get("n_trials") or opt_ops.get("trials")
+            if "scheduler" not in config:
+                config["scheduler"] = {}
+            config["scheduler"]["n_trials"] = opt_ops.get("n_trials") or opt_ops.get("trials")
 
         #####################################################
         #  copy over experiment name
@@ -624,7 +625,7 @@ For specific options you can pass to each step
 
     @property
     def trials(self):
-        return self.n_trials or self.total_trials or self.scheduler.total_trials
+        return self.n_trials or self.scheduler.total_trials
 
     @staticmethod
     def wpr_params_to_boa(
@@ -767,14 +768,14 @@ def generate_default_doc_config():
     return d, config
 
 
-def add_comment_recurse(d: ruamel.yaml.comments.CommentedMap, config, where="before", depth=0, indent=2):
+def add_comment_recurse(d: ruamel.yaml.comments.CommentedMap, config=None, where="before", depth=0, indent=2):
     fields = fields_dict(type(config)) if attr.has(config) else {}
     if isinstance(d, dict):
         for key in d:
             if key in fields:
                 doc = fields[key].metadata.get("doc")
                 if depth == 0:
-                    intro = "\n##" + "#" * len(key) + "##" + "\n# " + key + " #\n" + "##" + "#" * len(key) + "##"
+                    intro = "\n##" + "#" * len(key) + "\n" + key + " #\n" + "#" * len(key) + "##"
                     doc = intro + "\n" + doc if doc else intro
                 if doc:
                     doc = strip_white_space(doc)
@@ -799,25 +800,3 @@ if __name__ == "__main__":
     from tests.conftest import TEST_CONFIG_DIR
 
     c = BOAConfig.from_jsonlike(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml"))
-
-    # import ruamel.yaml
-    # import ruamel.yaml.comments
-
-    # yaml = ruamel.yaml.YAML()  # defaults to round-trip
-    # with open(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml", "r")) as f:
-    #     data: ruamel.yaml.comments.CommentedMap = yaml.load(f)
-    # data.yaml_add_eol_comment
-
-    import pathlib
-
-    import ruamel.yaml
-
-    d, c = generate_default_doc_config()
-
-    yaml = ruamel.yaml.YAML()
-    data = yaml.load(YAMLLoader().dump(d))
-
-    d2 = add_comment_recurse(data, c)
-
-    with open(pathlib.Path(TEST_CONFIG_DIR / "default_doc_config.yaml"), "w") as f:
-        yaml.dump(d2, f)
