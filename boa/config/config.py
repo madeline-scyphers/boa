@@ -348,9 +348,20 @@ class BOAScriptOptions(_Utils):
         default=".",
     )
 
-    def __attrs_post_init__(self):
-        if (self.rel_to_config and self.rel_to_launch) or (not self.rel_to_config and not self.rel_to_launch):
+    def __init__(self, **config):
+        rel_to_config = config.get("rel_to_config", None)
+        rel_to_launch = config.get("rel_to_launch", None)
+        if rel_to_config and rel_to_launch:
             raise TypeError("Must specify exactly one of rel_to_here or rel_to_config")
+
+        if rel_to_launch:
+            config["rel_to_config"] = False
+        if rel_to_config:
+            config["rel_to_launch"] = False
+
+        self.__attrs_init__(**config)
+
+    def __attrs_post_init__(self):
 
         if not self.base_path:
             if self.rel_to_config:
