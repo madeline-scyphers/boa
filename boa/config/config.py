@@ -304,6 +304,13 @@ class BOAScriptOptions(_Utils):
             to whatever pwd returns (and equivalent on windows))"""
         },
     )
+    exp_name: Optional[str] = field(
+        default="boa_runs",
+        metadata={
+            "doc": """name of the experiment. Used with output_dir to create the experiment directory
+            if experiment_dir is not specified."""
+        },
+    )
     append_timestamp: bool = field(
         default=True,
         metadata={
@@ -500,7 +507,6 @@ For specific options you can pass to each step
             ),
         },
     )
-    name: str = "boa_runs"
     parameter_constraints: list[str] = Factory(list)
     model_options: Optional[dict | list] = None
     script_options: Optional[dict | BOAScriptOptions] = field(
@@ -639,7 +645,9 @@ For specific options you can pass to each step
         #####################################################
         #  copy over experiment name
         if "name" in opt_ops.get("experiment", {}):
-            config["name"] = opt_ops["experiment"]["name"]
+            if not config.get("script_options"):
+                config["script_options"] = {}
+            config["script_options"]["exp_name"] = opt_ops["experiment"]["name"]
 
         return config
 

@@ -100,7 +100,7 @@ def get_experiment(config: BOAConfig, runner: Runner, wrapper: BaseWrapper = Non
         optimization_config=optimization_config,
         runner=runner,
         tracking_metrics=info_only_metrics,
-        name=config.name,
+        name=config.script_options.exp_name,
     )
     # we use getattr here in case someone subclassed without the proper super calls
     if not getattr(wrapper, "metric_names", None):

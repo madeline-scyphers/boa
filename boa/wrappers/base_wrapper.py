@@ -209,7 +209,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         # grab exp dir from config file or if passed in
         experiment_dir = experiment_dir or self.config.script_options.experiment_dir
         output_dir = output_dir or self.config.script_options.output_dir
-        experiment_name = experiment_name or self.config.name
+        experiment_name = experiment_name or self.config.script_options.exp_name
         append_timestamp = append_timestamp or self.script_options.append_timestamp
         if experiment_dir:
             mk_exp_dir_kw = dict(experiment_dir=experiment_dir, append_timestamp=append_timestamp, **kwargs)
