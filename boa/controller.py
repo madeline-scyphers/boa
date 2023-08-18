@@ -90,7 +90,7 @@ class Controller:
         self.scheduler: Scheduler = None
 
     @classmethod
-    def from_scheduler_path(cls, scheduler_path, **kwargs):
+    def from_scheduler_path(cls, scheduler_path, working_dir=None, **kwargs):
         scheduler = scheduler_from_json_file(scheduler_path, **kwargs)
         wrapper = scheduler.experiment.runner.wrapper
 
@@ -105,7 +105,7 @@ class Controller:
                 kw["experiment_name"] = Path(wrapper.experiment_dir).name
                 kw["append_timestamp"] = False
             wrapper.mk_experiment_dir(**kw)
-        inst = cls(wrapper=wrapper, **kwargs)
+        inst = cls(wrapper=wrapper, working_dir=working_dir, **kwargs)
         inst.logger.info(f"Resuming optimization from scheduler path{scheduler_path}")
         if "experiment_dir" in kw:
             inst.logger.info(

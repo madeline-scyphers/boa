@@ -124,15 +124,6 @@ html_theme = "pydata_sphinx_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ["_static"]
 
-# version = '%s r%s' % (pandas.__version__, svn_version())
-version = str(boa.__version__)
-
-switcher_version = version
-if ".dev" in version:
-    switcher_version = "dev"
-elif "rc" in version:
-    switcher_version = version.split("rc", maxsplit=1)[0] + " (rc)"
-
 
 html_theme_options = {
     "icon_links": [
