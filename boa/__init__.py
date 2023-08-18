@@ -28,6 +28,7 @@ from boa.registry import _add_common_encodes_and_decodes
 from boa.runner import *  # noqa
 from boa.scheduler import *  # noqa
 from boa.storage import *  # noqa
+from boa.template import render_template_from_path  # noqa
 from boa.wrappers.base_wrapper import *  # noqa
 from boa.wrappers.script_wrapper import *  # noqa
 from boa.wrappers.wrapper_utils import *  # noqa

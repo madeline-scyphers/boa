@@ -16,7 +16,7 @@ import pathlib
 import shlex
 from contextlib import contextmanager
 from functools import wraps
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Type
 
 import ruamel.yaml as yaml
 from ax.core.base_trial import BaseTrial
@@ -176,7 +176,7 @@ def split_shell_command(cmd: str):
     return shlex.split(cmd, posix=not IS_WINDOWS)
 
 
-def load_json(file: PathLike, template_kw: Optional[dict] = None) -> dict:
+def load_json(file: PathLike, **kwargs) -> dict:
     """
     Read experiment configuration file for setting up the optimization.
     The configuration file contains the list of parameters, and whether each parameter is a fixed
@@ -187,12 +187,9 @@ def load_json(file: PathLike, template_kw: Optional[dict] = None) -> dict:
     ----------
     file
         File path for the experiment configuration file
-    normalize
-        Whether to run :func:`.normalize_config` after loading config
-        to run certain predictable configuration normalization. (default true)
-    parameter_keys
-        Alternative keys or paths to keys to parse  as parameters to optimize,
-        for more information, see :func:`.wpr_params_to_boa`
+    kwargs
+        variables to pass to :func:`boa.template.render_template_from_path`
+        for rendering in your loaded file
 
     Examples
     --------
@@ -204,31 +201,28 @@ def load_json(file: PathLike, template_kw: Optional[dict] = None) -> dict:
     -------
     loaded_configs: dict
 
-    See Also
-    -------- jmn nmn
-    :func:`.normalize_config` for information on ``parameter_keys`` option
     """
     file = pathlib.Path(file).expanduser()
-    s = render_template_from_path(file, template_kw=template_kw)
+    s = render_template_from_path(file, **kwargs)
     config = json.loads(s)
     return config
 
 
 @copy_doc(load_json)
-def load_yaml(file: PathLike, template_kw: Optional[dict] = None) -> dict:
+def load_yaml(file: PathLike, **kwargs) -> dict:
     file = pathlib.Path(file).expanduser()
-    s = render_template_from_path(file, template_kw=template_kw)
+    s = render_template_from_path(file, **kwargs)
     config: dict = yaml.safe_load(s)
     return config
 
 
 @copy_doc(load_json)
-def load_jsonlike(file: PathLike, template_kw: Optional[dict] = None) -> dict:
+def load_jsonlike(file: PathLike, **kwargs) -> dict:
     file = pathlib.Path(file)
     if file.suffix.lstrip(".").lower() in {"yaml", "yml"}:
-        return load_yaml(file, template_kw=template_kw)
+        return load_yaml(file, **kwargs)
     elif file.suffix.lstrip(".").lower() == "json":
-        return load_json(file, template_kw=template_kw)
+        return load_json(file, **kwargs)
     else:
         raise ValueError(f"Invalid config file format for config file {file}\nAccepted file formats are YAML and JSON.")
 
