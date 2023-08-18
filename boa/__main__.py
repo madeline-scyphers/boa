@@ -46,19 +46,6 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     " This requires your Wrapper to have the ability to take experiment_dir as an argument"
     " to ``load_config``. The default ``load_config`` does support this.",
 )
-# @click.option(
-#     "-rel",
-#     "--rel-to-here",
-#     is_flag=True,
-#     show_default=True,
-#     default=False,
-#     help="Define all path and dir options in your config file relative to where boa is launch from"
-#     " instead of relative to the config file location (the default)"
-#     " ex:"
-#     " given working_dir=path/to/dir"
-#     " if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is"
-#     " if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from",
-# )
 @click.option(
     "--rel-to-config/--rel-to-here",  # more cli friendly name for config option of rel_to_launch
     # default=fields_dict(BOAConfig)["rel_to_config"].default,  # make default opposite of rel_to_config
@@ -71,8 +58,7 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     " if you do pass --rel-to-here then path/to/dir is defined in terms of where you launch boa from",
 )
 def main(config_path, scheduler_path, wrapper_path, temporary_dir, rel_to_config):
-    # config_path = config_path if config_path else None
-    # scheduler_path = scheduler_path if scheduler_path else None
+    """Run experiment run from config path or scheduler path"""
 
     if temporary_dir:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -100,13 +86,9 @@ def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, experimen
         Path to where file where your wrapper is located. Used when loaded from scheduler json file,
          and the path to your wrapper has changed (such as when loading on a different computer then
          originally ran from).
-    rel_to_here
-        Define all path and dir options in your config file relative to where boa is launch from"
-        instead of relative to the config file location (the default)"
-        ex:
-        given working_dir=path/to/dir
-        if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is
-        if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from
+    rel_to_config
+        Define all path and dir options in your config file relative to to your config file location
+        or rel_to_here (relative to cli launch)
     experiment_dir
         experiment output directory to save BOA run to, can only be specified during an initial run
         (when passing in a config_path, not a scheduler_path)
@@ -121,7 +103,7 @@ def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, experimen
         config = load_jsonlike(config_path)
         script_options = config.get("script_options", {})
         if rel_to_config is None:
-            rel_to_config = script_options.get("rel_to_config", None) or script_options.get("rel_to_launch", None)
+            rel_to_config = script_options.get("rel_to_config", None) or not script_options.get("rel_to_launch", None)
             if rel_to_config is None:
                 rel_to_config = (
                     fields_dict(BOAScriptOptions)["rel_to_config"].default
