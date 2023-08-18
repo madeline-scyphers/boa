@@ -304,6 +304,13 @@ class BOAScriptOptions(_Utils):
             to whatever pwd returns (and equivalent on windows))"""
         },
     )
+    exp_name: Optional[str] = field(
+        default="boa_runs",
+        metadata={
+            "doc": """name of the experiment. Used with output_dir to create the experiment directory
+            if experiment_dir is not specified."""
+        },
+    )
     append_timestamp: bool = field(
         default=True,
         metadata={
@@ -341,9 +348,19 @@ class BOAScriptOptions(_Utils):
         default=".",
     )
 
-    def __attrs_post_init__(self):
-        if (self.rel_to_config and self.rel_to_launch) or (not self.rel_to_config and not self.rel_to_launch):
+    def __init__(self, **config):
+        rel_to_config = config.get("rel_to_config", None)
+        rel_to_launch = config.get("rel_to_launch", None)
+        if rel_to_config and rel_to_launch:
             raise TypeError("Must specify exactly one of rel_to_here or rel_to_config")
+
+        if rel_to_launch:
+            config["rel_to_config"] = False
+        if rel_to_config:
+            config["rel_to_launch"] = False
+        self.__attrs_init__(**config)
+
+    def __attrs_post_init__(self):
 
         if not self.base_path:
             if self.rel_to_config:
@@ -500,7 +517,6 @@ For specific options you can pass to each step
             ),
         },
     )
-    name: str = "boa_runs"
     parameter_constraints: list[str] = Factory(list)
     model_options: Optional[dict | list] = None
     script_options: Optional[dict | BOAScriptOptions] = field(
@@ -639,7 +655,9 @@ For specific options you can pass to each step
         #####################################################
         #  copy over experiment name
         if "name" in opt_ops.get("experiment", {}):
-            config["name"] = opt_ops["experiment"]["name"]
+            if not config.get("script_options"):
+                config["script_options"] = {}
+            config["script_options"]["exp_name"] = opt_ops["experiment"]["name"]
 
         return config
 
