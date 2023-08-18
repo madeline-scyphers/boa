@@ -358,7 +358,6 @@ class BOAScriptOptions(_Utils):
             config["rel_to_config"] = False
         if rel_to_config:
             config["rel_to_launch"] = False
-
         self.__attrs_init__(**config)
 
     def __attrs_post_init__(self):

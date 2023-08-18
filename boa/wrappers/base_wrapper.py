@@ -97,7 +97,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         for metric in self._config.objective.metrics:
             if metric.properties:
                 name = metric.name
-                metric_propertis[name] = metric["properties"]
+                metric_propertis[name] = metric.properties
 
         self._metric_properties = metric_propertis
 
