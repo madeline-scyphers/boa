@@ -1,14 +1,15 @@
+import os
 import sys
 import tempfile
 from pathlib import Path
-from typing import Optional
 
 import click
+from attrs import fields_dict
 
-from boa.config import BOAConfig
+from boa.config import BOAScriptOptions
 from boa.controller import Controller
 from boa.wrappers.script_wrapper import ScriptWrapper
-from boa.wrappers.wrapper_utils import cd_and_cd_back
+from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
 
 
 @click.command()
@@ -45,20 +46,31 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back
     " This requires your Wrapper to have the ability to take experiment_dir as an argument"
     " to ``load_config``. The default ``load_config`` does support this.",
 )
+# @click.option(
+#     "-rel",
+#     "--rel-to-here",
+#     is_flag=True,
+#     show_default=True,
+#     default=False,
+#     help="Define all path and dir options in your config file relative to where boa is launch from"
+#     " instead of relative to the config file location (the default)"
+#     " ex:"
+#     " given working_dir=path/to/dir"
+#     " if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is"
+#     " if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from",
+# )
 @click.option(
-    "-rel",
-    "--rel-to-here",
-    is_flag=True,
-    show_default=True,
-    default=False,
-    help="Define all path and dir options in your config file relative to where boa is launch from"
+    "--rel-to-config/--rel-to-here",  # more cli friendly name for config option of rel_to_launch
+    # default=fields_dict(BOAConfig)["rel_to_config"].default,  # make default opposite of rel_to_config
+    default=None,
+    help="Define all path and dir options in your config file relative to where boa is launched from"
     " instead of relative to the config file location (the default)"
     " ex:"
     " given working_dir=path/to/dir"
-    " if you don't pass --rel_to_here then path/to/dir is defined in terms of where your config file is"
-    " if you do pass --rel_to_here then path/to/dir is defined in terms of where you launch boa from",
+    " if you don't pass --rel-to-here then path/to/dir is defined in terms of where your config file is"
+    " if you do pass --rel-to-here then path/to/dir is defined in terms of where you launch boa from",
 )
-def main(config_path, scheduler_path, wrapper_path, temporary_dir, rel_to_here):
+def main(config_path, scheduler_path, wrapper_path, temporary_dir, rel_to_config):
     # config_path = config_path if config_path else None
     # scheduler_path = scheduler_path if scheduler_path else None
 
@@ -69,13 +81,13 @@ def main(config_path, scheduler_path, wrapper_path, temporary_dir, rel_to_here):
                 config_path,
                 scheduler_path=scheduler_path,
                 wrapper_path=wrapper_path,
-                rel_to_here=rel_to_here,
+                rel_to_config=rel_to_config,
                 experiment_dir=experiment_dir,
             )
-    return run(config_path, scheduler_path=scheduler_path, wrapper_path=wrapper_path, rel_to_here=rel_to_here)
+    return run(config_path, scheduler_path=scheduler_path, wrapper_path=wrapper_path, rel_to_config=rel_to_config)
 
 
-def run(config_path, scheduler_path, rel_to_here, wrapper_path=None, experiment_dir=None):
+def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, experiment_dir=None):
     """Run experiment run from config path or scheduler path
 
     Parameters
@@ -103,33 +115,39 @@ def run(config_path, scheduler_path, rel_to_here, wrapper_path=None, experiment_
     -------
         Scheduler
     """
-    config: Optional[BOAConfig] = None
+    config = {}
     if config_path:
         config_path = Path(config_path).resolve()
-        config = BOAConfig.from_jsonlike(file=config_path, rel_to_config=not rel_to_here)
+        config = load_jsonlike(config_path)
+        script_options = config.get("script_options", {})
+        if rel_to_config is None:
+            rel_to_config = script_options.get("rel_to_config", None) or script_options.get("rel_to_launch", None)
+            if rel_to_config is None:
+                rel_to_config = (
+                    fields_dict(BOAScriptOptions)["rel_to_config"].default
+                    or not fields_dict(BOAScriptOptions)["rel_to_launch"].default
+                )
     if scheduler_path:
         scheduler_path = Path(scheduler_path).resolve()
     if experiment_dir:
         experiment_dir = Path(experiment_dir).resolve()
-        if config:
-            config.script_options.experiment_dir = experiment_dir
     wrapper_path = Path(wrapper_path).resolve() if wrapper_path else None
 
+    if config_path and rel_to_config:
+        rel_path = config_path.parent
+    else:
+        rel_path = os.getcwd()
+
     if config:
-        options = dict(
-            append_timestamp=config.script_options.append_timestamp,
-            experiment_dir=config.script_options.experiment_dir,
-            working_dir=config.script_options.working_dir,
-            wrapper_name=config.script_options.wrapper_name,
-            wrapper_path=config.script_options.wrapper_path,
+        options = get_config_options(
+            experiment_dir=experiment_dir, rel_path=rel_path, script_options=script_options, wrapper_path=wrapper_path
         )
     else:
-        options = dict(scheduler_path=scheduler_path, working_dir=Path.cwd())
+        options = dict(scheduler_path=scheduler_path, working_dir=Path.cwd(), wrapper_path=wrapper_path)
 
     with cd_and_cd_back(options["working_dir"]):
         if scheduler_path:
-
-            controller = Controller.from_scheduler_path(scheduler_path=scheduler_path, wrapper_path=wrapper_path)
+            controller = Controller.from_scheduler_path(**options)
         else:
             if options["wrapper_path"] and Path(options["wrapper_path"]).exists():
                 options["wrapper"] = options["wrapper_path"]
@@ -140,14 +158,53 @@ def run(config_path, scheduler_path, rel_to_here, wrapper_path=None, experiment_
                 **options,
             )
             controller.initialize_scheduler()
-        if not config:
-            config = controller.config
-        if config and config.script_options:
-            sys.path.append(str(config.script_options.working_dir))
-            sys.path.append(str(config.script_options.base_path))
 
         scheduler = controller.run()
         return scheduler
+
+
+def get_config_options(experiment_dir, rel_path, script_options, wrapper_path=None):
+    wrapper_name = script_options.get("wrapper_name", fields_dict(BOAScriptOptions)["wrapper_name"].default)
+    append_timestamp = (
+        script_options.get("append_timestamp", None)
+        if script_options.get("append_timestamp", None) is not None
+        else fields_dict(BOAScriptOptions)["append_timestamp"].default
+    )
+
+    wrapper_path = (
+        wrapper_path
+        if wrapper_path is not None
+        else script_options.get("wrapper_path", fields_dict(BOAScriptOptions)["wrapper_path"].default)
+    )
+    wrapper_path = _prepend_rel_path(rel_path, wrapper_path) if wrapper_path else wrapper_path
+
+    working_dir = script_options.get("working_dir", fields_dict(BOAScriptOptions)["working_dir"].default)
+    working_dir = _prepend_rel_path(rel_path, working_dir)
+
+    experiment_dir = experiment_dir or script_options.get(
+        "experiment_dir", fields_dict(BOAScriptOptions)["experiment_dir"].default
+    )
+    experiment_dir = _prepend_rel_path(rel_path, experiment_dir) if experiment_dir else experiment_dir
+
+    if working_dir:
+        sys.path.append(str(working_dir))
+
+    return dict(
+        append_timestamp=append_timestamp,
+        experiment_dir=experiment_dir,
+        working_dir=working_dir,
+        wrapper_name=wrapper_name,
+        wrapper_path=wrapper_path,
+    )
+
+
+def _prepend_rel_path(rel_path, path):
+    if not path:
+        return path
+    path = Path(path)
+    if not path.is_absolute():
+        path = rel_path / path
+    return path.resolve()
 
 
 if __name__ == "__main__":
