@@ -1,17 +1,18 @@
 # MultiObjective Optimization config
-objective:
-    metrics:
-        # List all of your metrics here,
-        # only list multiple objectives for a multi objective optimization
-        - metric: RMSE  # names default to the metric itself if not specified
-        - name: Meanyyy
-          metric: Mean
-    outcome_constraints: []
-    objective_thresholds: []
-scheduler:
-    total_trials: 10
-script_options:
-    exp_name: "test_experiment"
+optimization_options:
+    objective_options:
+        objectives:
+            # List all of your metrics here,
+            # only list multiple objectives for a multi objective optimization
+            - metric: RMSE  # names default to the metric itself if not specified
+            - name: Meanyyy
+              metric: Mean
+        outcome_constraints: []
+        objective_thresholds: []
+    experiment:
+        name: "test_experiment"
+    scheduler:
+        total_trials: 10
 
 parameters:
     x1:

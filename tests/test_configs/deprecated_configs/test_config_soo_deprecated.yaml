@@ -1,32 +1,34 @@
 # ScalarizedObjective Optimization config
-objective:  # can also use the key soo
-  metrics:
-    - name: rmse
-      metric: RootMeanSquaredError
-      weight: 1
-      properties:
-        obs_file: path
-    - metric: R2
-      weight: 2
-  minimize: true
-#  outcome_constraints:
-#    - metric:
-#        metric: rmse
-#        name: something
-#      op: LEQ
-#      bound: 10
-#      relative: true
+optimization_options:
+  objective_options:  # can also use the key soo
+    objectives:
+      - name: rmse
+        metric: RootMeanSquaredError
+        properties:
+          obs_file: path
+      - metric: R2
+    weights:
+      - 1
+      - 2
+    minimize: true
+#    outcome_constraints:
+#      - metric:
+#          boa_metric: mean
+#          name: something
+#        op: LEQ
+#        bound: 10
+#        relative: true
 
-generation_strategy:
-  steps:
-    - model: SOBOL
-      num_trials: 5
-    - model: GPEI
-      num_trials: -1
-scheduler:
-  total_trials: 10
-script_options:
-    exp_name: "test_experiment"
+  generation_strategy:
+    steps:
+      - model: SOBOL
+        num_trials: 5
+      - model: GPEI
+        num_trials: -1
+  scheduler:
+    total_trials: 10
+  experiment:
+      name: "test_experiment"
 
 model_options:
   model_specific_options:

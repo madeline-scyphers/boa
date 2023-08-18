@@ -66,14 +66,14 @@ def test_load_metric_by_name():
     assert metric_sklearn.metric_to_eval.__name__ == "mean_squared_error"
 
 
-def test_load_metric_from_config(synth_config, metric_config):
+def test_load_metric_from_config(synth_config, generic_config):
     metrics = synth_config.objective.metrics
     for metric_c in metrics:
         metric = get_metric_from_config(metric_c)
         assert metric.name == "Hartmann4"
         assert metric.metric_to_eval.name == "FromBotorch_Hartmann4"
 
-    metrics = metric_config.objective.metrics
+    metrics = generic_config.objective.metrics
     for metric_c in metrics:
         if not metric_c.info_only:
             metric = get_metric_from_config(metric_c)
@@ -149,8 +149,8 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_
             prev_f_ret = f_ret
 
 
-def test_can_create_info_only_metrics(metric_config, tmp_path):
-    controller = Controller(config=metric_config, wrapper=Wrapper, experiment_dir=tmp_path)
+def test_can_create_info_only_metrics(generic_config, tmp_path):
+    controller = Controller(config=generic_config, wrapper=Wrapper, experiment_dir=tmp_path)
     controller.initialize_scheduler()
 
     assert isinstance(controller.scheduler.experiment.optimization_config, OptimizationConfig)

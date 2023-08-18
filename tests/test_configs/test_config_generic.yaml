@@ -64,13 +64,3 @@ scheduler:
     global_stopping_strategy:
         type: ImprovementGlobalStoppingStrategy
         min_trials: 7
-    early_stopping_strategy:
-        type: AndEarlyStoppingStrategy
-        left:
-            type: PercentileEarlyStoppingStrategy
-            metric_names:
-                - rmse
-        right:
-            type: PercentileEarlyStoppingStrategy
-            metric_names:
-                - rmse

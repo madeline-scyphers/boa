@@ -1,5 +1,6 @@
 import logging
 import shutil
+import tempfile
 import time
 from pathlib import Path
 
@@ -21,9 +22,9 @@ from boa.logger import get_logger
 
 
 def main():
-    # with tempfile.TemporaryDirectory() as exp_dir:
-    exp_dir = "."
-    return run_opt(exp_dir)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        experiment_dir = Path(temp_dir)
+        return run_opt(exp_dir=experiment_dir)
 
 
 def run_opt(exp_dir):

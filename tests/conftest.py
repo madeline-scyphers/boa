@@ -7,36 +7,19 @@ import pytest
 import boa.__main__ as dunder_main
 import boa.scripts.moo as run_moo
 import boa.scripts.run_branin as run_branin
-from boa import BOAConfig, cd_and_cd_back, load_yaml, split_shell_command
+from boa import BOAConfig, cd_and_cd_back, split_shell_command
 from boa.definitions import ROOT, TEST_SCRIPTS_DIR
 
 logger = logging.getLogger(__file__)
 
 TEST_DIR = ROOT / "tests"
 TEST_CONFIG_DIR = TEST_DIR / "test_configs"
+TEST_DEPRECATED_CONFIG_DIR = TEST_DIR / "test_configs/deprecated_configs"
 
 
 @pytest.fixture
 def generic_config():
     config_path = TEST_CONFIG_DIR / "test_config_generic.yaml"
-    return BOAConfig.from_jsonlike(file=config_path)
-
-
-@pytest.fixture
-def synth_config():
-    config_path = TEST_CONFIG_DIR / "test_config_synth.yaml"
-    return BOAConfig.from_jsonlike(file=config_path)
-
-
-@pytest.fixture
-def metric_config():
-    config_path = TEST_CONFIG_DIR / "test_config_metric.yaml"
-    return BOAConfig.from_jsonlike(file=config_path)
-
-
-@pytest.fixture
-def gen_strat1_config():
-    config_path = TEST_CONFIG_DIR / "test_config_gen_strat1.yaml"
     return BOAConfig.from_jsonlike(file=config_path)
 
 
@@ -47,23 +30,9 @@ def saasbo_config():
 
 
 @pytest.fixture
-def soo_config():
-    """ScalarizedObjective Optimization config"""
-    config_path = TEST_CONFIG_DIR / "test_config_soo.yaml"
-    return BOAConfig.from_jsonlike(file=config_path)
-
-
-@pytest.fixture
 def moo_config():
     """MultiObjective Optimization config"""
     config_path = TEST_CONFIG_DIR / "test_config_moo.yaml"
-    return BOAConfig.from_jsonlike(file=config_path)
-
-
-@pytest.fixture
-def pass_through_config():
-    """PassThrough Optimization config"""
-    config_path = TEST_CONFIG_DIR / "test_config_pass_through_metric.yaml"
     return BOAConfig.from_jsonlike(file=config_path)
 
 
@@ -89,13 +58,76 @@ def denormed_param_parse_config():
 
 
 @pytest.fixture
-def synth_optimization_options(synth_config):
-    return synth_config["optimization_options"]
+def pass_through_config():
+    """PassThrough Optimization config"""
+    config_path = TEST_CONFIG_DIR / "test_config_pass_through_metric.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
 
 
 @pytest.fixture
-def metric_optimization_options(metric_config):
-    return metric_config["optimization_options"]
+def soo_config():
+    """ScalarizedObjective Optimization config"""
+    config_path = TEST_CONFIG_DIR / "test_config_soo.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
+def gen_strat1_config():
+    config_path = TEST_CONFIG_DIR / "test_config_gen_strat1.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
+def synth_config():
+    config_path = TEST_CONFIG_DIR / "test_config_synth.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+######################
+# Deprecated Configs #
+######################
+
+# Only tested in test_config_deprecation_normalization.py, which tests
+# the deprecation normalization process
+
+
+@pytest.fixture
+def pass_through_config_deprecated():
+    """PassThrough Optimization config"""
+    config_path = TEST_DEPRECATED_CONFIG_DIR / "test_config_pass_through_metric_deprecated.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
+def soo_config_deprecated():
+    """ScalarizedObjective Optimization config"""
+    config_path = TEST_DEPRECATED_CONFIG_DIR / "test_config_soo_deprecated.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
+def metric_config_deprecated():
+    config_path = TEST_DEPRECATED_CONFIG_DIR / "test_config_metric_deprecated.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
+def gen_strat1_config_deprecated():
+    config_path = TEST_DEPRECATED_CONFIG_DIR / "test_config_gen_strat1_deprecated.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
+def synth_config_deprecated():
+    config_path = TEST_DEPRECATED_CONFIG_DIR / "test_config_synth_deprecated.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
+def moo_config_deprecated():
+    """MultiObjective Optimization config"""
+    config_path = TEST_DEPRECATED_CONFIG_DIR / "test_config_moo_deprecated.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
 
 
 @pytest.fixture
