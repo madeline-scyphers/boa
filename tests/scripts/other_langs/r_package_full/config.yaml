@@ -1,17 +1,16 @@
-optimization_options:
-    objective_options: # can also use the key moo
-        objectives:
-            - name: metric
-              metric: mean
-    generation_strategy:
-        steps:
-            - model: SOBOL
-              num_trials: 5
-            - model: GPEI
-              num_trials: -1
-    scheduler:
-        total_trials: 15
-        tolerated_trial_failure_rate: 0.8
+objective: # can also use the key moo
+    metrics:
+        - name: metric
+          metric: mean
+generation_strategy:
+    steps:
+        - model: SOBOL
+          num_trials: 5
+        - model: GPEI
+          num_trials: -1
+scheduler:
+    total_trials: 15
+    tolerated_trial_failure_rate: 0.8
 
 parameters:
     x0:

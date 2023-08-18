@@ -43,7 +43,7 @@ __all__ = [
 NL = "\n"
 
 
-def strip_white_space(s: str, strip_all=True):
+def strip_white_space(s: str, strip_all=True):  # pragma: no cover  # Used in docs
     if not s:
         return s
     if strip_all:
@@ -61,7 +61,7 @@ def strip_white_space(s: str, strip_all=True):
 class _Utils:
     _filtered_dict_fields: ClassVar[list[str]] = None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict:  # pragma: no cover  # Used in docsi
         def vs(inst, attrib, val):
             if is_dataclass(val):
                 return dc_asdict(val)
@@ -178,6 +178,18 @@ class BOAMetric(_Utils):
             "doc": """Arbitrary properties of the metric. This is used to pass additional information about the metric
             to your wrapper. You can pass whatever information you want to your wrapper and use it in your
             wrapper functions."""
+        },
+    )
+    metric_func_kwargs: Optional[dict] = field(
+        default=None,
+        metadata={
+            "doc": """Additional keyword arguments to be passed to the metric function.
+            This is useful when you are setting up a metric and only want to pass the metric function
+            additional arguments.
+            Example: Passing `metric_func_kwargs={"sqaured": false}` to sklearn mean_squared_error
+            to get the root mean squared error instead of the mean squared error
+            (Though BOA already has :class:`RMSE <.RMSE>` available from sklrean built in if needed).
+            """
         },
     )
 
@@ -764,7 +776,7 @@ For specific options you can pass to each step
         return new_params
 
 
-def generate_default_doc_config():
+def generate_default_doc_config():  # pragma: no cover
 
     config = BOAConfig(
         **{
@@ -806,7 +818,9 @@ def generate_default_doc_config():
     return d, config
 
 
-def add_comment_recurse(d: ruamel.yaml.comments.CommentedMap, config=None, where="before", depth=0, indent=2):
+def add_comment_recurse(
+    d: ruamel.yaml.comments.CommentedMap, config=None, where="before", depth=0, indent=2
+):  # pragma: no cover
     fields = fields_dict(type(config)) if attr.has(config) else {}
     if isinstance(d, dict):
         for key in d:
@@ -835,7 +849,7 @@ def add_comment_recurse(d: ruamel.yaml.comments.CommentedMap, config=None, where
     return d
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     from tests.conftest import TEST_CONFIG_DIR
 
     c = BOAConfig.from_jsonlike(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml"))

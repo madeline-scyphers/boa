@@ -1,9 +1,11 @@
-objective:
-    metrics:
-        - metric: Hartmann4
-          metric_type: synthetic_metric
-scheduler:
-    total_trials: 10
+optimization_options:
+    objective_options:
+        objectives:
+            - synthetic_metric: Hartmann4
+    scheduler:
+        total_trials: 10
+    experiment:
+        name: "test_experiment"
 
 model_options:
     model_specific_options:
@@ -35,6 +37,3 @@ parameters:
 parameter_constraints:
     - x2 + x1 >= .1
     - x2 + x1 + .6*x1 <= .6
-
-script_options:
-    exp_name: "test_experiment"

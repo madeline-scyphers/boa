@@ -3,7 +3,6 @@ import sys
 
 import numpy as np
 import pytest
-from attrs import fields
 from ax import Experiment, Objective, OptimizationConfig
 from ax.storage.json_store.decoder import object_from_json
 from ax.storage.json_store.encoder import object_to_json
@@ -32,40 +31,39 @@ from boa.definitions import ROOT
 TEST_DIR = ROOT / "tests"
 
 
-def test_save_load_config(
-    generic_config,
-    synth_config,
-    metric_config,
-    gen_strat1_config,
-    soo_config,
-    moo_config,
-    pass_through_config,
-    scripts_moo,
-    scripts_synth_func,
-):
-    for config in [
-        generic_config,
-        synth_config,
-        metric_config,
-        gen_strat1_config,
-        soo_config,
-        moo_config,
-        pass_through_config,
-        scripts_moo,
-        scripts_synth_func,
-    ]:
-        serialized = object_to_json(
-            config,
-            encoder_registry=CORE_ENCODER_REGISTRY,
-            class_encoder_registry=CORE_CLASS_ENCODER_REGISTRY,
-        )
+@pytest.mark.parametrize(
+    "config",
+    [
+        "generic_config",
+        "synth_config",
+        "gen_strat1_config",
+        "soo_config",
+        "moo_config",
+        "pass_through_config",
+        "scripts_moo",
+        "scripts_synth_func",
+        "synth_config_deprecated",
+        "metric_config_deprecated",
+        "gen_strat1_config_deprecated",
+        "soo_config_deprecated",
+        "moo_config_deprecated",
+        "pass_through_config_deprecated",
+    ],  # 1. pass fixture name as a string
+)
+def test_save_load_config(config, request):
+    config = request.getfixturevalue(config)
+    serialized = object_to_json(
+        config,
+        encoder_registry=CORE_ENCODER_REGISTRY,
+        class_encoder_registry=CORE_CLASS_ENCODER_REGISTRY,
+    )
 
-        c = object_from_json(
-            serialized,
-            decoder_registry=CORE_DECODER_REGISTRY,
-            class_decoder_registry=CORE_CLASS_DECODER_REGISTRY,
-        )
-        assert config == c
+    c = object_from_json(
+        serialized,
+        decoder_registry=CORE_DECODER_REGISTRY,
+        class_decoder_registry=CORE_CLASS_DECODER_REGISTRY,
+    )
+    assert config == c
 
 
 def test_save_load_scheduler_branin(branin_main_run, tmp_path):
@@ -145,7 +143,7 @@ def test_boa_version_in_scheduler(stand_alone_opt_package_run, tmp_path_factory)
 
 
 @pytest.mark.skip(reason="Scheduler can't be saved with generic callable yet")
-def test_save_load_scheduler_with_generic_callable(metric_config, tmp_path):
+def test_save_load_scheduler_with_generic_callable(generic_config, tmp_path):
     p = (ROOT / "tests/scripts/stand_alone_opt_package").resolve()
     sys.path.append(p)
 
@@ -153,7 +151,7 @@ def test_save_load_scheduler_with_generic_callable(metric_config, tmp_path):
 
     with cd_and_cd_back(p):
         scheduler_json = tmp_path / "scheduler.json"
-        config = metric_config
+        config = generic_config
         opt_options = config["optimization_options"]
 
         wrapper = Wrapper()
