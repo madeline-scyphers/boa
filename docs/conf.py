@@ -136,7 +136,8 @@ html_theme_options = {
             "icon": "fab fa-github-square",
             # Whether icon should be a FontAwesome class, or a local file
         }
-    ]
+    ],
+    "show_nav_level": 2,
 }
 
 
@@ -153,6 +154,7 @@ intersphinx_mapping = {
     "torch": ("https://pytorch.org/docs/stable", None),
     "panel": ("https://panel.holoviz.org", None),
     "pandas": ("https://pandas.pydata.org/docs", None),
+    "jinja2": ("https://jinja.palletsprojects.com/", None),
 }
 
 # BOA things

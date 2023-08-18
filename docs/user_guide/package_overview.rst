@@ -11,10 +11,14 @@ Creating a configuration File
 
 Configuration is usually done through a configuration file in YAML or json format. The goal of :doc:`BOA </index>` is allow as much functionality of the bayesian optimization through the configuration as possible. Allowing users to worry mostly about their model itself instead of the optimization. In the configuration file you can do a single objective, multi objective, or scalarized objective optimization. You can specify different acquisition functions, or let them be selected for you, what parameters you are optimizing, parameter constraints, outcome constraints, and more.
 
-See the :doc:`instructions for configurations files</api/boa.config>` for details.
+
+.. toctree::
+    :maxdepth: 0
+
+    /api/boa.config
 
 .. note::
-    We are adding more and more functionality to the configuration directly, but if there are features not supported in the boa configuration file yet, but are support in the underlying Ax or BoTorch libraries, you can customize things further  with your run script. See below.
+    We are adding more and more functionality to the configuration directly, but if there are features not supported in the boa configuration file yet, but are support in the underlying Ax or BoTorch libraries, you can customize things further  with your lauch script. See below.
 
 
 Objective functions
@@ -36,25 +40,25 @@ and there is a standard interface to follow.
 
 See the :mod:`instructions for creating a model wrapper <.boa.wrappers>` for details.
 
-*********************************************
-Creating a run script (Usually Not Needed)
-*********************************************
+****************************************************
+Creating a Python launch script (Usually Not Needed)
+****************************************************
 
-Most of the time you won't need to write a run script because BOA has an built-in run script in
-its :mod:`.controller`. But if you do need more control over your run script than the default
-provides, you can either subclass :class:`.Controller` or write your own run script. Subclassing
+Most of the time you won't need to write a launch script because BOA has an built-in launch script in
+its :mod:`.controller` that is called when calling `python -m boa`. But if you do need more control over your launch script than the default
+provides, you can either subclass :class:`.Controller` or write your own launch script. Subclassing
 :class:`.Controller` might be easier if you just need to modify :meth:`.Controller.run` or :meth:`.Controller.initialize_wrapper` or :meth:`.Controller.initialize_scheduler`
-but can utilize the rest of the functions. If you need a lot of customization, writing your own run script might be
-easier. Some Custom run scripts are included in the link below.
+but can utilize the rest of the functions. If you need a lot of customization, writing your own script might be
+easier. Some Custom scripts are included in the link below.
 
 
-See :doc:`examples of custom run scripts <run_script>` for details.
+See :doc:`examples of custom launch scripts <run_script>` for details.
 
 *********************************************
 Starting From Command Line
 *********************************************
 
-If you are using :doc:`BOA's </index>` in built :mod:`.controller` for your run script,
+If you are using :doc:`BOA's </index>` in built :mod:`.controller` for your launch script,
 you can start your run easily from the command line.
 
 With your conda environment for boa activated, run::
@@ -83,7 +87,6 @@ A fuller example using the command line interface can be found  :doc:`here </exa
 .. toctree::
     :maxdepth: 2
 
-    configuration
     run_script
     /api/boa.wrappers
 
@@ -95,4 +98,5 @@ Plotting Utility Functions
 .. toctree::
     :maxdepth: 2
 
+    /api/boa.plot
     /api/boa.plotting
