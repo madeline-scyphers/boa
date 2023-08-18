@@ -2,6 +2,12 @@ objective:
     metrics:
         - name: rmse
           metric: RootMeanSquaredError
+          properties:
+              # You can add any property you want to the metric
+              # Use this to pass any information you want to the metric
+              # Through your wrapper
+              any_property: any_value
+
 generation_strategy:
     steps:
         - model: SOBOL

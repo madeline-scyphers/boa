@@ -156,6 +156,7 @@ def moo_main_run(tmp_path_factory, cd_to_root_and_back_session):
 def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_session):
     # parametrize the test to pass in script options in config as relative and absolute paths
     if getattr(request, "param", None) == "absolute":
+        temp_dir = tmp_path_factory.mktemp("temp_dir")
         wrapper_path = (TEST_DIR / "scripts/stand_alone_opt_package/wrapper.py").resolve()
         config = {
             "objective": {"metrics": [{"metric": "mean", "name": "Mean"}, {"metric": "RMSE", "info_only": True}]},
@@ -167,16 +168,21 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
                 {"bounds": [-5.0, 10.0], "name": "x0", "type": "range"},
                 {"bounds": [0.0, 15.0], "name": "x1", "type": "range"},
             ],
-            "script_options": {"wrapper_path": str(wrapper_path)},
+            "script_options": {
+                "wrapper_path": str(wrapper_path),
+                "output_dir": str(temp_dir),
+                "exp_name": "test_experiment",
+            },
         }
-        temp_dir = tmp_path_factory.mktemp("temp_dir")
         config_path = temp_dir / "config.yaml"
         with open(Path(config_path), "w") as file:
             json.dump(config, file)
+            args = f"--config-path {config_path}"
     else:
         config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.yaml"
+        args = f"--config-path {config_path} -td"
 
-    yield dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+    yield dunder_main.main(split_shell_command(args), standalone_mode=False)
 
 
 @pytest.fixture(scope="session")

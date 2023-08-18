@@ -9,10 +9,9 @@ optimization_options:
               num_trials: 5
             - model: GPEI
               num_trials: -1
-    scheduler:
-        total_trials: 10
     experiment:
         name: "test_experiment"
+    trials: 10
 
 model_options:
     model_specific_options:

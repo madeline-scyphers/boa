@@ -11,8 +11,7 @@ optimization_options:
         objective_thresholds: []
     experiment:
         name: "test_experiment"
-    scheduler:
-        total_trials: 10
+    n_trials: 10
 
 parameters:
     x1:

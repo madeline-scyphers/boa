@@ -4,9 +4,11 @@ from ax import MultiObjectiveOptimizationConfig, OptimizationConfig
 
 from boa import (
     BaseWrapper,
+    BOAMetric,
     Controller,
     get_metric_by_class_name,
     get_metric_from_config,
+    setup_sklearn_metric,
     setup_synthetic_metric,
 )
 
@@ -57,13 +59,21 @@ def test_load_metric_by_name():
     assert metric_synth.name == "something"
     assert metric_synth.metric_to_eval.name == "FromBotorch_Hartmann4"
 
-    metric_sklearn = get_metric_by_class_name("MSE")
-    assert metric_sklearn.name == "MSE"
-    assert metric_sklearn.metric_to_eval.__name__ == "mean_squared_error"
+    metric_boa = get_metric_by_class_name("MSE")
+    assert metric_boa.name == "MSE"
+    assert metric_boa.metric_to_eval.__name__ == "mean_squared_error"
 
-    metric_sklearn = get_metric_by_class_name("MSE", name="something")
+    metric_boa = get_metric_by_class_name("MSE", name="something")
+    assert metric_boa.name == "something"
+    assert metric_boa.metric_to_eval.__name__ == "mean_squared_error"
+
+    metric_sklearn = setup_sklearn_metric("median_absolute_error")
+    assert metric_sklearn.name == "median_absolute_error"
+    assert metric_sklearn.metric_to_eval.__name__ == "median_absolute_error"
+
+    metric_sklearn = setup_sklearn_metric("median_absolute_error", name="something")
     assert metric_sklearn.name == "something"
-    assert metric_sklearn.metric_to_eval.__name__ == "mean_squared_error"
+    assert metric_sklearn.metric_to_eval.__name__ == "median_absolute_error"
 
 
 def test_load_metric_from_config(synth_config, generic_config):
@@ -177,3 +187,17 @@ def test_pass_through_metric_passes_through_value(pass_through_config, tmp_path)
             f_ret = metric.f(wrapper.fetch_trial_data(trial, {}, name))
             assert f_ret == data.df["mean"].iloc[0]
             assert f_ret == trial.index
+
+
+def test_can_override_metric_func_kwargs():
+    x = [1, 2, 3, 4, 5, 6]
+    y = [0.1 * i for i in reversed(x)]
+    returns = []
+    normalizers = ["iqr", "std", "mean", "range"]
+    for normalizer in normalizers:
+        config = BOAMetric(**dict(metric="NRMSE", metric_func_kwargs=dict(normalizer=normalizer)))
+        metric = get_metric_from_config(config)
+        assert metric.metric_to_eval.__name__ == "normalized_root_mean_squared_error"
+        returns.append(metric.f(x, y))
+    # All the normalized values should be different, ensuring that the kwargs are passed through
+    assert len(set(returns)) == len(normalizers)
