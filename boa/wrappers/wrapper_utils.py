@@ -16,7 +16,7 @@ import pathlib
 import shlex
 from contextlib import contextmanager
 from functools import wraps
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 import ruamel.yaml as yaml
 from ax.core.base_trial import BaseTrial
@@ -27,6 +27,7 @@ from ax.utils.common.docutils import copy_doc
 
 from boa.definitions import IS_WINDOWS, PathLike, PathLike_tup
 from boa.logger import get_logger
+from boa.template import render_template_from_path
 from boa.utils import (
     _load_attr_from_module,
     _load_module_from_path,
@@ -175,7 +176,7 @@ def split_shell_command(cmd: str):
     return shlex.split(cmd, posix=not IS_WINDOWS)
 
 
-def load_json(file: PathLike) -> dict:
+def load_json(file: PathLike, template_kw: Optional[dict] = None) -> dict:
     """
     Read experiment configuration file for setting up the optimization.
     The configuration file contains the list of parameters, and whether each parameter is a fixed
@@ -208,27 +209,26 @@ def load_json(file: PathLike) -> dict:
     :func:`.normalize_config` for information on ``parameter_keys`` option
     """
     file = pathlib.Path(file).expanduser()
-    with open(file, "r") as f:
-        config = json.load(f)
-
+    s = render_template_from_path(file, template_kw=template_kw)
+    config = json.loads(s)
     return config
 
 
 @copy_doc(load_json)
-def load_yaml(file: PathLike) -> dict:
+def load_yaml(file: PathLike, template_kw: Optional[dict] = None) -> dict:
     file = pathlib.Path(file).expanduser()
-    with open(file, "r") as f:
-        config: dict = yaml.safe_load(f)
+    s = render_template_from_path(file, template_kw=template_kw)
+    config: dict = yaml.safe_load(s)
     return config
 
 
 @copy_doc(load_json)
-def load_jsonlike(file: PathLike):
+def load_jsonlike(file: PathLike, template_kw: Optional[dict] = None) -> dict:
     file = pathlib.Path(file)
     if file.suffix.lstrip(".").lower() in {"yaml", "yml"}:
-        return load_yaml(file)
+        return load_yaml(file, template_kw=template_kw)
     elif file.suffix.lstrip(".").lower() == "json":
-        return load_json(file)
+        return load_json(file, template_kw=template_kw)
     else:
         raise ValueError(f"Invalid config file format for config file {file}\nAccepted file formats are YAML and JSON.")
 
