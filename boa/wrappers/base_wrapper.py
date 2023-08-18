@@ -145,7 +145,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         your configuration dataclass.
 
         Load_config will (unless overwritten in a subclass), do some basic "normalizations"
-        to your configuration for convenience. See :func:`.normalize_config`
+        to your configuration for convenience. See :class:`.BOAConfig` and its __init__ method
         for more information about how the normalization works and what config options you
         can control.
 

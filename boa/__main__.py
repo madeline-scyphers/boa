@@ -48,7 +48,6 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
 )
 @click.option(
     "--rel-to-config/--rel-to-here",  # more cli friendly name for config option of rel_to_launch
-    # default=fields_dict(BOAConfig)["rel_to_config"].default,  # make default opposite of rel_to_config
     default=None,
     help="Define all path and dir options in your config file relative to where boa is launched from"
     " instead of relative to the config file location (the default)"

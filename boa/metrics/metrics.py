@@ -19,23 +19,21 @@ Examples
 ..  code-block:: YAML
 
     # Single objective optimization config
-    optimization_options:
-        objective_options:
-            objectives:
-                # List all of your metrics here,
-                # only list 1 metric for a single objective optimization
-                - metric: RootMeanSquaredError
+    objective:
+        metrics:
+            # List all of your metrics here,
+            # only list 1 metric for a single objective optimization
+            - metric: RootMeanSquaredError
 
 ..  code-block:: YAML
 
     # MultiObjective Optimization config
-    optimization_options:
-        objective_options:
-            objectives:
-                # List all of your metrics here,
-                # only list multiple objectives for a multi objective optimization
-                - metric: RMSE
-                - metric: R2
+    objective:
+        metrics:
+            # List all of your metrics here,
+            # only list multiple objectives for a multi objective optimization
+            - metric: RMSE
+            - metric: R2
 
 PassThrough Metric
 ******************
@@ -47,14 +45,13 @@ To mark as maximize, use ``minimize: False``.
 ..  code-block:: YAML
 
     # Single objective optimization config
-    optimization_options:
-        objective_options:
-            objectives:
-                # List all of your metrics here,
-                # only list 1 metric for a single objective optimization
-                - metric: PassThrough
-                  name: foo  # optional, any name will work
-                  minimize: False
+    objective:
+        metrics:
+            # List all of your metrics here,
+            # only list 1 metric for a single objective optimization
+            - metric: PassThrough
+              name: foo  # optional, any name will work
+              minimize: False
 
 You could also simply specify a name, with no metric type and it will
 default to a pass through metric:
@@ -62,12 +59,11 @@ default to a pass through metric:
 ..  code-block:: YAML
 
     # Single objective optimization config
-    optimization_options:
-        objective_options:
-            objectives:
-                # List all of your metrics here,
-                # only list 1 metric for a single objective optimization
-                - name: foo  # optional, any name will work
+    objective:
+        metrics:
+            # List all of your metrics here,
+            # only list 1 metric for a single objective optimization
+            - name: foo  # optional, any name will work
 
 If working in a language agnostic way, you can write out your output.json file like this
 (see more at :mod:`Wrappers <boa.wrappers>`):

@@ -351,12 +351,6 @@ scheduler:
   global_stopping_strategy: '...'
   suppress_storage_errors_after_retries: '...'
 
-# ######
-# name #
-# ######
-
-name: '...'
-
 # #######################
 # parameter_constraints #
 # #######################
@@ -405,6 +399,9 @@ script_options:
   # (if neither experiment_dir nor output_dir are specified, output_dir defaults
   # to whatever pwd returns (and equivalent on windows))
   output_dir: '...'
+  # name of the experiment. Used with output_dir to create the experiment directory
+  # if experiment_dir is not specified.
+  exp_name: '...'
   # Whether to append a timestamp to the output directory to ensure uniqueness.
   # Defaults to `True` if not specified.
   append_timestamp: '...'

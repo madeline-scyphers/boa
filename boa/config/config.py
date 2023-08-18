@@ -583,9 +583,9 @@ For specific options you can pass to each step
         self.__attrs_init__(**config, parameter_keys=parameter_keys)
 
     @classmethod
-    def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None):
+    def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None, template_kw: Optional[dict] = None):
         config_path = pathlib.Path(file).resolve()
-        config = load_jsonlike(config_path)
+        config = load_jsonlike(config_path, template_kw=template_kw)
 
         config = cls.convert_deprecated(configd=config)
 

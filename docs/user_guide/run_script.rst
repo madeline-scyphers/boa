@@ -1,16 +1,16 @@
 #############
-Run Script
+Launch Script
 #############
 
 ***********************
-Example Run Scripts
+Example Launch Scripts
 ***********************
 
 
-A run script needs to initialize your wrapper, load your configuration, and run your optimization.
+A launch script needs to initialize your wrapper, load your configuration, and launch your optimization.
 
-Single Objective Optimization Run Scripts
-===========================================
+Single Objective Optimization Launch Scripts
+=============================================
 
 .. rli:: https://raw.githubusercontent.com/madeline-scyphers/palm_wrapper/main/palm_wrapper/optimize/run.py
     :language: python

@@ -54,6 +54,7 @@ Plotting your Experiment
     :toctree: api
     :template: custom_module_template_short.rst
 
+    boa.plot
     boa.plotting
 
 
@@ -71,3 +72,4 @@ Advanced Usage/Direct Python Access
     boa.utils
     boa.metaclasses
     boa.instantiation_base
+    boa.template
