@@ -1,0 +1,42 @@
+# We can set up a list of parameter names to be used throughout the config file
+# This will give us a list from x0 to x9
+{% set param_names = [] %}
+{% for i in range(10) %}
+    {% do param_names.append("x" + i|string) %}
+{% endfor %}
+# We could also do this directly instead of in a loop
+{% set param_names2 = ["y0", "y1", "y2"] %}
+objective:
+    metrics:
+        # List all of your metrics here,
+        # only list 1 metric for a single objective optimization
+        -   name: rmse
+            metric: RootMeanSquaredError
+
+parameters:
+    # We can use the list of parameter names we created above
+    # and loop through them to create our parameters
+    {% for param in param_names %}
+    {{ param }}:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+    {% endfor %}
+    {% for param in param_names2 %}
+    {{ param }}:
+        type: range
+        bounds: [0.0, 1.0]
+    {% endfor %}
+
+parameter_constraints:
+    # We can also use the list of parameter names we created above
+    # and loop through them to create our parameter constraints
+    {% for param in param_names %}
+    - {{ param }} <= .5
+    {% endfor %}
+    {% for param in param_names2 %}
+    - {{ param }} >= .5
+    {% endfor %}
+
+scheduler:
+    n_trials: 1

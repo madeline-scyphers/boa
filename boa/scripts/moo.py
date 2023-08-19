@@ -1,3 +1,4 @@
+import tempfile
 from pathlib import Path
 
 import torch
@@ -30,11 +31,13 @@ class Wrapper(BaseWrapper):
 
 
 def main():
-    config_path = Path(__file__).resolve().parent / "moo.yaml"
-    wrapper = Wrapper(config_path=config_path)
-    controller = Controller(wrapper=wrapper)
-    controller.initialize_scheduler()
-    return controller.run()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        experiment_dir = Path(temp_dir)
+        config_path = Path(__file__).resolve().parent / "moo.yaml"
+        wrapper = Wrapper(config_path=config_path, experiment_dir=experiment_dir)
+        controller = Controller(wrapper=wrapper)
+        controller.initialize_scheduler()
+        return controller.run()
 
 
 if __name__ == "__main__":

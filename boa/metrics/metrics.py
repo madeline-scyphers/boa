@@ -19,23 +19,21 @@ Examples
 ..  code-block:: YAML
 
     # Single objective optimization config
-    optimization_options:
-        objective_options:
-            objectives:
-                # List all of your metrics here,
-                # only list 1 metric for a single objective optimization
-                - metric: RootMeanSquaredError
+    objective:
+        metrics:
+            # List all of your metrics here,
+            # only list 1 metric for a single objective optimization
+            - metric: RootMeanSquaredError
 
 ..  code-block:: YAML
 
     # MultiObjective Optimization config
-    optimization_options:
-        objective_options:
-            objectives:
-                # List all of your metrics here,
-                # only list multiple objectives for a multi objective optimization
-                - metric: RMSE
-                - metric: R2
+    objective:
+        metrics:
+            # List all of your metrics here,
+            # only list multiple objectives for a multi objective optimization
+            - metric: RMSE
+            - metric: R2
 
 PassThrough Metric
 ******************
@@ -47,14 +45,13 @@ To mark as maximize, use ``minimize: False``.
 ..  code-block:: YAML
 
     # Single objective optimization config
-    optimization_options:
-        objective_options:
-            objectives:
-                # List all of your metrics here,
-                # only list 1 metric for a single objective optimization
-                - metric: PassThrough
-                  name: foo  # optional, any name will work
-                  minimize: False
+    objective:
+        metrics:
+            # List all of your metrics here,
+            # only list 1 metric for a single objective optimization
+            - metric: PassThrough
+              name: foo  # optional, any name will work
+              minimize: False
 
 You could also simply specify a name, with no metric type and it will
 default to a pass through metric:
@@ -62,12 +59,11 @@ default to a pass through metric:
 ..  code-block:: YAML
 
     # Single objective optimization config
-    optimization_options:
-        objective_options:
-            objectives:
-                # List all of your metrics here,
-                # only list 1 metric for a single objective optimization
-                - name: foo  # optional, any name will work
+    objective:
+        metrics:
+            # List all of your metrics here,
+            # only list 1 metric for a single objective optimization
+            - name: foo  # optional, any name will work
 
 If working in a language agnostic way, you can write out your output.json file like this
 (see more at :mod:`Wrappers <boa.wrappers>`):
@@ -199,12 +195,14 @@ class RootMeanSquaredError(SklearnMetric):
     def __init__(
         self,
         lower_is_better=True,
-        metric_func_kwargs=(("squared", False),),
+        metric_func_kwargs=None,
         *args,
         **kwargs,
     ):
-        if metric_func_kwargs == (("squared", False),):
-            metric_func_kwargs = dict((y, x) for x, y in metric_func_kwargs)
+        if isinstance(metric_func_kwargs, dict):
+            metric_func_kwargs.update({"squared": False})
+        else:
+            metric_func_kwargs = {"squared": False}
         super().__init__(
             lower_is_better=lower_is_better,
             metric_func_kwargs=metric_func_kwargs,
@@ -297,15 +295,18 @@ success = []
 def get_metric_from_config(config: BOAMetric, instantiate=True, **kwargs) -> ModularMetric:
     kwargs["lower_is_better"] = config.minimize
     kwargs["metric_name"] = config.metric
+    kw = {**config.to_dict(), **kwargs}
+    if kw.get("metric_func_kwargs") is None:
+        kw.pop("metric_func_kwargs")
     if config.metric_type == MetricType.METRIC or config.metric_type == MetricType.BOA_METRIC:
-        metric = get_metric_by_class_name(instantiate=instantiate, **config.to_dict(), **kwargs)
+        metric = get_metric_by_class_name(instantiate=instantiate, **kw)
     elif config.metric_type == MetricType.SKLEARN_METRIC:
         kwargs["sklearn_"] = True
-        metric = get_metric_by_class_name(instantiate=instantiate, **config.to_dict(), **kwargs)
+        metric = get_metric_by_class_name(instantiate=instantiate, **kw)
     elif config.metric_type == MetricType.SYNTHETIC_METRIC:
-        metric = setup_synthetic_metric(instantiate=instantiate, **config.to_dict(), **kwargs)
+        metric = setup_synthetic_metric(instantiate=instantiate, **kw)
     elif config.metric_type == MetricType.PASSTHROUGH:  # only name but no metric type
-        metric = PassThroughMetric(**config.to_dict(), **kwargs)
+        metric = PassThroughMetric(**kw)
     else:
         # TODO link to docs for configuration when it exists
         raise KeyError("No valid configuration for metric found.")

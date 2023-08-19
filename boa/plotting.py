@@ -35,6 +35,16 @@ DEFAULT_CI_LEVEL: float = 0.9
 pn.extension("plotly")
 
 
+__all__ = [
+    "plot_contours",
+    "plot_metrics_trace",
+    "plot_pareto_frontier",
+    "plot_slice",
+    "scheduler_to_df",
+    "app_view",
+]
+
+
 def _maybe_load_scheduler(scheduler: SchedulerOrPath):
     if isinstance(scheduler, PathLike_tup):
         scheduler = scheduler_from_json_file(scheduler)
@@ -414,7 +424,10 @@ def app_view(
         pareto = plot_pareto_frontier(scheduler=scheduler, metric_names=metric_names)
     else:
         pareto = None
-    view.append(pn.Row(plot_metrics_trace(schedulers=scheduler, metric_names=metric_names), pareto))
+    row1 = pn.Row(plot_metrics_trace(schedulers=scheduler, metric_names=metric_names))
+    if pareto:
+        row1.append(pareto)
+    view.append(row1)
     view.append(plot_slice(scheduler=scheduler))
     view.append(plot_contours(scheduler=scheduler, metric_names=metric_names))
     view.append(scheduler_to_df(scheduler))

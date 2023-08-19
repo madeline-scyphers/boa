@@ -197,10 +197,11 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
 
     def _evaluate(self, params: TParameterization, **kwargs) -> float:
         kwargs.update(params.pop("kwargs"))
-
         return self.f(**get_dictionary_from_callable(self.metric_to_eval, kwargs))
 
     def f(self, *args, **kwargs):
+        if self.metric_func_kwargs:  # always pass the metric_func_kwargs, don't fail silently
+            kwargs.update(self.metric_func_kwargs)
         return self.metric_to_eval(*args, **kwargs)
 
     def clone(self) -> "Metric":

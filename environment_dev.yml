@@ -23,6 +23,7 @@ dependencies:
 - ruamel.yaml
 - domdfcoding::attr_utils
 - attrs
+- jinja2
 
   ## Jupyter and sphinx jupyter
 - myst-nb

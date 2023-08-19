@@ -1,20 +1,18 @@
 # MultiObjective Optimization config
-optimization_options:
-    objective_options:
-        objective_thresholds:
-            - branin >= -18.0
-            - currin >= -6.0
-        objectives:
-            - name: branin
-              lower_is_better: False
-              noise_sd: 0
-            - name: currin
-              lower_is_better: False
-              noise_sd: 0
+objective:
+    objective_thresholds:
+        - branin >= -18.0
+        - currin >= -6.0
+    metrics:
+        - name: branin
+          lower_is_better: False
+          noise_sd: 0
+        - name: currin
+          lower_is_better: False
+          noise_sd: 0
 
-    experiment:
-        name: "moo_run"
-    trials: 50
+scheduler:
+    n_trials: 30
 
 parameters:
     x0:
@@ -25,3 +23,6 @@ parameters:
         type: range
         bounds: [0, 1]
         value_type: float
+
+script_options:
+    exp_name: "moo_run"

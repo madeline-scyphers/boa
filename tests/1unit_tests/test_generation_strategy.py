@@ -22,8 +22,8 @@ def test_gen_steps_from_config(gen_strat1_config):
     assert gs1 == gs2
 
 
-def test_auto_gen_use_saasbo(saasbo_config):
-    controller = Controller(config=saasbo_config, wrapper=ScriptWrapper(config=saasbo_config))
+def test_auto_gen_use_saasbo(saasbo_config, tmp_path):
+    controller = Controller(config=saasbo_config, wrapper=ScriptWrapper(config=saasbo_config, experiment_dir=tmp_path))
     exp = get_experiment(
         config=controller.config, runner=WrappedJobRunner(wrapper=controller.wrapper), wrapper=controller.wrapper
     )

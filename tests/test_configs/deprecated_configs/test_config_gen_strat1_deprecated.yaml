@@ -1,23 +1,17 @@
-objective:
-    metrics:
-        - name: rmse
-          metric: RootMeanSquaredError
-          properties:
-              # You can add any property you want to the metric
-              # Use this to pass any information you want to the metric
-              # Through your wrapper
-              any_property: any_value
-
-generation_strategy:
-    steps:
-        - model: SOBOL
-          num_trials: 5
-        - model: GPEI
-          num_trials: -1
-scheduler:
-    total_trials: 10
-script_options:
-    exp_name: "test_experiment"
+optimization_options:
+    objective_options:
+        objectives:
+            - name: rmse
+              metric: RootMeanSquaredError
+    generation_strategy:
+        steps:
+            - model: SOBOL
+              num_trials: 5
+            - model: GPEI
+              num_trials: -1
+    experiment:
+        name: "test_experiment"
+    trials: 10
 
 model_options:
     model_specific_options:
