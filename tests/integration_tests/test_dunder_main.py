@@ -84,8 +84,10 @@ def test_calling_command_line_r_test_scripts(r_scripts_run, request):
     assert len(scheduler.experiment.trials) == config.trials
 
     assert scheduler
-    if "r_package_streamlined" in str(wrapper.config_path):
-        assert "param_names" in load_jsonlike(get_trial_dir(wrapper.experiment_dir, 0) / "data.json")
+    if "r_package_full" in str(wrapper.config_path):
+        data = load_jsonlike(get_trial_dir(wrapper.experiment_dir, 0) / "data.json")
+        assert "param_names" in data
+        assert "metric_properties" in data
 
 
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")

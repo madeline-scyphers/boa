@@ -56,7 +56,9 @@ class ScriptWrapper(BaseWrapper):
         ----------
         trial : Trial
         """
-        self._run_subprocess_script_cmd_if_exists(trial, "write_configs")
+        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        kw = {"param_names": param_names} if param_names else {}
+        self._run_subprocess_script_cmd_if_exists(trial, "write_configs", **kw)
 
     def run_model(self, trial: Trial) -> None:
         """
@@ -172,7 +174,9 @@ class ScriptWrapper(BaseWrapper):
         :meth:`~boa.wrappers.script_wrapper.ScriptWrapper.run_model`
         # TODO add sphinx link to ax trial status
         """
-        self._run_subprocess_script_cmd_if_exists(trial, "set_trial_status")
+        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        kw = {"param_names": param_names} if param_names else {}
+        self._run_subprocess_script_cmd_if_exists(trial, "set_trial_status", **kw)
         data = self._read_subprocess_script_output(trial, file_names=["trial_status", "TrialStatus", *OUTPUT_FILES])
         if data is not None:
             trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus" or k.lower() == "trial_status"]
