@@ -172,7 +172,7 @@ def scheduler_from_json_snapshot(
     if "wrapper" in serialized:
         wrapper_dict = serialized.pop("wrapper", {})
         config = object_from_json(
-            wrapper_dict["config"],
+            deepcopy(wrapper_dict["config"]),
             decoder_registry=decoder_registry,
             class_decoder_registry=class_decoder_registry,
         )
@@ -206,6 +206,7 @@ def scheduler_from_json_snapshot(
                     logger.exception(
                         f"Failed to deserialize wrapper because of: {e!r}" f"\n\nUsing basic ScriptWrapper as back up"
                     )
+                    exit()
                     wrapper = ScriptWrapper.from_dict(
                         **{**get_dictionary_from_callable(ScriptWrapper.from_dict, wrapper_dict), "config": config}
                     )

@@ -30,5 +30,5 @@ model_options:
 
 script_options:
     wrapper_path: ./script_wrappers.py
-    wrapper_name: Wrapper
+    wrapper_name: BraninWrapper
     append_timestamp: True

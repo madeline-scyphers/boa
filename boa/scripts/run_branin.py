@@ -7,9 +7,9 @@ from pathlib import Path
 from ax.service.utils.report_utils import exp_to_df
 
 try:
-    from script_wrappers import Wrapper  # pragma: no cover
+    from script_wrappers import BraninWrapper  # pragma: no cover
 except ImportError:
-    from .script_wrappers import Wrapper
+    from .script_wrappers import BraninWrapper
 
 from boa import (
     BOAConfig,
@@ -30,7 +30,7 @@ def main():
 def run_opt(exp_dir):
     config_file = Path(__file__).parent / "synth_func_config.yaml"
     start = time.time()
-    wrapper = Wrapper(config_path=config_file, experiment_dir=exp_dir)
+    wrapper = BraninWrapper(config_path=config_file, experiment_dir=exp_dir)
     config: BOAConfig = wrapper.config
     experiment_dir = wrapper.experiment_dir
     # Copy the experiment config to the experiment directory

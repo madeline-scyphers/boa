@@ -21,7 +21,6 @@ parameters:
     # test that a parameter that is just set likes this gets turned into a fixed parameter
     x1: 10
 
-# These are all defaults, so we don't need to specify them in this case
-#script_options:
-#    wrapper_path: ./wrapper.py
-#    wrapper_name: Wrapper
+script_options:
+#    wrapper_path: ./wrapper.py  # This is the default
+    wrapper_name: WrapperStandAlone  # This defaults to "Wrapper", but we change it here to whatever we called our Wrapper class

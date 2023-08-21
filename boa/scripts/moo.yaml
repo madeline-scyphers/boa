@@ -26,3 +26,4 @@ parameters:
 
 script_options:
     exp_name: "moo_run"
+    wrapper_name: WrapperMoo

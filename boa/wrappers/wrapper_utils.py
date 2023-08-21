@@ -144,10 +144,11 @@ def initialize_wrapper(
         try:
             module = _load_module_from_path(wrapper)
             WrapperCls: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_name)
-        except Exception:
-            from boa.wrappers.script_wrapper import ScriptWrapper
-
-            WrapperCls = ScriptWrapper
+        except Exception as e:
+            raise AxError(
+                f"Could not load wrapper properly from {wrapper} with name {wrapper_name}."
+                "\nEnsure wrapper path and wrapper name are correct in config."
+            ) from e
     else:
         WrapperCls = wrapper
 

@@ -170,6 +170,7 @@ def stand_alone_opt_package_run(request, tmp_path_factory, cd_to_root_and_back_s
             ],
             "script_options": {
                 "wrapper_path": str(wrapper_path),
+                "wrapper_name": "WrapperStandAlone",
                 "output_dir": str(temp_dir),
                 "exp_name": "test_experiment",
             },

@@ -13,7 +13,7 @@ from boa import (
 )
 
 
-class Wrapper(BaseWrapper):
+class WrapperForTestss(BaseWrapper):
     def __init__(self, *args, fetch_all=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.fetch_all = fetch_all
@@ -45,7 +45,7 @@ class Wrapper(BaseWrapper):
                 }
 
 
-class WrapperPassThrough(Wrapper):
+class WrapperPassThrough(WrapperForTestss):
     def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
         return trial.index
 
@@ -92,7 +92,7 @@ def test_load_metric_from_config(synth_config, generic_config):
 
 
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_and_test_sem_passing(moo_config, tmp_path):
-    controller = Controller(config=moo_config, wrapper=Wrapper, experiment_dir=tmp_path)
+    controller = Controller(config=moo_config, wrapper=WrapperForTestss, experiment_dir=tmp_path)
     controller.initialize_scheduler()
 
     scheduler = controller.scheduler
@@ -121,7 +121,7 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_all_data_and_tes
 ):
     orig_metrics = moo_config.objective.metrics
     moo_config.objective.metrics = orig_metrics[:1]
-    controller = Controller(config=moo_config, wrapper=Wrapper, experiment_dir=tmp_path)
+    controller = Controller(config=moo_config, wrapper=WrapperForTestss, experiment_dir=tmp_path)
     controller.initialize_scheduler()
 
     scheduler = controller.scheduler
@@ -134,7 +134,7 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_all_data_and_tes
 
 
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_test_sem_passing(moo_config, tmp_path):
-    controller = Controller(config=moo_config, wrapper=Wrapper, fetch_all=False, experiment_dir=tmp_path)
+    controller = Controller(config=moo_config, wrapper=WrapperForTestss, fetch_all=False, experiment_dir=tmp_path)
     controller.initialize_scheduler()
 
     scheduler = controller.scheduler
@@ -160,7 +160,7 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_
 
 
 def test_can_create_info_only_metrics(generic_config, tmp_path):
-    controller = Controller(config=generic_config, wrapper=Wrapper, experiment_dir=tmp_path)
+    controller = Controller(config=generic_config, wrapper=WrapperForTestss, experiment_dir=tmp_path)
     controller.initialize_scheduler()
 
     assert isinstance(controller.scheduler.experiment.optimization_config, OptimizationConfig)

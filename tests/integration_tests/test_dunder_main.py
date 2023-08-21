@@ -27,7 +27,7 @@ except subprocess.CalledProcessError:
     R_INSTALLED = False
 
 
-class Wrapper(BaseWrapper):
+class WrapperDunderMain(BaseWrapper):
     def load_config(self, config_path, *args, **kwargs) -> BOAConfig:
         return BOAConfig(
             objective={"metrics": [{"name": "passthrough"}]},
@@ -101,5 +101,11 @@ def test_wrapper_with_custom_load_config():
     # But we override the failing config in our wrapper with a working one in a custom load_config
     wrapper_path = pathlib.Path(__file__)
     dunder_main.main(
-        split_shell_command(f"--config-path {config_path} --wrapper-path {wrapper_path} -td"), standalone_mode=False
+        split_shell_command(
+            f"--config-path {config_path}"
+            f" --wrapper-path {wrapper_path}"
+            f" --wrapper-name {WrapperDunderMain.__name__}"
+            " -td"
+        ),
+        standalone_mode=False,
     )

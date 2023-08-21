@@ -137,7 +137,7 @@ passthrough = PassThroughMetric
 pass_through_metric = PassThroughMetric
 
 
-class SklearnMetric(ModularMetric):
+class BOASklearnMetric(ModularMetric):
     """A subclass of ModularMetric where you can pass in a string name of a metric from
     sklrean.metrics, and BOA will grab that metric and create a BOA metric class for you.
 
@@ -156,7 +156,7 @@ class SklearnMetric(ModularMetric):
         super().__init__(metric_to_eval=metric_to_eval, *args, **kwargs)
 
 
-class MeanSquaredError(SklearnMetric):
+class MeanSquaredError(BOASklearnMetric):
     """
     Mean squared error regression loss.
 
@@ -178,7 +178,7 @@ MSE = MeanSquaredError
 mean_squared_error = MSE
 
 
-class RootMeanSquaredError(SklearnMetric):
+class RootMeanSquaredError(BOASklearnMetric):
     """
     Root mean squared error regression loss.
 
@@ -215,7 +215,7 @@ RMSE = RootMeanSquaredError
 root_mean_squared_error = RMSE
 
 
-class RSquared(SklearnMetric):
+class RSquared(BOASklearnMetric):
     """
     :math:`R^2` (coefficient of determination) regression score function.
 

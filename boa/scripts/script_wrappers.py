@@ -10,7 +10,7 @@ import boa
 from boa.definitions import TEST_SCRIPTS_DIR
 
 
-class Wrapper(boa.BaseWrapper):
+class BraninWrapper(boa.BaseWrapper):
     _processes = []
     # Use default BaseWrapper methods for everything but methods below
 
@@ -54,5 +54,5 @@ class Wrapper(boa.BaseWrapper):
 
 
 def exit_handler():
-    for process in Wrapper._processes:
+    for process in BraninWrapper._processes:
         process.kill()
