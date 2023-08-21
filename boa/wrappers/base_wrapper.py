@@ -514,7 +514,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     @classmethod
     def from_dict(cls, **kwargs):
-        if isinstance(kwargs.get("config"), dict):
+        if isinstance(kwargs.get("config"), dict):  # pragma: no cover  # Ax should catch this
             kwargs["config"] = object_from_json(kwargs["config"])
             if isinstance(kwargs["config"], dict):
                 try:
