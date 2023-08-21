@@ -32,10 +32,11 @@ class ScriptWrapper(BaseWrapper):
     need to run your scripts. ``parameters.json`` includes all of the parameters for that trial.
     ``trial.json`` includes the complete json serialization of the current trial (including the
     parameters, this is usually more than you need, but has lots of information, such as the trial index
-    (You also know that by the trial dir path you are passed), metric_properties.json which include
-    the metric_properties you custom configure for any individual metric in your configuration.
-    That last one is only available in the final stages when fetch_trial_status is being called.
-
+    (You also know that by the trial dir path you are passed), ``data.json`` which includes
+    which is a comprehensive json file of everything above, as well as the param_names from your
+    config file for each metric, and the metric_properties you custom configure for any individual
+    metric (though metric_properties is only available in the final stages when fetch_trial_status
+    is being called).
     """
 
     def write_configs(self, trial: Trial) -> None:
@@ -251,6 +252,8 @@ class ScriptWrapper(BaseWrapper):
         """
         param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
         kw = {"param_names": param_names} if param_names else {}
+        if metric_properties:
+            kw["metric_properties"] = metric_properties
         self._run_subprocess_script_cmd_if_exists(
             trial,
             func_names="fetch_trial_data",

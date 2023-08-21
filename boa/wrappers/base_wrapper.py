@@ -452,12 +452,12 @@ class BaseWrapper(metaclass=WrapperRegister):
         This example returns all the metrics at once.
         You can imagine instead having a "calc_stuff" for whatever you need to throw into these
 
-        >>> def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
+        >>> def fetch_trial_data(self, parameters, metric_name, metric_properties, trial, param_names=None, **kwargs):
         ...     return {
-        ...         "Mean": {"a": trial.arm.parameters.values(), "sem": 4.5},
+        ...         "Mean": {"a": parameters.values(), "sem": 4.5},
         ...         "RMSE": {
         ...             "y_true": [1.12, 1.25, 2.54, 4.52],
-        ...             "y_pred": trial.arm.parameters.values(),
+        ...             "y_pred": parameters.values(),
         ...         },
         ...     }
 
@@ -465,13 +465,13 @@ class BaseWrapper(metaclass=WrapperRegister):
         the name of the metrics in the config, this will break. But for quick and dirty things, this
         can be great.
 
-        >>> def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
+        >>> def fetch_trial_data(self, parameters, metric_name, metric_properties, trial, param_names=None, **kwargs):
         ...     if metric_name == "Mean":
-        ...         return {"a": trial.arm.parameters.values(), "sem": 4.5}
+        ...         return {"a": parameters.values(), "sem": 4.5}
         ...     elif metric_name == "RMSE":
         ...         return {
         ...             "y_true": [1.12, 1.25, 2.54, 4.52],
-        ...             "y_pred": trial.arm.parameters.values(),
+        ...             "y_pred": parameters.values(),
         ...         }
 
         This one is a little more complicated, but it assumes in your config for each metric, you
@@ -487,10 +487,10 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         >>> funcs = {func_a.__name__: func_a, func_b.__name__: func_b}
 
-        >>> def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
+        >>> def fetch_trial_data(self, parameters, metric_name, metric_properties, trial, param_names=None, **kwargs):
         ...     # we define in our config the names of functions to associate with certain metrics
         ...     # and look them up at run time
-        ...     return {"a": funcs[metric_properties[metric_name]["function"]](trial.arm.parameters)}
+        ...     return {"a": funcs[metric_properties[metric_name]["function"]](parameters)}
         """
 
     def to_dict(self) -> dict:
