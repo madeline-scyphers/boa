@@ -57,19 +57,55 @@ class WrapperRegister(ABCMeta):
             _path = None
         cls._path = _path
         super().__init__(*args, **kwargs)
+        check = 0
+        if cls not in CORE_ENCODER_REGISTRY:
+            CORE_ENCODER_REGISTRY[cls] = cls.to_dict
+            check += 1
+        if cls.__name__ not in CORE_DECODER_REGISTRY:
+            CORE_DECODER_REGISTRY[cls.__name__] = cls.from_dict
+            check += 1
+        elif CORE_DECODER_REGISTRY[cls.__name__].__self__.path() == cls.path():
+            # When we dynamically reload a module, the class is already registered
+            # But the class is not the same object as the one we are trying to register
+            check = 2
+        if check != 2:
+            raise ValueError(
+                f"Wrapper defined in {cls.__module__} already registered. "
+                "Please use a different name for your Wrapper class."
+            )
 
 
 class RunnerRegister(ABCMeta):
     def __init__(cls, *args, **kwargs):
-        CORE_ENCODER_REGISTRY[cls] = cls.to_dict
-        CORE_DECODER_REGISTRY[cls.__name__] = cls
-        next_pk = max(CORE_RUNNER_REGISTRY.values()) + 1
-        CORE_RUNNER_REGISTRY[cls] = next_pk
+        check = 0
+        if cls not in CORE_ENCODER_REGISTRY:
+            CORE_ENCODER_REGISTRY[cls] = cls.to_dict
+            next_pk = max(CORE_RUNNER_REGISTRY.values()) + 1
+            CORE_RUNNER_REGISTRY[cls] = next_pk
+            check += 1
+        if cls.__name__ not in CORE_DECODER_REGISTRY:
+            CORE_DECODER_REGISTRY[cls.__name__] = cls
+            check += 1
+        if check != 2:
+            raise ValueError(
+                f"Runner defined in {cls.__module__} already registered. "
+                "Please use a different name for your Runner class."
+            )
 
 
 class MetricRegister(ABCMeta):
     def __init__(cls, *args, **kwargs):
-        CORE_ENCODER_REGISTRY[cls] = cls.to_dict
-        CORE_DECODER_REGISTRY[cls.__name__] = cls
-        next_pk = max(CORE_METRIC_REGISTRY.values()) + 1
-        CORE_METRIC_REGISTRY[cls] = next_pk
+        check = 0
+        if cls not in CORE_ENCODER_REGISTRY:
+            CORE_ENCODER_REGISTRY[cls] = cls.to_dict
+            next_pk = max(CORE_METRIC_REGISTRY.values()) + 1
+            CORE_METRIC_REGISTRY[cls] = next_pk
+            check += 1
+        if cls.__name__ not in CORE_DECODER_REGISTRY:
+            CORE_DECODER_REGISTRY[cls.__name__] = cls
+            check += 1
+        if check != 2:
+            raise ValueError(
+                f"Metric defined in {cls.__module__} already registered. "
+                "Please use a different name for your Metric class."
+            )

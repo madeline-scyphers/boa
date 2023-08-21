@@ -27,7 +27,7 @@ except subprocess.CalledProcessError:
     R_INSTALLED = False
 
 
-class Wrapper(BaseWrapper):
+class WrapperDunderMain(BaseWrapper):
     def load_config(self, config_path, *args, **kwargs) -> BOAConfig:
         return BOAConfig(
             objective={"metrics": [{"name": "passthrough"}]},
@@ -84,8 +84,10 @@ def test_calling_command_line_r_test_scripts(r_scripts_run, request):
     assert len(scheduler.experiment.trials) == config.trials
 
     assert scheduler
-    if "r_package_streamlined" in str(wrapper.config_path):
-        assert "param_names" in load_jsonlike(get_trial_dir(wrapper.experiment_dir, 0) / "data.json")
+    if "r_package_full" in str(wrapper.config_path):
+        data = load_jsonlike(get_trial_dir(wrapper.experiment_dir, 0) / "data.json")
+        assert "param_names" in data
+        assert "metric_properties" in data
 
 
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
@@ -101,5 +103,11 @@ def test_wrapper_with_custom_load_config():
     # But we override the failing config in our wrapper with a working one in a custom load_config
     wrapper_path = pathlib.Path(__file__)
     dunder_main.main(
-        split_shell_command(f"--config-path {config_path} --wrapper-path {wrapper_path} -td"), standalone_mode=False
+        split_shell_command(
+            f"--config-path {config_path}"
+            f" --wrapper-path {wrapper_path}"
+            f" --wrapper-name {WrapperDunderMain.__name__}"
+            " -td"
+        ),
+        standalone_mode=False,
     )

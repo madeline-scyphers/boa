@@ -23,8 +23,6 @@ def _add_common_encodes_and_decodes():
         BOAScriptOptions,
         MetricType,
     )
-    from boa.wrappers.base_wrapper import BaseWrapper
-    from boa.wrappers.script_wrapper import ScriptWrapper
 
     for cls in [BOAObjective, BOAMetric, BOAScriptOptions, BOAConfig]:
         CORE_ENCODER_REGISTRY[cls] = attrs_to_dict
@@ -32,8 +30,3 @@ def _add_common_encodes_and_decodes():
 
     # CORE_ENCODER_REGISTRY[MetricType] = str(MetricType)
     CORE_DECODER_REGISTRY[MetricType.__name__] = MetricType
-
-    CORE_ENCODER_REGISTRY[BaseWrapper] = BaseWrapper.to_dict
-    CORE_DECODER_REGISTRY[BaseWrapper.__name__] = BaseWrapper.from_dict
-    CORE_ENCODER_REGISTRY[ScriptWrapper] = ScriptWrapper.to_dict
-    CORE_DECODER_REGISTRY[ScriptWrapper.__name__] = ScriptWrapper.from_dict

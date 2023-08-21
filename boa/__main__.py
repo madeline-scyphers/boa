@@ -36,6 +36,13 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     " originally ran from).",
 )
 @click.option(
+    "-wn",
+    "--wrapper-name",
+    type=str,
+    default="",
+    help="Name of the wrapper class to use. Used when loaded from scheduler json file,",
+)
+@click.option(
     "-td",
     "--temporary-dir",
     is_flag=True,
@@ -56,7 +63,7 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     " if you don't pass --rel-to-here then path/to/dir is defined in terms of where your config file is"
     " if you do pass --rel-to-here then path/to/dir is defined in terms of where you launch boa from",
 )
-def main(config_path, scheduler_path, wrapper_path, temporary_dir, rel_to_config):
+def main(config_path, scheduler_path, wrapper_path, wrapper_name, temporary_dir, rel_to_config):
     """Run experiment run from config path or scheduler path"""
 
     if temporary_dir:
@@ -66,13 +73,14 @@ def main(config_path, scheduler_path, wrapper_path, temporary_dir, rel_to_config
                 config_path,
                 scheduler_path=scheduler_path,
                 wrapper_path=wrapper_path,
+                wrapper_name=wrapper_name,
                 rel_to_config=rel_to_config,
                 experiment_dir=experiment_dir,
             )
     return run(config_path, scheduler_path=scheduler_path, wrapper_path=wrapper_path, rel_to_config=rel_to_config)
 
 
-def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, experiment_dir=None):
+def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, wrapper_name=None, experiment_dir=None):
     """Run experiment run from config path or scheduler path
 
     Parameters
@@ -125,6 +133,9 @@ def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, experimen
         )
     else:
         options = dict(scheduler_path=scheduler_path, working_dir=Path.cwd(), wrapper_path=wrapper_path)
+
+    if wrapper_name:
+        options["wrapper_name"] = wrapper_name
 
     with cd_and_cd_back(options["working_dir"]):
         if scheduler_path:

@@ -11,6 +11,7 @@ import pathlib
 
 from ax import Trial
 from ax.core.types import TParameterization
+from ax.storage.json_store.decoder import object_from_json
 from ax.storage.json_store.encoder import object_to_json
 
 from boa.config import BOAConfig
@@ -513,6 +514,18 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     @classmethod
     def from_dict(cls, **kwargs):
+        if isinstance(kwargs.get("config"), dict):  # pragma: no cover  # Ax should catch this
+            kwargs["config"] = object_from_json(kwargs["config"])
+            if isinstance(kwargs["config"], dict):
+                try:
+                    kwargs["config"] = BOAConfig(**kwargs["config"])
+                except TypeError as e:
+                    logger.warning(
+                        f"Could not deserialize wrapper config."
+                        f"\nLoading wrapper without config. You may not be able to resume new trials: "
+                        f"\n{e}"
+                    )
+
         return initialize_wrapper(
             wrapper=cls,
             post_init_attrs=dict(

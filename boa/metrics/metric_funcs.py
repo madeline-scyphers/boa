@@ -65,7 +65,7 @@ def setup_sklearn_metric(metric_to_eval, instantiate=True, **kw):
     import boa.metrics.metrics
 
     def modular_sklearn_metric(**kwargs):
-        return boa.metrics.metrics.SklearnMetric(
+        return boa.metrics.metrics.BOASklearnMetric(
             **{"name": metric_to_eval, **kw, **kwargs, "metric_to_eval": metric_to_eval}
         )
 
