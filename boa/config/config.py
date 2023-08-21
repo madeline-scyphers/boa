@@ -192,6 +192,14 @@ class BOAMetric(_Utils):
             """
         },
     )
+    param_names: Optional[list[str]] = field(
+        factory=list,
+        metadata={
+            "doc": """A list of names of parameters to be passed to your wrapper.
+            Useful for filtering out parameters before those parameters are passed to
+            your metric"""
+        },
+    )
 
     def __init__(self, *args, lower_is_better: Optional[bool] = None, **kwargs):
         if lower_is_better is not None:

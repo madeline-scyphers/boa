@@ -166,7 +166,7 @@ def serialize_init_args(class_, *, parents: list[Type] = None, match_private: bo
 def _load_module_from_path(module_path: PathLike, module_name: str = None) -> types.ModuleType:
     """Load a module dynamically from a path"""
     if module_name is None:
-        module_name = Path(module_path).name
+        module_name = Path(module_path).stem
     sys.path.append(str(Path(module_path).parent))
     # create a module spec from a file location, so we can then load that module
     spec = importlib.util.spec_from_file_location(module_name, module_path)

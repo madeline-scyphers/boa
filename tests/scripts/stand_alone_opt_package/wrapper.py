@@ -6,7 +6,7 @@ from stand_alone_model_func import run_branin_from_trial
 import boa
 
 
-class Wrapper(boa.BaseWrapper):
+class WrapperStandAlone(boa.BaseWrapper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data = {}

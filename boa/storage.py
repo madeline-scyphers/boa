@@ -14,6 +14,7 @@ from copy import deepcopy
 from dataclasses import asdict
 from typing import Any, Callable, Dict, Optional, Type
 
+from ax.exceptions.core import AxError
 from ax.exceptions.storage import JSONDecodeError as AXJSONDecodeError
 from ax.exceptions.storage import JSONEncodeError as AXJSONEncodeError
 from ax.service.scheduler import SchedulerOptions
@@ -56,7 +57,7 @@ def scheduler_to_json_file(
     if dir_:
         scheduler_filepath = pathlib.Path(dir_) / scheduler_filepath
     with open(scheduler_filepath, "w+") as file:  # pragma: no cover
-        file.write(json.dumps(scheduler_to_json_snapshot(scheduler)))
+        file.write(json.dumps(scheduler_to_json_snapshot(scheduler), indent=4))
         logger.info(
             f"Saved JSON-serialized state of optimization to `{scheduler_filepath}`." f"\nBoa version: {__version__}"
         )
@@ -172,7 +173,7 @@ def scheduler_from_json_snapshot(
     if "wrapper" in serialized:
         wrapper_dict = serialized.pop("wrapper", {})
         config = object_from_json(
-            wrapper_dict["config"],
+            deepcopy(wrapper_dict["config"]),
             decoder_registry=decoder_registry,
             class_decoder_registry=class_decoder_registry,
         )
@@ -186,7 +187,7 @@ def scheduler_from_json_snapshot(
                 decoder_registry=decoder_registry,
                 class_decoder_registry=class_decoder_registry,
             )
-        except Exception as e:
+        except Exception as e:  # pragma: no cover  # The only way to test this is to have a bad wrapper
             deserialized = recursive_deserialize(
                 wrapper_dict,
                 decoder_registry=decoder_registry,
@@ -202,13 +203,8 @@ def scheduler_from_json_snapshot(
                     module = _load_module_from_path(path)
                     WrapperCls: Type[BaseWrapper] = _load_attr_from_module(module, wrapper_dict["name"])
                     wrapper = WrapperCls.from_dict(**{**wrapper_dict, "config": config})
-                except Exception:
-                    logger.exception(
-                        f"Failed to deserialize wrapper because of: {e!r}" f"\n\nUsing basic ScriptWrapper as back up"
-                    )
-                    wrapper = ScriptWrapper.from_dict(
-                        **{**get_dictionary_from_callable(ScriptWrapper.from_dict, wrapper_dict), "config": config}
-                    )
+                except Exception as e:
+                    raise AxError(f"Failed to deserialize wrapper because of: {e!r}")
 
             else:
                 logger.exception(

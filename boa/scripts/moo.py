@@ -16,7 +16,7 @@ Problem = get_synth_func("BraninCurrin")
 problem = Problem(negate=True).to(**tkwargs)
 
 
-class Wrapper(BaseWrapper):
+class WrapperMoo(BaseWrapper):
     def run_model(self, trial) -> None:
         pass
 
@@ -34,7 +34,7 @@ def main():
     with tempfile.TemporaryDirectory() as temp_dir:
         experiment_dir = Path(temp_dir)
         config_path = Path(__file__).resolve().parent / "moo.yaml"
-        wrapper = Wrapper(config_path=config_path, experiment_dir=experiment_dir)
+        wrapper = WrapperMoo(config_path=config_path, experiment_dir=experiment_dir)
         controller = Controller(wrapper=wrapper)
         controller.initialize_scheduler()
         return controller.run()
