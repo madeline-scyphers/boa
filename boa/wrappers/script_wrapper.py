@@ -3,7 +3,8 @@ from __future__ import annotations
 import subprocess
 from typing import Iterable
 
-from ax.core.base_trial import BaseTrial, TrialStatus
+from ax import Trial
+from ax.core.base_trial import TrialStatus
 
 from boa.logger import get_logger
 from boa.wrappers.base_wrapper import BaseWrapper
@@ -31,13 +32,14 @@ class ScriptWrapper(BaseWrapper):
     need to run your scripts. ``parameters.json`` includes all of the parameters for that trial.
     ``trial.json`` includes the complete json serialization of the current trial (including the
     parameters, this is usually more than you need, but has lots of information, such as the trial index
-    (You also know that by the trial dir path you are passed), metric_properties.json which include
-    the metric_properties you custom configure for any individual metric in your configuration.
-    That last one is only available in the final stages when fetch_trial_status is being called.
-
+    (You also know that by the trial dir path you are passed), ``data.json`` which includes
+    which is a comprehensive json file of everything above, as well as the param_names from your
+    config file for each metric, and the metric_properties you custom configure for any individual
+    metric (though metric_properties is only available in the final stages when fetch_trial_status
+    is being called).
     """
 
-    def write_configs(self, trial: BaseTrial) -> None:
+    def write_configs(self, trial: Trial) -> None:
         """
         It can be convenient to separate our your writing out model configuration files
         from your run_model script. If this is the case, then if you include a script option
@@ -52,11 +54,11 @@ class ScriptWrapper(BaseWrapper):
 
         Parameters
         ----------
-        trial : BaseTrial
+        trial : Trial
         """
         self._run_subprocess_script_cmd_if_exists(trial, "write_configs")
 
-    def run_model(self, trial: BaseTrial) -> None:
+    def run_model(self, trial: Trial) -> None:
         """
         This Script is the one that runs your model. If your model is in the same language
         as your wrapper, you might just directly run it in your wrapper, if it is in
@@ -77,11 +79,13 @@ class ScriptWrapper(BaseWrapper):
 
         Parameters
         ----------
-        trial : BaseTrial
+        trial Trial
         """
-        self._run_subprocess_script_cmd_if_exists(trial, "run_model")
+        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        kw = {"param_names": param_names} if param_names else {}
+        self._run_subprocess_script_cmd_if_exists(trial, "run_model", **kw)
 
-    def set_trial_status(self, trial: BaseTrial) -> None:
+    def set_trial_status(self, trial: Trial) -> None:
         """
         Marks the status of a trial to reflect the status of the model run for the trial.
 
@@ -194,7 +198,7 @@ class ScriptWrapper(BaseWrapper):
                 except ValueError as e:
                     raise ValueError(f"Invalid trial status - {trial_status} - passed to `set_trial_status`") from e
 
-    def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, *args, **kwargs) -> dict:
+    def fetch_trial_data(self, trial: Trial, metric_properties: dict, *args, **kwargs) -> dict:
         """
         Retrieves the trial data and prepares it for the metric(s) used in the objective
         function.
@@ -235,7 +239,7 @@ class ScriptWrapper(BaseWrapper):
 
         Parameters
         ----------
-        trial : BaseTrial
+        trial : Trial
         metric_properties: dict
             metric_properties specified in configuration file associated with metric
             calling this fetch trial data
@@ -246,9 +250,14 @@ class ScriptWrapper(BaseWrapper):
             A dictionary with the keys matching the keys of the metric function
                 used in the objective
         """
+        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        kw = {"param_names": param_names} if param_names else {}
+        if metric_properties:
+            kw["metric_properties"] = metric_properties
         self._run_subprocess_script_cmd_if_exists(
             trial,
             func_names="fetch_trial_data",
+            **kw,
         )
         data = self._read_subprocess_script_output(trial, file_names=OUTPUT_FILES)
         if data is not None:
@@ -257,7 +266,7 @@ class ScriptWrapper(BaseWrapper):
                 data.pop(key)
             return data
 
-    def _run_subprocess_script_cmd_if_exists(self, trial: BaseTrial, func_names: list[str] | str, **kwargs):
+    def _run_subprocess_script_cmd_if_exists(self, trial: Trial, func_names: list[str] | str, **kwargs):
         """
         Run a script command from their config file in a subproccess.
         Dump the trial data into a json file for them to collect if need be
@@ -265,7 +274,7 @@ class ScriptWrapper(BaseWrapper):
 
         Parameters
         ----------
-        trial : BaseTrial
+        trial : Trial
             Current trial that will be dumped to json
         func_name : str
             Name of function that is calling this func.
@@ -288,14 +297,6 @@ class ScriptWrapper(BaseWrapper):
                 # TODO BaseTrial doesn't have arm property, just arms.
                 # With issue #22, fix this to fully support Batched Trials
                 trial_dir = save_trial_data(trial, experiment_dir=self.experiment_dir, **kwargs)
-                # for name, jsn in kw.items():
-                #     file_path = trial_dir / f"{name}.json"
-                #     if not file_path.exists():
-                #         with open(file_path, "w+") as file:  # pragma: no cover
-                #             file.write(json.dumps(jsn))
-                # output_file = trial_dir / f"{func_name}_to_wrapper.json"
-                # with open(output_file, "w+") as file:  # pragma: no cover
-                #     file.write(json.dumps(data))
 
                 args = split_shell_command(f"{run_cmd} {trial_dir}")
                 p = subprocess.Popen(
@@ -308,7 +309,7 @@ class ScriptWrapper(BaseWrapper):
                     logger.info(line.strip())
         return ran_cmds
 
-    def _read_subprocess_script_output(self, trial: BaseTrial, file_names: Iterable[str] | str):
+    def _read_subprocess_script_output(self, trial: Trial, file_names: Iterable[str] | str):
         trial_dir = get_trial_dir(self.experiment_dir, trial.index)
         if isinstance(file_names, str):
             file_names = [file_names]

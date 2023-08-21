@@ -11,8 +11,7 @@ import logging
 from functools import partial
 from typing import Any, Callable, Optional
 
-from ax import Data, Metric
-from ax.core.base_trial import BaseTrial
+from ax import Data, Metric, Trial
 from ax.core.types import TParameterization
 from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.utils.common.result import Err, Ok
@@ -96,7 +95,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         Scale of normal noise added to the function result. If None, interpret the function as
         noisy with unknown noise level.
     param_names
-        An ordered list of names of parameters to be passed to the metric_to_eval
+        A list of names of parameters to be passed to your wrapper.
         Useful for filtering out parameters before those parameters are passed to
         your metric
     name
@@ -160,9 +159,11 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     def weight(self):
         return self._weight
 
-    def fetch_trial_data(self, trial: BaseTrial, **kwargs):
+    def fetch_trial_data(self, trial: Trial, **kwargs):
         wrapper_kwargs = (
             self.wrapper._fetch_trial_data(
+                parameters=trial.arm.parameters,
+                param_names=self.param_names,
                 trial=trial,
                 metric_name=self.name,
                 **kwargs,

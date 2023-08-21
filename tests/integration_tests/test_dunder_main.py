@@ -5,7 +5,13 @@ import pytest
 from ax.service.scheduler import FailureRateExceededError
 
 import boa.__main__ as dunder_main
-from boa import BaseWrapper, BOAConfig, split_shell_command
+from boa import (
+    BaseWrapper,
+    BOAConfig,
+    get_trial_dir,
+    load_jsonlike,
+    split_shell_command,
+)
 from boa.definitions import ROOT
 
 try:
@@ -71,11 +77,15 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
     indirect=True,
 )
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
-def test_calling_command_line_r_test_scripts(r_scripts_run):
+def test_calling_command_line_r_test_scripts(r_scripts_run, request):
     scheduler = r_scripts_run
     wrapper = scheduler.experiment.runner.wrapper
     config = wrapper.config
     assert len(scheduler.experiment.trials) == config.trials
+
+    assert scheduler
+    if "r_package_streamlined" in str(wrapper.config_path):
+        assert "param_names" in load_jsonlike(get_trial_dir(wrapper.experiment_dir, 0) / "data.json")
 
 
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
