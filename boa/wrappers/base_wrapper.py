@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import pathlib
 
-from ax.core.base_trial import BaseTrial
+from ax import Trial
+from ax.core.types import TParameterization
 from ax.storage.json_store.encoder import object_to_json
 
 from boa.config import BOAConfig
@@ -243,7 +244,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         """
         return self.mk_experiment_dir(*args, **kwargs)
 
-    def write_configs(self, trial: BaseTrial) -> None:
+    def write_configs(self, trial: Trial) -> None:
         """
         This function is usually used to write out the configurations files used
         in an individual optimization trial run, or to dynamically write a run
@@ -254,7 +255,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         trial
         """
 
-    def run_model(self, trial: BaseTrial) -> None:
+    def run_model(self, trial: Trial) -> None:
         """
         Runs a model by deploying a given trial.
 
@@ -270,7 +271,7 @@ class BaseWrapper(metaclass=WrapperRegister):
             "\nOr an instantiated wrapper."
         )
 
-    def set_trial_status(self, trial: BaseTrial) -> None:
+    def set_trial_status(self, trial: Trial) -> None:
         """
         Marks the status of a trial to reflect the status of the model run for the trial.
 
@@ -324,7 +325,15 @@ class BaseWrapper(metaclass=WrapperRegister):
         # TODO add sphinx link to ax trial status
         """
 
-    def _fetch_trial_data(self, trial: BaseTrial, metric_name: str, *args, **kwargs):
+    def _fetch_trial_data(
+        self,
+        parameters: TParameterization,
+        metric_name: str,
+        trial: Trial,
+        param_names: list[str] = None,
+        *args,
+        **kwargs,
+    ):
         # in case users don't subclass with super
         if not hasattr(self, "_metric_cache"):
             self._metric_cache = {}
@@ -333,7 +342,12 @@ class BaseWrapper(metaclass=WrapperRegister):
         if metric_name in self._metric_cache[trial.index]:
             return self._metric_cache[trial.index][metric_name]
         res = self.fetch_trial_data(
-            trial=trial, metric_properties=self._metric_properties, metric_name=metric_name, *args, **kwargs
+            parameters=parameters,
+            metric_name=metric_name,
+            metric_properties=self._metric_properties,
+            trial=trial,
+            param_names=param_names,
+            **kwargs,
         )
         if res is None:
             raise ValueError(
@@ -357,7 +371,16 @@ class BaseWrapper(metaclass=WrapperRegister):
                 )
         return self._metric_cache[trial.index][metric_name]
 
-    def fetch_trial_data(self, trial: BaseTrial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
+    def fetch_trial_data(
+        self,
+        *,
+        parameters: TParameterization,
+        metric_name: str,
+        metric_properties: dict,
+        trial: Trial,
+        param_names: list[str] = None,
+        **kwargs,
+    ) -> dict:
         """
         Retrieves the trial data for either the one metric that is specified in metric_name or all
         metrics at once.
@@ -377,15 +400,22 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
-        trial
-            The current trial. parameters can be accessed as trial.arm.parameters and trial
-            index can be accessed by trial.index
-        metric_properties
-            collection of all metric properties for all metrics as a nested dictionary.
-            a specific metric properties can be accessed as `metric_properties["metric_name1"]`
+        parameters
+            The parameters for the current trial. Format is a dictionary of key value pairs.
+            This is a convenience argument, as these can also be accessed as `trial.arm.parameters`.
         metric_name
             the name of the metric that the arguments are being fetched for if you
             choose to only return one metric at a time
+        metric_properties
+            collection of all metric properties for all metrics as a nested dictionary.
+            a specific metric properties can be accessed as `metric_properties["metric_name1"]`
+        trial
+            The current trial. parameters can be accessed as `trial.arm.parameters` and trial
+            index can be accessed by `trial.index`
+        param_names
+            A list of names of parameters to restrict this `metric_name` metric to.
+            Useful for filtering out parameters before those parameters are passed to
+            your metric. Defaults to `[]`.
 
         Returns
         -------

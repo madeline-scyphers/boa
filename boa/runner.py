@@ -11,7 +11,7 @@ import concurrent.futures
 from collections import defaultdict
 from typing import Any, Dict, Iterable, Set
 
-from ax.core.base_trial import BaseTrial, TrialStatus
+from ax.core.base_trial import TrialStatus
 from ax.core.runner import Runner
 from ax.core.trial import Trial
 
@@ -29,7 +29,7 @@ class WrappedJobRunner(Runner, metaclass=RunnerRegister):
         self.wrapper = wrapper or BaseWrapper()
         super().__init__(*args, **kwargs)
 
-    def run(self, trial: BaseTrial) -> Dict[str, Any]:
+    def run(self, trial: Trial) -> Dict[str, Any]:
         """Deploys a trial based on custom runner subclass implementation.
 
         Args:
@@ -80,7 +80,7 @@ class WrappedJobRunner(Runner, metaclass=RunnerRegister):
 
         return results
 
-    def poll_trial_status(self, trials: Iterable[BaseTrial]) -> Dict[TrialStatus, Set[int]]:
+    def poll_trial_status(self, trials: Iterable[Trial]) -> Dict[TrialStatus, Set[int]]:
         """Checks the status of any non-terminal trials and returns their
         indices as a mapping from TrialStatus to a list of indices. Required
         for runners used with Ax ``Scheduler``.

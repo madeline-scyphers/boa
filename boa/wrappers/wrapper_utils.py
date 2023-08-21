@@ -391,5 +391,5 @@ def save_trial_data(trial: BaseTrial, trial_dir: pathlib.Path = None, experiment
         file_path = trial_dir / f"{name}.json"
         if not file_path.exists():
             with open(file_path, "w+") as file:  # pragma: no cover
-                file.write(json.dumps(jsn))
+                file.write(json.dumps(jsn, indent=4))
     return trial_dir

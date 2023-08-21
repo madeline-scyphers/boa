@@ -56,7 +56,7 @@ def scheduler_to_json_file(
     if dir_:
         scheduler_filepath = pathlib.Path(dir_) / scheduler_filepath
     with open(scheduler_filepath, "w+") as file:  # pragma: no cover
-        file.write(json.dumps(scheduler_to_json_snapshot(scheduler)))
+        file.write(json.dumps(scheduler_to_json_snapshot(scheduler), indent=4))
         logger.info(
             f"Saved JSON-serialized state of optimization to `{scheduler_filepath}`." f"\nBoa version: {__version__}"
         )

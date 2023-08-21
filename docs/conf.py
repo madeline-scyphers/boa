@@ -62,6 +62,7 @@ nitpick_ignore = [
     ("py:class", "SearchSpace"),
     ("py:class", "Objective"),
     ("py:class", "BaseTrial"),
+    ("py:class", "Trial"),
     ("py:class", "DBSettings"),
     # ("py:class", "PathLike"),  # TODO, why can't we use type aliases?
 ]
