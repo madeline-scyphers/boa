@@ -16,7 +16,7 @@ import pandas as pd
 import panel as pn
 import plotly.graph_objs as go
 from ax.plot.contour import plot_contour_plotly
-from ax.plot.helper import get_range_parameters
+from ax.plot.helper import get_range_parameters_from_list
 from ax.plot.pareto_frontier import plot_pareto_frontier as ax_plot_pareto_frontier
 from ax.plot.pareto_utils import compute_posterior_pareto_frontier
 from ax.plot.slice import interact_slice_plotly
@@ -48,6 +48,7 @@ __all__ = [
 def _maybe_load_scheduler(scheduler: SchedulerOrPath):
     if isinstance(scheduler, PathLike_tup):
         scheduler = scheduler_from_json_file(scheduler)
+        scheduler.generation_strategy._fit_or_update_current_model(data=scheduler.experiment.fetch_data())
     return scheduler
 
 
@@ -173,8 +174,7 @@ def plot_contours(
 
     if not metric_names:
         metric_names = list(scheduler.experiment.metrics.keys())
-
-    range_parameters = get_range_parameters(model, min_num_values=5)
+    range_parameters = get_range_parameters_from_list(list(scheduler.experiment.parameters.values()), min_num_values=5)
     param_names1 = [parameter.name for i, parameter in enumerate(range_parameters) if i != 1]
     param_names2 = [parameter.name for i, parameter in enumerate(range_parameters) if i != 0]
 

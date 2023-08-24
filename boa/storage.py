@@ -217,10 +217,7 @@ def scheduler_from_json_snapshot(
         generation_strategy_json=serialized_generation_strategy, experiment=experiment
     )
 
-    generation_strategy._fit_or_update_current_model(data=experiment.fetch_data())
-
     scheduler = Scheduler(generation_strategy=generation_strategy, experiment=experiment, options=options, **kwargs)
-    scheduler._experiment = experiment
     if wrapper:
         if isinstance(scheduler.experiment.runner, WrappedJobRunner):
             scheduler.experiment.runner.wrapper = wrapper
