@@ -84,6 +84,11 @@ class BaseWrapper(metaclass=WrapperRegister):
             self._metric_names = []
 
     @property
+    def metric_params(self) -> dict:
+        """dictionary of metric name to list of parameter names associated with each metric"""
+        return {metric.name: metric.param_names for metric in self.config.objective.metrics}
+
+    @property
     def config(self) -> BOAConfig:
         return self._config
 
@@ -102,6 +107,7 @@ class BaseWrapper(metaclass=WrapperRegister):
                 metric_propertis[name] = metric.properties
 
         self._metric_properties = metric_propertis
+        # TODO we could set _metric_names here
 
     @property
     def experiment_dir(self):
