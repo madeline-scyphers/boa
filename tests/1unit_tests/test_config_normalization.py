@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+import pytest
+
 from boa import BOAConfig
 
 
@@ -44,6 +46,20 @@ def test_config_run_cmd_sets_to_run_model():
     assert c.script_options.run_model == "some command"
 
 
+def test_config_run_cmd_and_run_model_error():
+    config = {
+        "objective": {"metrics": [{"name": "a"}]},
+        "parameters": {"x": 10},
+        "n_trials": 1,
+        "script_options": {
+            "run_cmd": "some command",
+            "run_model": "some command",
+        },
+    }
+    with pytest.raises(TypeError):
+        BOAConfig(**config)
+
+
 def test_config_weights_can_be_set_on_obj_passed_to_metrics():
     weights = [1, 2]
     config = {
@@ -55,3 +71,15 @@ def test_config_weights_can_be_set_on_obj_passed_to_metrics():
     c = BOAConfig(**config)
     for metric, weight in zip(c.objective.metrics, weights):
         assert metric.weight == weight
+
+
+def test_config_obj_weights_and_metric_weights_error():
+    weights = [1, 2]
+    config = {
+        "objective": {"metrics": [{"name": "a", "weight": 1}, {"name": "b", "weight": 2}], "weights": weights},
+        "parameters": {"x": 10},
+        "n_trials": 1,
+        "script_options": {"run_cmd": "some command"},
+    }
+    with pytest.raises(TypeError):
+        BOAConfig(**config)

@@ -268,6 +268,8 @@ class BOAObjective(_Utils):
             if len(weights) != len(config["metrics"]):
                 raise TypeError("Number of weights must match number of metrics")
             for i, weight in enumerate(weights):
+                if config["metrics"][i].get("weight"):
+                    raise TypeError("Cannot specify weight in both objetive.weights and metric.weight")
                 config["metrics"][i]["weight"] = weight
 
         self.__attrs_init__(**config)
