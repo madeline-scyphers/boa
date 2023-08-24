@@ -262,6 +262,16 @@ class BOAObjective(_Utils):
         },
     )
 
+    def __init__(self, **config):
+        weights = config.pop("weights", None)
+        if weights:
+            if len(weights) != len(config["metrics"]):
+                raise TypeError("Number of weights must match number of metrics")
+            for i, weight in enumerate(weights):
+                config["metrics"][i]["weight"] = weight
+
+        self.__attrs_init__(**config)
+
 
 @define
 class BOAScriptOptions(_Utils):
@@ -369,6 +379,11 @@ class BOAScriptOptions(_Utils):
     )
 
     def __init__(self, **config):
+        if config.get("run_cmd"):
+            if config.get("run_model"):
+                raise TypeError("Must specify either run_cmd or run_model, not both")
+            config["run_model"] = config.pop("run_cmd")
+
         rel_to_config = config.get("rel_to_config", None)
         rel_to_launch = config.get("rel_to_launch", None)
         if rel_to_config and rel_to_launch:
