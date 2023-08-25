@@ -1,5 +1,7 @@
 """
-BOA plotting CLI module
+###################################
+Plotting & EDA CLI
+###################################
 
 You can launch a basic EDA plot view
 of your optimization with::

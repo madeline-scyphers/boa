@@ -6,19 +6,15 @@ Configuration Guide
 
 
 ***********************
-Example Configurations
+Example Configuration
 ***********************
-
-
-Default Configuration
-==============================
 
 .. literalinclude:: ../../docs/examples/default_config.yaml
     :language: YAML
 
-
+***********************
 Jinja2 Templating
-==============================
+***********************
 
 BOA supports Jinja2 templating in the configuration file. This allows for
 the use of variables and conditionals in the configuration file. For example,
