@@ -573,7 +573,9 @@ For specific options you can pass to each step
 
     _filtered_dict_fields: ClassVar[str] = ["mapping", "orig_config"]
 
-    def __init__(self, parameter_keys=None, **config):
+    def __init__(self, **config):
+        self.orig_config = copy.deepcopy(config)
+        parameter_keys = config.get("parameter_keys", None)
         scheduler = config.get("scheduler", {})
         n_trials = config.get("n_trials", None)
         if isinstance(scheduler, dict):
@@ -597,7 +599,6 @@ For specific options you can pass to each step
                         config["scheduler"] = SchedulerOptions(**d)
                 else:
                     raise TypeError(f"Scheduler must be a dict or SchedulerOptions, but is {type(config['scheduler'])}")
-        self.orig_config = copy.deepcopy(config)
 
         # we instantiate it as None since all defined attributes from above need to exist
         self.mapping = None
@@ -605,7 +606,7 @@ For specific options you can pass to each step
             parameters, mapping = self.wpr_params_to_boa(config, parameter_keys)
             config["parameters"] = parameters
             self.mapping = mapping
-        self.__attrs_init__(**config, parameter_keys=parameter_keys)
+        self.__attrs_init__(**config)
 
     @classmethod
     def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None, template_kw: Optional[dict] = None):
@@ -736,6 +737,13 @@ For specific options you can pass to each step
                     for k in maybe_key[1:]:
                         if isinstance(d, dict):
                             path_type.append("dict")
+                            if isinstance(k, int):
+                                raise TypeError(
+                                    "JSON serialization does not support integer keys."
+                                    " If you use a integer key in your YAML"
+                                    " config file, this information will be lost during serialization."
+                                    " Please use str keys instead."
+                                )
                         else:
                             path_type.append("list")
                         d = d[k]

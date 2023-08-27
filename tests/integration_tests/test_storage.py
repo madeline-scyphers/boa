@@ -15,12 +15,15 @@ from ax.storage.json_store.registry import (
 
 import boa.__main__ as dunder_main
 from boa import (
+    BaseWrapper,
+    BOAConfig,
     ModularMetric,
     WrappedJobRunner,
     cd_and_cd_back,
     get_dictionary_from_callable,
     get_scheduler,
     instantiate_search_space_from_json,
+    load_jsonlike,
     scheduler_from_json_file,
     scheduler_to_json_file,
     split_shell_command,
@@ -29,6 +32,28 @@ from boa.__version__ import __version__
 from boa.definitions import ROOT
 
 TEST_DIR = ROOT / "tests"
+
+
+class WrapperConfigNormalization(BaseWrapper):
+    def load_config(self, config_path, *args, **kwargs) -> BOAConfig:
+        config = load_jsonlike(config_path)
+        parameter_keys = [
+            ["params", "a"],
+            ["params", "b"],
+            ["params_a"],
+            ["params2", 0, "a"],
+            ["params2", 1, "b"],
+        ]
+        return BOAConfig(parameter_keys=parameter_keys, **config)
+
+    def run_model(self, trial) -> None:
+        """"""
+
+    def set_trial_status(self, trial) -> None:
+        trial.mark_completed()
+
+    def fetch_trial_data(self, **kwargs) -> dict:
+        return 1
 
 
 @pytest.mark.parametrize(
@@ -64,6 +89,32 @@ def test_save_load_config(config, request):
         class_decoder_registry=CORE_CLASS_DECODER_REGISTRY,
     )
     assert config == c
+
+
+def test_config_param_parse_with_custom_wrapper_load_config(denormed_custom_wrapper_config_path, tmp_path):
+    scheduler = dunder_main.main(
+        split_shell_command(f"--config-path {denormed_custom_wrapper_config_path}" " -td"),
+        standalone_mode=False,
+    )
+    file_out = tmp_path / "scheduler.json"
+    scheduler_to_json_file(scheduler, file_out)
+
+    scheduler = scheduler_from_json_file(file_out)
+    config = scheduler.experiment.runner.wrapper.config
+    names = {
+        "params_a_x2",
+        "params_a_x1",
+        "params_b_x1",
+        "params_b_x2",
+        "params_a_x1_0",
+        "params_a_x2_0",
+        "params2_0_a_x1",
+        "params2_0_a_x2",
+        "params2_1_b_x1",
+        "params2_1_b_x2",
+    }
+    for key in config.parameters:
+        assert key["name"] in names
 
 
 def test_save_load_scheduler_branin(branin_main_run, tmp_path):

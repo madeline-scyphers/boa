@@ -58,6 +58,13 @@ def denormed_param_parse_config():
 
 
 @pytest.fixture
+def denormed_custom_wrapper_config_path():
+    """MultiObjective Optimization config"""
+    config_path = TEST_CONFIG_DIR / "test_config_param_parse_with_wrapper_load.yaml"
+    return config_path
+
+
+@pytest.fixture
 def pass_through_config():
     """PassThrough Optimization config"""
     config_path = TEST_CONFIG_DIR / "test_config_pass_through_metric.yaml"
