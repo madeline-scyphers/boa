@@ -16,10 +16,10 @@ def test_wpr_params_to_boa(denormed_param_parse_config):
         "params_b_x2",
         "params_a_x1_0",
         "params_a_x2_0",
-        "params2_0_0_x1",
-        "params2_0_0_x2",
-        "params2_1_0_x1",
-        "params2_1_0_x2",
+        "params2_0_a_x1",
+        "params2_0_a_x2",
+        "params2_1_b_x1",
+        "params2_1_b_x2",
     }
     for key in config.parameters:
         assert key["name"] in names
