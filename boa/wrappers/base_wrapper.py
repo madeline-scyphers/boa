@@ -584,9 +584,11 @@ class BaseWrapper(metaclass=WrapperRegister):
                     exp_dir = pathlib.Path(kwargs["experiment_dir"])
                 else:
                     exp_dir = pathlib.Path.cwd()
-                with open(exp_dir / "temp_config.yaml", "w") as f:
+                config_path = exp_dir / "temp_config.yaml"
+                with open(config_path, "w") as f:
                     # Write out config as yaml since we don't know what file format it came from
                     yaml.dump(kwargs["config"], f)
+                kwargs["config_path"] = config_path
                 logger.warning(
                     f"No config path found, writing out config to {exp_dir / 'temp_config.yaml'}"
                     " and using that as config_path"

@@ -9,6 +9,7 @@ stop and restart.
 """
 
 import json
+import logging
 import pathlib
 from copy import deepcopy
 from dataclasses import asdict
@@ -196,6 +197,13 @@ def scheduler_from_json_snapshot(
             )
         if not exp_dir or not pathlib.Path(exp_dir).exists():
             wrapper_dict["experiment_dir"] = str(pathlib.Path(filepath).parent)
+            logger = get_logger(filename=str(pathlib.Path(wrapper_dict["experiment_dir"]) / "optimization.log"))
+            for handler in logger.handlers:
+                if isinstance(handler, logging.FileHandler):
+                    if not pathlib.Path(handler.baseFilename).exists():
+                        logger.removeHandler(handler)
+            # setup file handler on ax logger too
+            get_logger("ax", filename=str(pathlib.Path(wrapper_dict["experiment_dir"]) / "optimization.log"))
             logger.info(
                 f"Making new experiment dir here: {wrapper_dict['experiment_dir']}."
                 f"\nOld experiment directory not found. "

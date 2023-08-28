@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import sys
 
@@ -119,13 +120,13 @@ def test_config_param_parse_with_custom_wrapper_load_config(denormed_custom_wrap
         assert key["name"] in names
 
 
-def test_custom_wrapper_load_config_reload_from_moved_files(denormed_custom_wrapper_run, tmp_path):
+def test_custom_wrapper_load_config_reload_from_moved_files(denormed_custom_wrapper_run, tmp_path, caplog):
     scheduler = denormed_custom_wrapper_run
     output_dir = tmp_path / "output_dir"
     shutil.move(scheduler.wrapper.experiment_dir, output_dir)
 
     scheduler = scheduler_from_json_file(output_dir / "scheduler.json")
-    config = scheduler.experiment.runner.wrapper.config
+    config = scheduler.wrapper.config
     names = {
         "params_a_x2",
         "params_a_x1",
@@ -140,6 +141,13 @@ def test_custom_wrapper_load_config_reload_from_moved_files(denormed_custom_wrap
     }
     for key in config.parameters:
         assert key["name"] in names
+
+    os.remove(scheduler.wrapper.config_path)
+    scheduler = scheduler_from_json_file(output_dir / "scheduler.json")
+    config = scheduler.wrapper.config
+    for key in config.parameters:
+        assert key["name"] in names
+    assert "No config path found, writing out config to " in caplog.text
 
 
 def test_save_load_scheduler_branin(branin_main_run, tmp_path):
