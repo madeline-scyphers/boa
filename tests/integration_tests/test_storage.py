@@ -120,6 +120,7 @@ def test_config_param_parse_with_custom_wrapper_load_config(denormed_custom_wrap
         assert key["name"] in names
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Windows doesn't support moving files that are open")
 def test_custom_wrapper_load_config_reload_from_moved_files(denormed_custom_wrapper_run, tmp_path, caplog):
     scheduler = denormed_custom_wrapper_run
     output_dir = tmp_path / "output_dir"
