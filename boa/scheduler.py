@@ -8,6 +8,7 @@ from ax.service.scheduler import Scheduler as AxScheduler
 
 from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
+from boa.wrappers.base_wrapper import BaseWrapper
 
 logger = get_logger()
 
@@ -16,6 +17,10 @@ class Scheduler(AxScheduler):
     runner: WrappedJobRunner
     scheduler_filepath: str = "scheduler.json"
     opt_filepath: str = "optimization.csv"
+
+    @property
+    def wrapper(self) -> BaseWrapper:
+        return self.runner.wrapper
 
     def report_results(self, force_refit: bool = False):
         """

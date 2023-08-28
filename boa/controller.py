@@ -96,26 +96,9 @@ class Controller:
         scheduler = scheduler_from_json_file(scheduler_path, **kwargs)
         wrapper = scheduler.experiment.runner.wrapper
 
-        # experiment dir doesn't exist anymore, etierh bc it was deleted or bc we changed computers
-        kw = {}
-        if not wrapper.experiment_dir or (
-            isinstance(wrapper.experiment_dir, Path) and not wrapper.experiment_dir.exists()
-        ):
-            kw["experiment_dir"] = Path(scheduler_path).parent
-            if wrapper.experiment_dir:  # copy old name over
-
-                kw["experiment_name"] = Path(wrapper.experiment_dir).name
-                kw["append_timestamp"] = False
-            wrapper.mk_experiment_dir(**kw)
         inst = cls(wrapper=wrapper, working_dir=working_dir, **kwargs)
-        inst.logger.info(f"Resuming optimization from scheduler path{scheduler_path}")
-        if "experiment_dir" in kw:
-            inst.logger.info(
-                f"Making new experiment dir here: {wrapper.experiment_dir}."
-                f"\nOld experiment directory not found. "
-                f"\nMost likely because it was deleted or because of reloading on a different computer than"
-                f" originally ran on."
-            )
+        inst.logger.info(f"Resuming optimization from scheduler path: {scheduler_path}")
+
         inst.scheduler = scheduler
         inst.experiment = scheduler.experiment
         return inst

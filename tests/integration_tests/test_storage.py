@@ -1,4 +1,5 @@
 import json
+import shutil
 import sys
 
 import numpy as np
@@ -23,6 +24,7 @@ from boa import (
     get_dictionary_from_callable,
     get_scheduler,
     instantiate_search_space_from_json,
+    load_jsonlike,
     scheduler_from_json_file,
     scheduler_to_json_file,
     split_shell_command,
@@ -34,7 +36,8 @@ TEST_DIR = ROOT / "tests"
 
 
 class WrapperConfigNormalization(BaseWrapper):
-    def load_config(self, raw_config, *args, **kwargs) -> BOAConfig:
+    def load_config(self, config_path, *args, **kwargs) -> BOAConfig:
+        config = load_jsonlike(config_path)
         parameter_keys = [
             ["params", "a"],
             ["params", "b"],
@@ -42,11 +45,11 @@ class WrapperConfigNormalization(BaseWrapper):
             ["params2", 0, "a"],
             ["params2", 1, "b"],
         ]
-        assert "dummy_key" in raw_config["params_a"]["x1"]
-        assert "dummy_key" in raw_config["params_a"]["x2"]
-        raw_config["params_a"]["x1"].pop("dummy_key")
-        raw_config["params_a"]["x2"].pop("dummy_key")
-        return BOAConfig(parameter_keys=parameter_keys, **raw_config)
+        assert "dummy_key" in config["params_a"]["x1"]
+        assert "dummy_key" in config["params_a"]["x2"]
+        config["params_a"]["x1"].pop("dummy_key")
+        config["params_a"]["x2"].pop("dummy_key")
+        return BOAConfig(parameter_keys=parameter_keys, **config)
 
     def run_model(self, trial) -> None:
         """"""
@@ -93,15 +96,35 @@ def test_save_load_config(config, request):
     assert config == BOAConfig(**c)
 
 
-def test_config_param_parse_with_custom_wrapper_load_config(denormed_custom_wrapper_config_path, tmp_path):
-    scheduler = dunder_main.main(
-        split_shell_command(f"--config-path {denormed_custom_wrapper_config_path}" " -td"),
-        standalone_mode=False,
-    )
+def test_config_param_parse_with_custom_wrapper_load_config(denormed_custom_wrapper_run, tmp_path):
+    scheduler = denormed_custom_wrapper_run
     file_out = tmp_path / "scheduler.json"
     scheduler_to_json_file(scheduler, file_out)
 
     scheduler = scheduler_from_json_file(file_out)
+    config = scheduler.experiment.runner.wrapper.config
+    names = {
+        "params_a_x2",
+        "params_a_x1",
+        "params_b_x1",
+        "params_b_x2",
+        "params_a_x1_0",
+        "params_a_x2_0",
+        "params2_0_a_x1",
+        "params2_0_a_x2",
+        "params2_1_b_x1",
+        "params2_1_b_x2",
+    }
+    for key in config.parameters:
+        assert key["name"] in names
+
+
+def test_custom_wrapper_load_config_reload_from_moved_files(denormed_custom_wrapper_run, tmp_path):
+    scheduler = denormed_custom_wrapper_run
+    output_dir = tmp_path / "output_dir"
+    shutil.move(scheduler.wrapper.experiment_dir, output_dir)
+
+    scheduler = scheduler_from_json_file(output_dir / "scheduler.json")
     config = scheduler.experiment.runner.wrapper.config
     names = {
         "params_a_x2",

@@ -69,9 +69,9 @@ def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None
     """
     with open(filepath, "r") as file:  # pragma: no cover
         serialized = json.loads(file.read())
-        scheduler = scheduler_from_json_snapshot(serialized=serialized, **kwargs)
+        scheduler = scheduler_from_json_snapshot(serialized=serialized, filepath=filepath, **kwargs)
 
-    wrapper = scheduler.experiment.runner.wrapper
+    wrapper = scheduler.wrapper
 
     if wrapper is not None:
         for trial in scheduler.running_trials:
@@ -145,6 +145,7 @@ def scheduler_from_json_snapshot(
     decoder_registry: Optional[Dict[str, Type]] = None,
     class_decoder_registry: Optional[Dict[str, Callable[[Dict[str, Any]], Any]]] = None,
     wrapper_path=None,
+    filepath: PathLike = None,
     **kwargs,
 ) -> Scheduler:
     """Recreate an `Scheduler` from a JSON snapshot."""
@@ -181,9 +182,31 @@ def scheduler_from_json_snapshot(
         if isinstance(wrapper_dict, list) and len(wrapper_dict) == 1:
             wrapper_dict = wrapper_dict[0]
 
+        # experiment dir doesn't exist anymore, either bc it was deleted or bc we changed computers
+        # we also need to do this before we try and deserialize the wrapper b/c the config deserilization
+        # is the wrapper responsibility in wrapper deserialization, and if things got moved,
+        # the config path will be wrong
+        exp_dir = wrapper_dict.get("experiment_dir")
+
+        if exp_dir:
+            exp_dir = object_from_json(
+                exp_dir,
+                decoder_registry=decoder_registry,
+                class_decoder_registry=class_decoder_registry,
+            )
+        if not exp_dir or not pathlib.Path(exp_dir).exists():
+            wrapper_dict["experiment_dir"] = str(pathlib.Path(filepath).parent)
+            logger.info(
+                f"Making new experiment dir here: {wrapper_dict['experiment_dir']}."
+                f"\nOld experiment directory not found. "
+                f"\nMost likely because it was deleted or because of reloading on a different computer than"
+                f" originally ran on."
+            )
+
+        wd = deepcopy(wrapper_dict)
         try:
             wrapper = object_from_json(
-                deepcopy(wrapper_dict),
+                deepcopy(wd),
                 decoder_registry=decoder_registry,
                 class_decoder_registry=class_decoder_registry,
             )

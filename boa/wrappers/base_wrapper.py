@@ -559,11 +559,12 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     @classmethod
     def from_dict(cls, **kwargs):
-        config_path = None
-        if "config_path" in kwargs:
-            config_path = pathlib.Path(kwargs["config_path"])
+        config_path = kwargs.pop("config_path", None)
+        config_path = pathlib.Path(config_path) if config_path else None
+        if config_path:
+            config_path = pathlib.Path(config_path)
             if not config_path.exists() and "experiment_dir" in kwargs:
-                config_path = pathlib.Path(kwargs["experiment_dir"]) / pathlib.Path(kwargs["config_path"]).name
+                config_path = pathlib.Path(kwargs["experiment_dir"]) / config_path.name
         if not config_path or not config_path.exists():
             if "experiment_dir" in kwargs:
                 configs = pathlib.Path(kwargs["experiment_dir"]).glob("config.*")
