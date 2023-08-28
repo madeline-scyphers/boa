@@ -13,7 +13,6 @@ import time
 from pathlib import Path
 from typing import Type
 
-import ruamel.yaml as yaml
 from ax import Experiment
 from ax.service.utils.report_utils import exp_to_df
 
@@ -25,6 +24,7 @@ from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
 from boa.storage import scheduler_from_json_file
+from boa.utils import yaml_dump
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import get_dt_now_as_str, initialize_wrapper
 
@@ -79,9 +79,7 @@ class Controller:
             # Copy the experiment config to the experiment directory
             shutil.copyfile(wrapper.config_path, wrapper.experiment_dir / Path(config_path).name)
         else:
-            with open(wrapper.experiment_dir / "config.yaml", "w") as f:
-                # Write out config as yaml since we don't know what file format it came from
-                yaml.dump(wrapper.config, f)
+            yaml_dump(wrapper.config, wrapper.experiment_dir / "config.yaml")
 
         self.wrapper = wrapper
         self.config = self.wrapper.config
