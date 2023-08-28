@@ -56,6 +56,10 @@ class BaseWrapper(metaclass=WrapperRegister):
                 self.config = config
             if isinstance(config, dict):
                 c = copy.deepcopy(config)
+                if config_path:
+                    kwargs["config_path"] = config_path
+                elif "config_path" in config and config_path not in kwargs:
+                    kwargs["config_path"] = config["config_path"]
                 config = self.load_config(raw_config=config, *args, **kwargs)
                 config.orig_config = c
                 # if load_config returns something, set to self.config
@@ -173,7 +177,8 @@ class BaseWrapper(metaclass=WrapperRegister):
         Load config takes a configuration path of either a JSON file or a YAML file and returns
         your configuration dataclass.
 
-        Load_config will (unless overwritten in a subclass), do some basic "normalizations"
+        Load_config will (unless overwritten in a subclass), will load the configuration file
+        by handing it to :class:`.BOAConfig` and then normalize it to a standard format
         to your configuration for convenience. See :class:`.BOAConfig` and its __init__ method
         for more information about how the normalization works and what config options you
         can control.
@@ -183,21 +188,29 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
+        raw_config
+            Raw configuration dictionary directly loaded from YAML or JSON configuration file.
+            Either raw config or config_path must be processed and then converted
+            to a `BOAConfig` object.
+            Either through `BOAConfig(**raw_config)` or `BOAConfig.from_deprecated(**raw_config)`
+            with whatever processing before you need.
         config_path
             File path for the experiment configuration file
+            Either raw config or config_path must be processed and then converted
+            to a `BOAConfig` object.
+            You can do this through `BOAConfig.from_jsonlike(config_path)`
+            or config = `boa.load_jsonlike(config_path); BOAConfig(**config)`
+            with whatever processing in between you need.
 
         Returns
         -------
         BOAConfig
             loaded_config
         """
-        if config_path:
-            try:
-                config = BOAConfig.from_jsonlike(config_path)
-            except ValueError as e:  # return empty config if not json or yaml file
-                raise e
-        elif raw_config:
+        if raw_config:
             config = BOAConfig(**raw_config)
+        elif config_path:
+            config = BOAConfig.from_jsonlike(config_path)
         else:
             raise ValueError("No config_path or raw_config passed in")
 
@@ -546,6 +559,24 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     @classmethod
     def from_dict(cls, **kwargs):
+        config_path = None
+        if "config_path" in kwargs:
+            config_path = pathlib.Path(kwargs["config_path"])
+            if not config_path.exists() and "experiment_dir" in kwargs:
+                config_path = pathlib.Path(kwargs["experiment_dir"]) / pathlib.Path(kwargs["config_path"]).name
+        if not config_path or not config_path.exists():
+            if "experiment_dir" in kwargs:
+                configs = pathlib.Path(kwargs["experiment_dir"]).glob("config.*")
+                if len(list(configs)) == 1:
+                    config_path = list(configs)[0]
+                elif len(list(configs)) > 1:
+                    for config in configs:
+                        if config.suffix.lower() in (".yaml", ".json", ".yml"):
+                            config_path = config
+                            break
+        if config_path and config_path.exists():
+            kwargs["config_path"] = config_path
+
         return initialize_wrapper(
             wrapper=cls,
             post_init_attrs=dict(

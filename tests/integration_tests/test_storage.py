@@ -23,7 +23,6 @@ from boa import (
     get_dictionary_from_callable,
     get_scheduler,
     instantiate_search_space_from_json,
-    load_jsonlike,
     scheduler_from_json_file,
     scheduler_to_json_file,
     split_shell_command,
