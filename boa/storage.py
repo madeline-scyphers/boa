@@ -190,7 +190,7 @@ def scheduler_from_json_snapshot(
 
         if exp_dir:
             exp_dir = object_from_json(
-                exp_dir,
+                deepcopy(exp_dir),
                 decoder_registry=decoder_registry,
                 class_decoder_registry=class_decoder_registry,
             )
@@ -203,10 +203,9 @@ def scheduler_from_json_snapshot(
                 f" originally ran on."
             )
 
-        wd = deepcopy(wrapper_dict)
         try:
             wrapper = object_from_json(
-                deepcopy(wd),
+                deepcopy(wrapper_dict),
                 decoder_registry=decoder_registry,
                 class_decoder_registry=class_decoder_registry,
             )

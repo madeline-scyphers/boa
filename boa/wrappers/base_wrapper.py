@@ -11,6 +11,7 @@ import copy
 import pathlib
 from typing import Optional
 
+import ruamel.yaml as yaml
 from ax import Trial
 from ax.core.types import TParameterization
 from ax.storage.json_store.encoder import object_to_json
@@ -577,6 +578,21 @@ class BaseWrapper(metaclass=WrapperRegister):
                             break
         if config_path and config_path.exists():
             kwargs["config_path"] = config_path
+        else:
+            if "config" in kwargs:
+                if "experiment_dir" in kwargs:
+                    exp_dir = pathlib.Path(kwargs["experiment_dir"])
+                else:
+                    exp_dir = pathlib.Path.cwd()
+                with open(exp_dir / "temp_config.yaml", "w") as f:
+                    # Write out config as yaml since we don't know what file format it came from
+                    yaml.dump(kwargs["config"], f)
+                logger.warning(
+                    f"No config path found, writing out config to {exp_dir / 'temp_config.yaml'}"
+                    " and using that as config_path"
+                )
+            else:
+                logger.warning(f"No config path found, and no config passed in! No config to pass to wrapper {cls}")
 
         return initialize_wrapper(
             wrapper=cls,
