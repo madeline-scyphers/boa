@@ -35,8 +35,7 @@ TEST_DIR = ROOT / "tests"
 
 
 class WrapperConfigNormalization(BaseWrapper):
-    def load_config(self, config_path, *args, **kwargs) -> BOAConfig:
-        config = load_jsonlike(config_path)
+    def load_config(self, raw_config, *args, **kwargs) -> BOAConfig:
         parameter_keys = [
             ["params", "a"],
             ["params", "b"],
@@ -44,7 +43,11 @@ class WrapperConfigNormalization(BaseWrapper):
             ["params2", 0, "a"],
             ["params2", 1, "b"],
         ]
-        return BOAConfig(parameter_keys=parameter_keys, **config)
+        assert "dummy_key" in raw_config["params_a"]["x1"]
+        assert "dummy_key" in raw_config["params_a"]["x2"]
+        raw_config["params_a"]["x1"].pop("dummy_key")
+        raw_config["params_a"]["x2"].pop("dummy_key")
+        return BOAConfig(parameter_keys=parameter_keys, **raw_config)
 
     def run_model(self, trial) -> None:
         """"""
@@ -88,7 +91,7 @@ def test_save_load_config(config, request):
         decoder_registry=CORE_DECODER_REGISTRY,
         class_decoder_registry=CORE_CLASS_DECODER_REGISTRY,
     )
-    assert config == c
+    assert config == BOAConfig(**c)
 
 
 def test_config_param_parse_with_custom_wrapper_load_config(denormed_custom_wrapper_config_path, tmp_path):

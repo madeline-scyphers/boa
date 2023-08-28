@@ -7,18 +7,23 @@ Base Wrapper
 
 from __future__ import annotations
 
+import copy
 import pathlib
+from typing import Optional
 
 from ax import Trial
 from ax.core.types import TParameterization
-from ax.storage.json_store.decoder import object_from_json
 from ax.storage.json_store.encoder import object_to_json
 
 from boa.config import BOAConfig
 from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metaclasses import WrapperRegister
-from boa.wrappers.wrapper_utils import initialize_wrapper, make_experiment_dir
+from boa.wrappers.wrapper_utils import (
+    initialize_wrapper,
+    load_jsonlike,
+    make_experiment_dir,
+)
 
 logger = get_logger()
 
@@ -47,10 +52,24 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         self.config = None
         if config:
-            self.config = config
+            if isinstance(config, BOAConfig):
+                self.config = config
+            if isinstance(config, dict):
+                c = copy.deepcopy(config)
+                config = self.load_config(raw_config=config, *args, **kwargs)
+                config.orig_config = c
+                # if load_config returns something, set to self.config
+                # if users overwrite load_config and don't return anything,
+                # we assume they set self.config in load_config and don't want
+                # to override it here (and set it to None)
+                if config is not None:
+                    self.config = config
 
         elif config_path:
-            config = self.load_config(config_path, *args, **kwargs)
+            orig_config = load_jsonlike(config_path)
+            c = copy.deepcopy(orig_config)
+            config = self.load_config(config_path=config_path, raw_config=orig_config, *args, **kwargs)
+            config.orig_config = c
             # if load_config returns something, set to self.config
             # if users overwrite load_config and don't return anything,
             # we assume they set self.config in load_config and don't want
@@ -147,7 +166,9 @@ class BaseWrapper(metaclass=WrapperRegister):
         """Path of file that the Wrapper class is defined in"""
         return cls._path
 
-    def load_config(self, config_path: PathLike, *args, **kwargs) -> BOAConfig:
+    def load_config(
+        self, config_path: Optional[PathLike] = None, raw_config: Optional[dict] = None, *args, **kwargs
+    ) -> BOAConfig:
         """
         Load config takes a configuration path of either a JSON file or a YAML file and returns
         your configuration dataclass.
@@ -170,10 +191,15 @@ class BaseWrapper(metaclass=WrapperRegister):
         BOAConfig
             loaded_config
         """
-        try:
-            config = BOAConfig.from_jsonlike(config_path)
-        except ValueError as e:  # return empty config if not json or yaml file
-            raise e
+        if config_path:
+            try:
+                config = BOAConfig.from_jsonlike(config_path)
+            except ValueError as e:  # return empty config if not json or yaml file
+                raise e
+        elif raw_config:
+            config = BOAConfig(**raw_config)
+        else:
+            raise ValueError("No config_path or raw_config passed in")
 
         self.config = config
         return self.config
@@ -520,18 +546,6 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     @classmethod
     def from_dict(cls, **kwargs):
-        if isinstance(kwargs.get("config"), dict):  # pragma: no cover  # Ax should catch this
-            kwargs["config"] = object_from_json(kwargs["config"])
-            if isinstance(kwargs["config"], dict):
-                try:
-                    kwargs["config"] = BOAConfig(**kwargs["config"])
-                except TypeError as e:
-                    logger.warning(
-                        f"Could not deserialize wrapper config."
-                        f"\nLoading wrapper without config. You may not be able to resume new trials: "
-                        f"\n{e}"
-                    )
-
         return initialize_wrapper(
             wrapper=cls,
             post_init_attrs=dict(
