@@ -9,6 +9,7 @@ stop and restart.
 """
 
 import json
+import logging
 import pathlib
 from copy import deepcopy
 from dataclasses import asdict
@@ -69,9 +70,9 @@ def scheduler_from_json_file(filepath: PathLike = "scheduler.json", wrapper=None
     """
     with open(filepath, "r") as file:  # pragma: no cover
         serialized = json.loads(file.read())
-        scheduler = scheduler_from_json_snapshot(serialized=serialized, **kwargs)
+        scheduler = scheduler_from_json_snapshot(serialized=serialized, filepath=filepath, **kwargs)
 
-    wrapper = scheduler.experiment.runner.wrapper
+    wrapper = scheduler.wrapper
 
     if wrapper is not None:
         for trial in scheduler.running_trials:
@@ -145,6 +146,7 @@ def scheduler_from_json_snapshot(
     decoder_registry: Optional[Dict[str, Type]] = None,
     class_decoder_registry: Optional[Dict[str, Callable[[Dict[str, Any]], Any]]] = None,
     wrapper_path=None,
+    filepath: PathLike = None,
     **kwargs,
 ) -> Scheduler:
     """Recreate an `Scheduler` from a JSON snapshot."""
@@ -180,6 +182,34 @@ def scheduler_from_json_snapshot(
         # sometimes the way people write their to_dict methods wrap it in a list
         if isinstance(wrapper_dict, list) and len(wrapper_dict) == 1:
             wrapper_dict = wrapper_dict[0]
+
+        # experiment dir doesn't exist anymore, either bc it was deleted or bc we changed computers
+        # we also need to do this before we try and deserialize the wrapper b/c the config deserilization
+        # is the wrapper responsibility in wrapper deserialization, and if things got moved,
+        # the config path will be wrong
+        exp_dir = wrapper_dict.get("experiment_dir")
+
+        if exp_dir:
+            exp_dir = object_from_json(
+                deepcopy(exp_dir),
+                decoder_registry=decoder_registry,
+                class_decoder_registry=class_decoder_registry,
+            )
+        if not exp_dir or not pathlib.Path(exp_dir).exists():
+            wrapper_dict["experiment_dir"] = str(pathlib.Path(filepath).parent)
+            logger = get_logger(filename=str(pathlib.Path(wrapper_dict["experiment_dir"]) / "optimization.log"))
+            for handler in logger.handlers:
+                if isinstance(handler, logging.FileHandler):
+                    if not pathlib.Path(handler.baseFilename).exists():
+                        logger.removeHandler(handler)
+            # setup file handler on ax logger too
+            get_logger("ax", filename=str(pathlib.Path(wrapper_dict["experiment_dir"]) / "optimization.log"))
+            logger.info(
+                f"Making new experiment dir here: {wrapper_dict['experiment_dir']}."
+                f"\nOld experiment directory not found. "
+                f"\nMost likely because it was deleted or because of reloading on a different computer than"
+                f" originally ran on."
+            )
 
         try:
             wrapper = object_from_json(
@@ -239,18 +269,18 @@ def recursive_deserialize(obj, **kwargs):
     return obj
 
 
-def exp_opt_to_csv(experiment, opt_path: PathLike = "optimization.csv", dir_: PathLike = None, **kwargs):
+def exp_opt_to_csv(experiment, opt_filepath: PathLike = "optimization.csv", dir_: PathLike = None, **kwargs):
     if dir_:
-        opt_path = pathlib.Path(dir_) / opt_path
+        opt_filepath = pathlib.Path(dir_) / opt_filepath
     df = exp_to_df(experiment)
-    df.to_csv(path_or_buf=opt_path, index=False, **kwargs)
-    logger.info(f"Saved optimization parametrization and objective to `{opt_path}`.")
+    df.to_csv(path_or_buf=opt_filepath, index=False, **kwargs)
+    logger.info(f"Saved optimization parametrization and objective to `{opt_filepath}`.")
 
 
 def scheduler_opt_to_csv(scheduler, **kwargs):
     return exp_opt_to_csv(scheduler.experiment, **kwargs)
 
 
-def dump_scheduler_data(scheduler, **kwargs):
-    scheduler_to_json_file(scheduler, **kwargs)
-    scheduler_opt_to_csv(scheduler, **kwargs)
+def dump_scheduler_data(scheduler, scheduler_filepath, opt_filepath, **kwargs):
+    scheduler_to_json_file(scheduler, scheduler_filepath=scheduler_filepath, **kwargs)
+    scheduler_opt_to_csv(scheduler, opt_filepath=opt_filepath, **kwargs)

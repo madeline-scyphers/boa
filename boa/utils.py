@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional, Type, Union
 
 import torch
+from ruamel.yaml import YAML
 
 from boa.definitions import PathLike
 
@@ -286,3 +287,9 @@ class StrEnum(str, Enum):  # pragma: no cover  # copied from python 3.11
     @classmethod
     def from_str_or_enum(cls, value: Union[str, "StrEnum"]) -> "StrEnum":
         return cls(value)
+
+
+def yaml_dump(data: dict, path: PathLike) -> None:
+    yaml = YAML(typ="unsafe", pure=True)
+    with open(path, "w") as file:
+        yaml.dump(data, file)

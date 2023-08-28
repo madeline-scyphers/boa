@@ -88,7 +88,7 @@ jobs:
 
       - name: Run tests
         shell: bash -l {0}
-        run: invoke tests --options '-s -v --cov=boa --cov-branch --cov-report=xml'
+        run: invoke tests --options '-v -s --cov=boa --cov-branch --cov-report=xml'
 
       - name: Upload coverage to Codecov
         if: startsWith(matrix.os, 'ubuntu')

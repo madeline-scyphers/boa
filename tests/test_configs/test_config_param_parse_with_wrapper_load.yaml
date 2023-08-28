@@ -24,10 +24,12 @@ params:
 
 params_a:
     x1:
+        dummy_key: dummy_value
         type: range
         bounds: [ 0, 1 ]
         value_type: float
     x2:
+        dummy_key: dummy_value
         type: fixed
         value: 0.5
         value_type: float

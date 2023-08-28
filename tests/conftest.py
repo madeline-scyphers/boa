@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from pathlib import Path
 
 import pytest
@@ -147,6 +148,53 @@ def cd_to_root_and_back():
 def cd_to_root_and_back_session():
     with cd_and_cd_back(ROOT):
         yield
+
+
+@pytest.fixture(scope="session")
+def denormed_custom_wrapper_run(tmp_path_factory, cd_to_root_and_back_session):
+    config = {
+        "objective": {"metrics": [{"name": "metric"}]},
+        "params": {
+            "a": {
+                "x1": {"type": "range", "bounds": [0, 1], "value_type": "float"},
+                "x2": {"type": "fixed", "value": 0.5, "value_type": "float"},
+            },
+            "b": {
+                "x1": {"type": "range", "bounds": [0, 1], "value_type": "float"},
+                "x2": {"type": "fixed", "value": 0.5, "value_type": "float"},
+            },
+        },
+        "params_a": {
+            "x1": {"dummy_key": "dummy_value", "type": "range", "bounds": [0, 1], "value_type": "float"},
+            "x2": {"dummy_key": "dummy_value", "type": "fixed", "value": 0.5, "value_type": "float"},
+        },
+        "params2": [
+            {
+                "a": {
+                    "x1": {"type": "range", "bounds": [0, 1], "value_type": "float"},
+                    "x2": {"type": "fixed", "value": 0.5, "value_type": "float"},
+                }
+            },
+            {
+                "b": {
+                    "x1": {"type": "range", "bounds": [0, 1], "value_type": "float"},
+                    "x2": {"type": "fixed", "value": 0.5, "value_type": "float"},
+                }
+            },
+        ],
+        "scheduler": {"n_trials": 5},
+        "script_options": {
+            "wrapper_name": "WrapperConfigNormalization",
+            "wrapper_path": str((TEST_DIR / "integration_tests/test_storage.py").resolve()),
+        },
+    }
+    temp_dir = tmp_path_factory.mktemp("temp_dir")
+    config_path = temp_dir / "different_name_config.json"
+    with open(Path(config_path), "w") as file:
+        json.dump(config, file)
+    scheduler = dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+    os.remove(config_path)
+    yield scheduler
 
 
 @pytest.fixture(scope="session")
