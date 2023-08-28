@@ -39,7 +39,7 @@ class BaseWrapper(metaclass=WrapperRegister):
     kwargs
     """
 
-    def __init__(self, config_path: PathLike = None, config: BOAConfig = None, setup=True, *args, **kwargs):
+    def __init__(self, config_path: PathLike = None, config: dict | BOAConfig = None, setup=True, *args, **kwargs):
         self.config_path = config_path
         self._experiment_dir = None
         self._working_dir = None

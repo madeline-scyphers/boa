@@ -239,18 +239,18 @@ def recursive_deserialize(obj, **kwargs):
     return obj
 
 
-def exp_opt_to_csv(experiment, opt_path: PathLike = "optimization.csv", dir_: PathLike = None, **kwargs):
+def exp_opt_to_csv(experiment, opt_filepath: PathLike = "optimization.csv", dir_: PathLike = None, **kwargs):
     if dir_:
-        opt_path = pathlib.Path(dir_) / opt_path
+        opt_filepath = pathlib.Path(dir_) / opt_filepath
     df = exp_to_df(experiment)
-    df.to_csv(path_or_buf=opt_path, index=False, **kwargs)
-    logger.info(f"Saved optimization parametrization and objective to `{opt_path}`.")
+    df.to_csv(path_or_buf=opt_filepath, index=False, **kwargs)
+    logger.info(f"Saved optimization parametrization and objective to `{opt_filepath}`.")
 
 
 def scheduler_opt_to_csv(scheduler, **kwargs):
     return exp_opt_to_csv(scheduler.experiment, **kwargs)
 
 
-def dump_scheduler_data(scheduler, **kwargs):
-    scheduler_to_json_file(scheduler, **kwargs)
-    scheduler_opt_to_csv(scheduler, **kwargs)
+def dump_scheduler_data(scheduler, scheduler_filepath, opt_filepath, **kwargs):
+    scheduler_to_json_file(scheduler, scheduler_filepath=scheduler_filepath, **kwargs)
+    scheduler_opt_to_csv(scheduler, opt_filepath=opt_filepath, **kwargs)

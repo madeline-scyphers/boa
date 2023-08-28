@@ -14,6 +14,8 @@ logger = get_logger()
 
 class Scheduler(AxScheduler):
     runner: WrappedJobRunner
+    scheduler_filepath: str = "scheduler.json"
+    opt_filepath: str = "optimization.csv"
 
     def report_results(self, force_refit: bool = False):
         """
@@ -213,6 +215,12 @@ class Scheduler(AxScheduler):
         from boa.storage import dump_scheduler_data
 
         try:
-            dump_scheduler_data(scheduler=self, dir_=self.runner.wrapper.experiment_dir, **kwargs)
+            dump_scheduler_data(
+                scheduler=self,
+                dir_=self.runner.wrapper.experiment_dir,
+                scheduler_filepath=self.scheduler_filepath,
+                opt_filepath=self.opt_filepath,
+                **kwargs,
+            )
         except Exception as e:
             logger.exception("failed to save scheduler to json! Reason: %s" % repr(e))
