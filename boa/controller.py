@@ -171,17 +171,17 @@ class Controller:
         start = time.time()
         start_tm = get_dt_now_as_str()
         scheduler = scheduler or self.scheduler
+        wrapper = wrapper or self.wrapper
         self.logger.info(
             f"\n{HEADER_BAR}"
             f"""\n\n{LOG_INFO.format(
-                exp_dir=self.wrapper.experiment_dir,
+                exp_dir=wrapper.experiment_dir,
                 start_time=start_tm,
-                scheduler_path=scheduler.scheduler_filepath,
-                opt_csv_path=scheduler.opt_filepath)}"""
+                scheduler_path=Path(wrapper.experiment_dir) / scheduler.scheduler_filepath,
+                opt_csv_path=Path(wrapper.experiment_dir) / scheduler.opt_filepath)}"""
             f"\n{HEADER_BAR}"
         )
 
-        wrapper = wrapper or self.wrapper
         if not scheduler or not wrapper:
             raise ValueError("Scheduler and wrapper must be defined, or setup in setup method!")
 
@@ -201,8 +201,8 @@ class Controller:
                 f"""\n{LOG_INFO.format(
                     exp_dir=self.wrapper.experiment_dir,
                     start_time=start_tm,
-                    scheduler_path=scheduler.scheduler_filepath,
-                    opt_csv_path=scheduler.opt_filepath)}"""
+                    scheduler_path=Path(wrapper.experiment_dir) / scheduler.scheduler_filepath,
+                    opt_csv_path=Path(wrapper.experiment_dir) / scheduler.opt_filepath)}"""
                 f"\nEnd Time: {get_dt_now_as_str()}"
                 f"\nTotal Run Time: {time.time() - start}"
                 "\n"
