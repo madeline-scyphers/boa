@@ -88,7 +88,7 @@ Running pytest the test framework
 =================================
 """
     )
-    command.run(f"python -m pytest {options} {dir_}", echo=True, pty=POSIX)
+    command.run(f"python -m pytest -v {options} {dir_}", echo=True, pty=POSIX)
 
 
 @task(aliases=["tests"])

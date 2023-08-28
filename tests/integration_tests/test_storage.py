@@ -1,4 +1,6 @@
 import json
+import os
+import shutil
 import sys
 
 import numpy as np
@@ -44,6 +46,10 @@ class WrapperConfigNormalization(BaseWrapper):
             ["params2", 0, "a"],
             ["params2", 1, "b"],
         ]
+        assert "dummy_key" in config["params_a"]["x1"]
+        assert "dummy_key" in config["params_a"]["x2"]
+        config["params_a"]["x1"].pop("dummy_key")
+        config["params_a"]["x2"].pop("dummy_key")
         return BOAConfig(parameter_keys=parameter_keys, **config)
 
     def run_model(self, trial) -> None:
@@ -88,14 +94,11 @@ def test_save_load_config(config, request):
         decoder_registry=CORE_DECODER_REGISTRY,
         class_decoder_registry=CORE_CLASS_DECODER_REGISTRY,
     )
-    assert config == c
+    assert config == BOAConfig(**c)
 
 
-def test_config_param_parse_with_custom_wrapper_load_config(denormed_custom_wrapper_config_path, tmp_path):
-    scheduler = dunder_main.main(
-        split_shell_command(f"--config-path {denormed_custom_wrapper_config_path}" " -td"),
-        standalone_mode=False,
-    )
+def test_config_param_parse_with_custom_wrapper_load_config(denormed_custom_wrapper_run, tmp_path):
+    scheduler = denormed_custom_wrapper_run
     file_out = tmp_path / "scheduler.json"
     scheduler_to_json_file(scheduler, file_out)
 
@@ -115,6 +118,37 @@ def test_config_param_parse_with_custom_wrapper_load_config(denormed_custom_wrap
     }
     for key in config.parameters:
         assert key["name"] in names
+
+
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Windows doesn't support moving files that are open")
+def test_custom_wrapper_load_config_reload_from_moved_files(denormed_custom_wrapper_run, tmp_path, caplog):
+    scheduler = denormed_custom_wrapper_run
+    output_dir = tmp_path / "output_dir"
+    shutil.move(scheduler.wrapper.experiment_dir, output_dir)
+
+    scheduler = scheduler_from_json_file(output_dir / "scheduler.json")
+    config = scheduler.wrapper.config
+    names = {
+        "params_a_x2",
+        "params_a_x1",
+        "params_b_x1",
+        "params_b_x2",
+        "params_a_x1_0",
+        "params_a_x2_0",
+        "params2_0_a_x1",
+        "params2_0_a_x2",
+        "params2_1_b_x1",
+        "params2_1_b_x2",
+    }
+    for key in config.parameters:
+        assert key["name"] in names
+
+    os.remove(scheduler.wrapper.config_path)
+    scheduler = scheduler_from_json_file(output_dir / "scheduler.json")
+    config = scheduler.wrapper.config
+    for key in config.parameters:
+        assert key["name"] in names
+    assert "No config path found, writing out config to " in caplog.text
 
 
 def test_save_load_scheduler_branin(branin_main_run, tmp_path):

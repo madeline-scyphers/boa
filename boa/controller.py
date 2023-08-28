@@ -13,7 +13,6 @@ import time
 from pathlib import Path
 from typing import Type
 
-import ruamel.yaml as yaml
 from ax import Experiment
 from ax.service.utils.report_utils import exp_to_df
 
@@ -25,6 +24,7 @@ from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
 from boa.storage import scheduler_from_json_file
+from boa.utils import yaml_dump
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import get_dt_now_as_str, initialize_wrapper
 
@@ -34,6 +34,8 @@ HEADER_BAR = """
 LOG_INFO = (
     """BOA Experiment Run
 Output Experiment Dir: {exp_dir}
+Scheduler File Path: {scheduler_path}
+Optimization CSV File Path: {opt_csv_path}
 Start Time: {start_time}
 Version: """
     + f"{VERSION}"
@@ -77,9 +79,7 @@ class Controller:
             # Copy the experiment config to the experiment directory
             shutil.copyfile(wrapper.config_path, wrapper.experiment_dir / Path(config_path).name)
         else:
-            with open(wrapper.experiment_dir / "config.yaml", "w") as f:
-                # Write out config as yaml since we don't know what file format it came from
-                yaml.dump(wrapper.config, f)
+            yaml_dump(wrapper.config, wrapper.experiment_dir / "config.yaml")
 
         self.wrapper = wrapper
         self.config = self.wrapper.config
@@ -94,26 +94,9 @@ class Controller:
         scheduler = scheduler_from_json_file(scheduler_path, **kwargs)
         wrapper = scheduler.experiment.runner.wrapper
 
-        # experiment dir doesn't exist anymore, etierh bc it was deleted or bc we changed computers
-        kw = {}
-        if not wrapper.experiment_dir or (
-            isinstance(wrapper.experiment_dir, Path) and not wrapper.experiment_dir.exists()
-        ):
-            kw["experiment_dir"] = Path(scheduler_path).parent
-            if wrapper.experiment_dir:  # copy old name over
-
-                kw["experiment_name"] = Path(wrapper.experiment_dir).name
-                kw["append_timestamp"] = False
-            wrapper.mk_experiment_dir(**kw)
         inst = cls(wrapper=wrapper, working_dir=working_dir, **kwargs)
-        inst.logger.info(f"Resuming optimization from scheduler path{scheduler_path}")
-        if "experiment_dir" in kw:
-            inst.logger.info(
-                f"Making new experiment dir here: {wrapper.experiment_dir}."
-                f"\nOld experiment directory not found. "
-                f"\nMost likely because it was deleted or because of reloading on a different computer than"
-                f" originally ran on."
-            )
+        inst.logger.info(f"Resuming optimization from scheduler path: {scheduler_path}")
+
         inst.scheduler = scheduler
         inst.experiment = scheduler.experiment
         return inst
@@ -168,14 +151,18 @@ class Controller:
         """
         start = time.time()
         start_tm = get_dt_now_as_str()
+        scheduler = scheduler or self.scheduler
+        wrapper = wrapper or self.wrapper
         self.logger.info(
             f"\n{HEADER_BAR}"
-            f"\n\n{LOG_INFO.format(exp_dir=self.wrapper.experiment_dir, start_time=start_tm)}"
+            f"""\n\n{LOG_INFO.format(
+                exp_dir=wrapper.experiment_dir,
+                start_time=start_tm,
+                scheduler_path=Path(wrapper.experiment_dir) / scheduler.scheduler_filepath,
+                opt_csv_path=Path(wrapper.experiment_dir) / scheduler.opt_filepath)}"""
             f"\n{HEADER_BAR}"
         )
 
-        scheduler = scheduler or self.scheduler
-        wrapper = wrapper or self.wrapper
         if not scheduler or not wrapper:
             raise ValueError("Scheduler and wrapper must be defined, or setup in setup method!")
 
@@ -192,7 +179,11 @@ class Controller:
             self.logger.info(
                 f"\n{HEADER_BAR}"
                 f"\n{final_msg}"
-                f"\n{LOG_INFO.format(exp_dir=self.wrapper.experiment_dir, start_time=start_tm)}"
+                f"""\n{LOG_INFO.format(
+                    exp_dir=self.wrapper.experiment_dir,
+                    start_time=start_tm,
+                    scheduler_path=Path(wrapper.experiment_dir) / scheduler.scheduler_filepath,
+                    opt_csv_path=Path(wrapper.experiment_dir) / scheduler.opt_filepath)}"""
                 f"\nEnd Time: {get_dt_now_as_str()}"
                 f"\nTotal Run Time: {time.time() - start}"
                 "\n"

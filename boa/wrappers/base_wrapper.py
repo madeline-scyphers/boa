@@ -7,18 +7,24 @@ Base Wrapper
 
 from __future__ import annotations
 
+import copy
 import pathlib
+from typing import Optional
 
 from ax import Trial
 from ax.core.types import TParameterization
-from ax.storage.json_store.decoder import object_from_json
 from ax.storage.json_store.encoder import object_to_json
 
 from boa.config import BOAConfig
 from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metaclasses import WrapperRegister
-from boa.wrappers.wrapper_utils import initialize_wrapper, make_experiment_dir
+from boa.utils import yaml_dump
+from boa.wrappers.wrapper_utils import (
+    initialize_wrapper,
+    load_jsonlike,
+    make_experiment_dir,
+)
 
 logger = get_logger()
 
@@ -34,7 +40,7 @@ class BaseWrapper(metaclass=WrapperRegister):
     kwargs
     """
 
-    def __init__(self, config_path: PathLike = None, config: BOAConfig = None, setup=True, *args, **kwargs):
+    def __init__(self, config_path: PathLike = None, config: dict | BOAConfig = None, mk_exp_dir=True, *args, **kwargs):
         self.config_path = config_path
         self._experiment_dir = None
         self._working_dir = None
@@ -47,10 +53,28 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         self.config = None
         if config:
-            self.config = config
+            if isinstance(config, BOAConfig):
+                self.config = config
+            if isinstance(config, dict):
+                c = copy.deepcopy(config)
+                if config_path:
+                    kwargs["config_path"] = config_path
+                elif "config_path" in config and config_path not in kwargs:
+                    kwargs["config_path"] = config["config_path"]
+                config = self.load_config(raw_config=config, *args, **kwargs)
+                config.orig_config = c
+                # if load_config returns something, set to self.config
+                # if users overwrite load_config and don't return anything,
+                # we assume they set self.config in load_config and don't want
+                # to override it here (and set it to None)
+                if config is not None:
+                    self.config = config
 
         elif config_path:
-            config = self.load_config(config_path, *args, **kwargs)
+            orig_config = load_jsonlike(config_path)
+            c = copy.deepcopy(orig_config)
+            config = self.load_config(config_path=config_path, raw_config=orig_config, *args, **kwargs)
+            config.orig_config = c
             # if load_config returns something, set to self.config
             # if users overwrite load_config and don't return anything,
             # we assume they set self.config in load_config and don't want
@@ -58,8 +82,8 @@ class BaseWrapper(metaclass=WrapperRegister):
             if config is not None:
                 self.config = config
 
-        if setup and self.config:
-            experiment_dir = self.setup(*args, **kwargs)
+        if mk_exp_dir and self.config:
+            experiment_dir = self.mk_experiment_dir(*args, **kwargs)
             if not self.experiment_dir:
                 if experiment_dir:
                     self.experiment_dir = experiment_dir
@@ -67,6 +91,7 @@ class BaseWrapper(metaclass=WrapperRegister):
                     self.experiment_dir = self.config.script_options.experiment_dir
                 else:
                     raise ValueError("No experiment_dir set or returned from mk_experiment_dir")
+        self.setup()
 
     @property
     def metric_names(self):
@@ -147,12 +172,15 @@ class BaseWrapper(metaclass=WrapperRegister):
         """Path of file that the Wrapper class is defined in"""
         return cls._path
 
-    def load_config(self, config_path: PathLike, *args, **kwargs) -> BOAConfig:
+    def load_config(
+        self, config_path: Optional[PathLike] = None, raw_config: Optional[dict] = None, *args, **kwargs
+    ) -> BOAConfig:
         """
         Load config takes a configuration path of either a JSON file or a YAML file and returns
         your configuration dataclass.
 
-        Load_config will (unless overwritten in a subclass), do some basic "normalizations"
+        Load_config will (unless overwritten in a subclass), will load the configuration file
+        by handing it to :class:`.BOAConfig` and then normalize it to a standard format
         to your configuration for convenience. See :class:`.BOAConfig` and its __init__ method
         for more information about how the normalization works and what config options you
         can control.
@@ -162,18 +190,31 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         Parameters
         ----------
+        raw_config
+            Raw configuration dictionary directly loaded from YAML or JSON configuration file.
+            Either raw config or config_path must be processed and then converted
+            to a `BOAConfig` object.
+            Either through `BOAConfig(**raw_config)` or `BOAConfig.from_deprecated(**raw_config)`
+            with whatever processing before you need.
         config_path
             File path for the experiment configuration file
+            Either raw config or config_path must be processed and then converted
+            to a `BOAConfig` object.
+            You can do this through `BOAConfig.from_jsonlike(config_path)`
+            or config = `boa.load_jsonlike(config_path); BOAConfig(**config)`
+            with whatever processing in between you need.
 
         Returns
         -------
         BOAConfig
             loaded_config
         """
-        try:
+        if raw_config:
+            config = BOAConfig(**raw_config)
+        elif config_path:
             config = BOAConfig.from_jsonlike(config_path)
-        except ValueError as e:  # return empty config if not json or yaml file
-            raise e
+        else:
+            raise ValueError("No config_path or raw_config passed in")
 
         self.config = config
         return self.config
@@ -238,18 +279,33 @@ class BaseWrapper(metaclass=WrapperRegister):
         self.experiment_dir = experiment_dir
         return experiment_dir
 
-    def setup(self, *args, **kwargs):
+    def setup(self):
         """
         method to override for subclasses to run any setup code they need either on class init
-        (which will happen by default unless passing setup=False) or after init by
-        calling this method directly
 
-        By default, this method will run mk_experiment_directory, so if you override this
-        method to do more setup, either include that a call to mk_experiment_directory,
-        (the default version or your own implementation) or call ``super().setup(*args, **kwargs)``
-        which will then call the original version, which will call mk_experiment_directory.
+        You can access various options from your config file by accessing them as self.config.<option>
+        for example, if you have a config file with the following:
+
+        .. code-block:: yaml
+            objective:
+                metrics:
+                    - metric: mean
+                      name: some name
+            parameters:
+                x:
+                  type: range
+                  bounds: [0, 1]
+                  value_type: float
+            script_options:
+              experiment_dir: path/to/dir
+              output_dir: path/to/dir
+              exp_name: my_experiment
+              append_timestamp: True
+
+        You can access these options as `self.config.objective.metrics[0].name`, `self.config.parameters`, etc.
+        You can also access various other wrapper attributes, such as `self.experiment_dir` and others.
+        See :class:`.BaseWrapper` and :class:`.BOAConfig` for more information about what options are available.
         """
-        return self.mk_experiment_dir(*args, **kwargs)
 
     def write_configs(self, trial: Trial) -> None:
         """
@@ -520,17 +576,40 @@ class BaseWrapper(metaclass=WrapperRegister):
 
     @classmethod
     def from_dict(cls, **kwargs):
-        if isinstance(kwargs.get("config"), dict):  # pragma: no cover  # Ax should catch this
-            kwargs["config"] = object_from_json(kwargs["config"])
-            if isinstance(kwargs["config"], dict):
-                try:
-                    kwargs["config"] = BOAConfig(**kwargs["config"])
-                except TypeError as e:
-                    logger.warning(
-                        f"Could not deserialize wrapper config."
-                        f"\nLoading wrapper without config. You may not be able to resume new trials: "
-                        f"\n{e}"
-                    )
+        config_path = kwargs.pop("config_path", None)
+        config_path = pathlib.Path(config_path) if config_path else None
+        if config_path:
+            config_path = pathlib.Path(config_path)
+            if not config_path.exists() and "experiment_dir" in kwargs:
+                config_path = pathlib.Path(kwargs["experiment_dir"]) / config_path.name
+        if not config_path or not config_path.exists():
+            if "experiment_dir" in kwargs:
+                configs = pathlib.Path(kwargs["experiment_dir"]).glob("config.*")
+                if len(list(configs)) == 1:
+                    config_path = list(configs)[0]
+                elif len(list(configs)) > 1:
+                    for config in configs:
+                        if config.suffix.lower() in (".yaml", ".json", ".yml"):
+                            config_path = config
+                            break
+        if config_path and config_path.exists():
+            kwargs["config_path"] = config_path
+        else:
+            if "config" in kwargs:
+                if "experiment_dir" in kwargs:
+                    exp_dir = pathlib.Path(kwargs["experiment_dir"])
+                else:
+                    exp_dir = pathlib.Path.cwd()
+                config_path = exp_dir / "temp_config.yaml"
+                # Write out config as yaml since we don't know what file format it came from
+                yaml_dump(kwargs["config"], config_path)
+                kwargs["config_path"] = config_path
+                logger.warning(
+                    f"No config path found, writing out config to {exp_dir / 'temp_config.yaml'}"
+                    " and using that as config_path"
+                )
+            else:
+                logger.warning(f"No config path found, and no config passed in! No config to pass to wrapper {cls}")
 
         return initialize_wrapper(
             wrapper=cls,
@@ -540,6 +619,6 @@ class BaseWrapper(metaclass=WrapperRegister):
                 output_dir=kwargs.get("output_dir"),
                 metric_names=kwargs.get("metric_names"),
             ),
-            setup=False,
+            mk_exp_dir=False,
             **kwargs,
         )
