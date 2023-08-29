@@ -88,9 +88,8 @@ jobs:
 
       - name: update ax versions
         if: ${{ matrix.ax_version }} # only update when ax_version is set
-        run: |
-          mamba activate boa 
-          mamba install ax-platform=${{ matrix.ax_version }} -c conda-forge
+        shell: bash -l {0}
+        run: mamba install ax-platform=${{ matrix.ax_version }} -c conda-forge
 
       - name: export env to artifact
         run: mamba env export -n boa > environment_ci_${{ matrix.os }}_${{ matrix.ax_version }}.yml
