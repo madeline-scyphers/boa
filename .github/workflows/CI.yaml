@@ -35,8 +35,21 @@ jobs:
       matrix:
         include:
           - os: ubuntu
-            label: linux-64
+            label: linux-64-0.3.4
             prefix: /usr/share/miniconda3/envs/boa
+            ax_version: 0.3.4
+          - os: ubuntu
+            label: linux-64-0.3.3
+            prefix: /usr/share/miniconda3/envs/boa
+            ax_version: 0.3.3
+          - os: ubuntu
+            label: linux-64-0.3.2
+            prefix: /usr/share/miniconda3/envs/boa
+            ax_version: 0.3.2
+          - os: ubuntu
+            label: linux-64-0.3.1
+            prefix: /usr/share/miniconda3/envs/boa
+            ax_version: 0.3.1
 
           - os: macos
             label: osx-64
@@ -70,11 +83,16 @@ jobs:
         id: cache
 
       - name: Update base environment
-        run: mamba env update -n boa -f environment_dev.yml --prune
         if: steps.cache.outputs.cache-hit != 'true'
+        run: mamba env update -n boa -f environment_dev.yml --prune
+
+      - name: update ax versions
+        if: ${{ matrix.ax_version }} # only update when ax_version is set
+        shell: bash -l {0}
+        run: mamba install ax-platform=${{ matrix.ax_version }} -c conda-forge
 
       - name: export env to artifact
-        run: mamba env export -n boa > environment_ci_${{ matrix.os }}.yml
+        run: mamba env export -n boa > environment_ci_${{ matrix.os }}_${{ matrix.ax_version }}.yml
 
       - uses: actions/upload-artifact@v3
         with:
