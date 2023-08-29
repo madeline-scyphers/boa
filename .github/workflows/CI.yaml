@@ -33,6 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        ax_version: ["0.3.4", "0.3.3", "0.3.2", "0.3.1", ]
         include:
           - os: ubuntu
             label: linux-64
@@ -70,11 +71,17 @@ jobs:
         id: cache
 
       - name: Update base environment
-        run: mamba env update -n boa -f environment_dev.yml --prune
         if: steps.cache.outputs.cache-hit != 'true'
+        run: mamba env update -n boa -f environment_dev.yml --prune
+
+      - name: update ax versions
+        if: startsWith(matrix.os, 'ubuntu')  # only update ax on linux
+        run: |
+          mamba activate boa 
+          mamba install ax-platform=${{ matrix.ax_version }} -c conda-forge
 
       - name: export env to artifact
-        run: mamba env export -n boa > environment_ci_${{ matrix.os }}.yml
+        run: mamba env export -n boa > environment_ci_${{ matrix.os }}_${{ matrix.ax_version }}.yml
 
       - uses: actions/upload-artifact@v3
         with:
