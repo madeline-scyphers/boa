@@ -306,7 +306,7 @@ def check_min_package_version(package, minimum_version, should_trunc_to_same_len
     return real_version >= minimum_version
 
 
-def yaml_dump(data: dict, path: PathLike) -> None:
+def yaml_dump(data: dict | str, path: PathLike) -> None:
     yaml = YAML(typ="unsafe", pure=True)
     with open(path, "w") as file:
         yaml.dump(data, file)
