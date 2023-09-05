@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import panel as pn
 import plotly.graph_objs as go
+from ax.modelbridge.registry import get_model_from_generator_run
 from ax.plot.contour import plot_contour_plotly
 from ax.plot.helper import get_range_parameters_from_list
 from ax.plot.pareto_frontier import plot_pareto_frontier as ax_plot_pareto_frontier
@@ -48,7 +49,15 @@ __all__ = [
 def _maybe_load_scheduler(scheduler: SchedulerOrPath):
     if isinstance(scheduler, PathLike_tup):
         scheduler = scheduler_from_json_file(scheduler)
-        scheduler.generation_strategy._fit_or_update_current_model(data=scheduler.experiment.fetch_data())
+        model = get_model_from_generator_run(
+            generator_run=scheduler.generation_strategy.last_generator_run,
+            experiment=scheduler.experiment,
+            data=scheduler.experiment.fetch_data(),
+            models_enum=type(scheduler.generation_strategy.current_step.model),
+            after_gen=False,
+        )
+        scheduler.model = model
+
     return scheduler
 
 
@@ -170,7 +179,7 @@ def plot_contours(
     """
     scheduler = _maybe_load_scheduler(scheduler)
 
-    model = scheduler.generation_strategy.model
+    model = scheduler.model
 
     if not metric_names:
         metric_names = list(scheduler.experiment.metrics.keys())
@@ -241,7 +250,6 @@ def plot_contours(
     def update(event):
         param_x.options = [param.name for param in range_parameters if param.name != param_y.value]
         param_y.options = [param.name for param in range_parameters if param.name != param_x.value]
-        print(param_y.options)
         col[-1].object = get_plot(metric_name.value, param_x.value, param_y.value)
 
     metric_name.param.watch(update, "value")
@@ -264,7 +272,7 @@ def plot_slice(scheduler: SchedulerOrPath, **kwargs):
     """
     scheduler = _maybe_load_scheduler(scheduler)
 
-    model = scheduler.generation_strategy.model
+    model = scheduler.model
     return pn.pane.Plotly(interact_slice_plotly(model=model, **kwargs))
 
 

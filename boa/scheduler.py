@@ -4,6 +4,7 @@ from pprint import pformat
 from typing import Iterable, Optional
 
 from ax.core.optimization_config import OptimizationConfig
+from ax.modelbridge.base import ModelBridge
 from ax.service.scheduler import Scheduler as AxScheduler
 
 from boa.logger import get_logger
@@ -15,12 +16,21 @@ logger = get_logger()
 
 class Scheduler(AxScheduler):
     runner: WrappedJobRunner
+    _model: Optional[ModelBridge] = None
     scheduler_filepath: str = "scheduler.json"
     opt_filepath: str = "optimization.csv"
 
     @property
     def wrapper(self) -> BaseWrapper:
         return self.runner.wrapper
+
+    @property
+    def model(self):
+        return self._model or self.generation_strategy.model
+
+    @model.setter
+    def model(self, model):
+        self._model = model
 
     def report_results(self, force_refit: bool = False):
         """
