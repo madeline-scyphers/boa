@@ -364,11 +364,17 @@ def make_trial_dir(experiment_dir: PathLike, trial_index: int, exist_ok=True, **
     return trial_dir
 
 
-def save_trial_data(trial: BaseTrial, trial_dir: pathlib.Path = None, experiment_dir: PathLike = None, **kwargs):
+def save_trial_data(
+    trial: BaseTrial,
+    trial_dir: pathlib.Path = None,
+    experiment_dir: PathLike = None,
+    param_names: dict[str, list] = None,
+    **kwargs,
+):
     """Save trial data (trial.json, parameters.json and data.json) to
     either: supplied trial_dir or supplied experiment_dir / trial.index
     """
-
+    param_names = param_names if param_names is not None else {}
     if not trial_dir:
         trial_dir = get_trial_dir(experiment_dir, trial.index)
         trial_dir.mkdir(parents=True, exist_ok=True)
@@ -380,16 +386,33 @@ def save_trial_data(trial: BaseTrial, trial_dir: pathlib.Path = None, experiment
             kw[key] = str(value)
             logger.warning(e)
     parameters_jsn = object_to_json(trial.arm.parameters)
+    parameters_jsn.pop("__type", None)
+    filtered_parameters_jsn = {}
+    if param_names:
+        for metric, param_list in param_names.items():
+            try:
+                filtered_parameters_jsn[metric] = {param_name: parameters_jsn[param_name] for param_name in param_list}
+            except KeyError as e:
+                raise AxError(
+                    f"Parameter {metric} listed in `param_names` not found in trial parameters. "
+                    f"Available parameters are {list(parameters_jsn.keys())}"
+                ) from e
     trial_jsn = object_to_json(trial)
     data = {
         "parameters": parameters_jsn,
         "trial": trial_jsn,
         "trial_index": trial.index,
         "trial_dir": str(trial_dir),
+        "filtered_parameters": filtered_parameters_jsn,
+        "param_names": param_names,
         **kw,
     }
-    for name, jsn in zip(["parameters", "trial", "data"], [parameters_jsn, trial_jsn, data]):
-        file_path = trial_dir / f"{name}.json"
-        with open(file_path, "w+") as file:  # pragma: no cover
-            file.write(json.dumps(jsn, indent=4))
+    for name, jsn in zip(
+        ["parameters", "trial", "data", "filtered_parameters"],
+        [parameters_jsn, trial_jsn, data, filtered_parameters_jsn],
+    ):
+        if jsn:
+            file_path = trial_dir / f"{name}.json"
+            with open(file_path, "w+") as file:  # pragma: no cover
+                file.write(json.dumps(jsn, indent=4))
     return trial_dir
