@@ -96,6 +96,8 @@ class Controller:
 
         inst = cls(wrapper=wrapper, working_dir=working_dir, **kwargs)
         inst.logger.info(f"Resuming optimization from scheduler path: {scheduler_path}")
+        if inst.wrapper.config_path:
+            inst.logger.info(f"Config path: {inst.wrapper.config_path}")
 
         inst.scheduler = scheduler
         inst.experiment = scheduler.experiment

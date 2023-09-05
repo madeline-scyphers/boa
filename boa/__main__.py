@@ -5,6 +5,7 @@ from pathlib import Path
 
 import click
 from attrs import fields_dict
+from ax.storage.json_store.decoder import object_from_json
 
 from boa.config import BOAScriptOptions
 from boa.controller import Controller
@@ -105,19 +106,23 @@ def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, wrapper_n
         Scheduler
     """
     config = {}
+    script_options = {}
     if config_path:
         config_path = Path(config_path).resolve()
         config = load_jsonlike(config_path)
         script_options = config.get("script_options", {})
         if rel_to_config is None:
-            rel_to_config = script_options.get("rel_to_config", None) or not script_options.get("rel_to_launch", None)
-            if rel_to_config is None:
-                rel_to_config = (
-                    fields_dict(BOAScriptOptions)["rel_to_config"].default
-                    or not fields_dict(BOAScriptOptions)["rel_to_launch"].default
-                )
+            rel_to_config = get_rel_from_script_options(script_options)
     if scheduler_path:
         scheduler_path = Path(scheduler_path).resolve()
+        if not config:
+            sch_jsn = load_jsonlike(scheduler_path)
+            config = object_from_json(sch_jsn["wrapper"]["config"])
+            config_path = object_from_json(sch_jsn["wrapper"]["config_path"])
+            script_options = config.get("script_options", {})
+            if rel_to_config is None:
+                rel_to_config = get_rel_from_script_options(script_options)
+
     if experiment_dir:
         experiment_dir = Path(experiment_dir).resolve()
     wrapper_path = Path(wrapper_path).resolve() if wrapper_path else None
@@ -127,18 +132,19 @@ def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, wrapper_n
     else:
         rel_path = os.getcwd()
 
-    if config:
-        options = get_config_options(
-            experiment_dir=experiment_dir, rel_path=rel_path, script_options=script_options, wrapper_path=wrapper_path
-        )
-    else:
-        options = dict(scheduler_path=scheduler_path, working_dir=Path.cwd(), wrapper_path=wrapper_path)
+    options = get_config_options(
+        experiment_dir=experiment_dir, rel_path=rel_path, script_options=script_options, wrapper_path=wrapper_path
+    )
 
     if wrapper_name:
         options["wrapper_name"] = wrapper_name
 
     with cd_and_cd_back(options["working_dir"]):
         if scheduler_path:
+            print(options["working_dir"])
+            options = dict(
+                scheduler_path=scheduler_path, working_dir=options["working_dir"], wrapper_path=options["wrapper_path"]
+            )
             controller = Controller.from_scheduler_path(**options)
         else:
             if options["wrapper_path"] and Path(options["wrapper_path"]).exists():
@@ -155,7 +161,18 @@ def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, wrapper_n
         return scheduler
 
 
-def get_config_options(experiment_dir, rel_path, script_options, wrapper_path=None):
+def get_rel_from_script_options(script_options):
+    rel_to_config = script_options.get("rel_to_config", None) or not script_options.get("rel_to_launch", None)
+    if rel_to_config is None:
+        rel_to_config = (
+            fields_dict(BOAScriptOptions)["rel_to_config"].default
+            or not fields_dict(BOAScriptOptions)["rel_to_launch"].default
+        )
+    return rel_to_config
+
+
+def get_config_options(experiment_dir, rel_path, script_options: dict = None, wrapper_path=None):
+    script_options = script_options if script_options is not None else {}
     wrapper_name = script_options.get("wrapper_name", fields_dict(BOAScriptOptions)["wrapper_name"].default)
     append_timestamp = (
         script_options.get("append_timestamp", None)
