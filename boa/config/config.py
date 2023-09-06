@@ -5,7 +5,7 @@ import pathlib
 from dataclasses import asdict as dc_asdict
 from dataclasses import is_dataclass
 from enum import Enum
-from typing import ClassVar, Optional, Union
+from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
 import attr
 import ruamel.yaml
@@ -28,6 +28,9 @@ from boa.config.converters import (
 from boa.definitions import PathLike
 from boa.utils import StrEnum, deprecation
 from boa.wrappers.wrapper_utils import load_jsonlike
+
+if TYPE_CHECKING:
+    from boa.metrics.modular_metric import ModularMetric
 
 __all__ = [
     "BOAConfig",
@@ -106,11 +109,12 @@ class MetricType(StrEnum):
     SKLEARN_METRIC = "sklearn_metric"
     SYNTHETIC_METRIC = "synthetic_metric"
     PASSTHROUGH = "pass_through"
+    INSTANTIATED = "instantiated"
 
 
 @define(kw_only=True)
 class BOAMetric(_Utils):
-    metric: Optional[str] = field(
+    metric: Optional[str | ModularMetric] = field(
         default=None,
         metadata={
             "doc": """metrics to be used for optimization. You can use list any metric in built into BOA.
@@ -211,6 +215,15 @@ class BOAMetric(_Utils):
     def __attrs_post_init__(self):
         if not self.metric and not self.name:
             raise TypeError("Must specify at least metric name or metric")
+        from boa.metrics.modular_metric import ModularMetric
+
+        if isinstance(self.metric, ModularMetric):
+            self.metric_type = MetricType.INSTANTIATED
+            # if a passed in name, override the name of the metric
+            if self.name:
+                self.metric._name = self.name
+            else:
+                self.name = self.metric.name
         if self.name is None:
             self.name = self.metric
         elif self.metric is None:
