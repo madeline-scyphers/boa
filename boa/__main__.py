@@ -9,6 +9,7 @@ from ax.storage.json_store.decoder import object_from_json
 
 from boa.config import BOAScriptOptions
 from boa.controller import Controller
+from boa.storage import scheduler_from_json_file
 from boa.wrappers.script_wrapper import ScriptWrapper
 from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
 
@@ -141,11 +142,8 @@ def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, wrapper_n
 
     with cd_and_cd_back(options["working_dir"]):
         if scheduler_path:
-            print(options["working_dir"])
-            options = dict(
-                scheduler_path=scheduler_path, working_dir=options["working_dir"], wrapper_path=options["wrapper_path"]
-            )
-            controller = Controller.from_scheduler_path(**options)
+            scheduler = scheduler_from_json_file(filepath=scheduler_path, wrapper_path=options["wrapper_path"])
+            controller = Controller.from_scheduler(scheduler=scheduler, **options)
         else:
             if options["wrapper_path"] and Path(options["wrapper_path"]).exists():
                 options["wrapper"] = options["wrapper_path"]

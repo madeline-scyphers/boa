@@ -31,18 +31,19 @@ logger = get_logger()
 
 class BaseWrapper(metaclass=WrapperRegister):
     _path: PathLike
-    """
 
-    Parameters
-    ----------
-    config_path
-    args
-    kwargs
-    """
-
-    def __init__(self, config_path: PathLike = None, config: dict | BOAConfig = None, mk_exp_dir=True, *args, **kwargs):
+    def __init__(
+        self,
+        config_path: PathLike = None,
+        config: dict | BOAConfig = None,
+        mk_exp_dir=True,
+        fetch_none_ok: bool = False,
+        *args,
+        **kwargs,
+    ):
         self.config_path = config_path
         self._experiment_dir = None
+        self.fetch_none_ok = fetch_none_ok
         self._working_dir = None
         self._output_dir = None
         self.model_settings = None
@@ -394,7 +395,6 @@ class BaseWrapper(metaclass=WrapperRegister):
         metric_name: str,
         trial: Trial,
         param_names: list[str] = None,
-        *args,
         **kwargs,
     ):
         # in case users don't subclass with super
@@ -412,7 +412,7 @@ class BaseWrapper(metaclass=WrapperRegister):
             param_names=param_names,
             **kwargs,
         )
-        if res is None:
+        if res is None and not self.fetch_none_ok:
             raise ValueError(
                 "No data returned when fetching Metric!"
                 " Make sure you return something form `fetch_trial_data`"

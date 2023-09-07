@@ -287,6 +287,10 @@ class BOAObjective(_Utils):
 
         self.__attrs_init__(**config)
 
+    @property
+    def metric_names(self):
+        return (metric.name for metric in self.metrics)
+
 
 @define
 class BOAScriptOptions(_Utils):
@@ -592,7 +596,8 @@ For specific options you can pass to each step
         scheduler = config.get("scheduler", {})
         n_trials = config.get("n_trials", None)
         if isinstance(scheduler, dict):
-            n_trials = scheduler.pop("n_trials", n_trials)  # n_trials is not a valid scheduler option so we pop it
+            sch_n_trials = scheduler.pop("n_trials", None)
+            n_trials = sch_n_trials or n_trials  # n_trials is not a valid scheduler option so we pop it
             total_trials = scheduler.get("total_trials", None)
         else:
             total_trials = scheduler.total_trials
@@ -622,7 +627,7 @@ For specific options you can pass to each step
         self.__attrs_init__(**config)
 
     @classmethod
-    def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None, template_kw: Optional[dict] = None):
+    def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None, template_kw: Optional[dict] = None, **kwargs):
         config_path = pathlib.Path(file).resolve()
         config = load_jsonlike(config_path, template_kw=template_kw)
 
@@ -640,6 +645,7 @@ For specific options you can pass to each step
             config["script_options"]["rel_to_launch"] = False
             config["script_options"]["base_path"] = config_path.parent
 
+        update_dict(config, kwargs)
         return cls(**config, config_path=file)
 
     # @classmethod
@@ -893,6 +899,14 @@ def add_comment_recurse(
                 d[i] = add_comment_recurse(item, new_config, where="end", depth=depth + 1, indent=indent)
 
     return d
+
+
+def update_dict(original: dict, param: dict):
+    for key in param.keys():
+        if isinstance(param[key], dict) and key in original:
+            update_dict(original[key], param[key])
+        else:
+            original[key] = param[key]
 
 
 if __name__ == "__main__":  # pragma: no cover

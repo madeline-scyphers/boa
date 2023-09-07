@@ -9,11 +9,15 @@ objective:
         # default to a passthrough metric
         - name: metric2
 scheduler:
-    total_trials: 10
+    n_trials: 10
 
 # optimization parameters
 parameters:
     x1:
+        type: range
+        bounds: [0, 1]
+        value_type: float
+    x2:
         type: range
         bounds: [0, 1]
         value_type: float
