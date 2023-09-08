@@ -14,6 +14,7 @@ from ax.storage.json_store.decoder import object_from_json
 from boa.config import BOAConfig, BOAScriptOptions, MetricType
 from boa.controller import Controller
 from boa.storage import scheduler_from_json_file
+from boa.utils import check_min_package_version
 from boa.wrappers.synthetic_wrapper import SyntheticWrapper
 from boa.wrappers.wrapper_utils import load_jsonlike
 
@@ -167,8 +168,7 @@ def run(config_path, scheduler_path, num_trials, experiment_dir=None):
                             sem=0.0,
                         )
                     )
-                ),
-                combine_with_last_data=True,
+                )
             )
 
     scheduler.save_data(metrics_to_end=True, ax_kwargs=dict(always_include_field_columns=True))
@@ -187,21 +187,25 @@ def exp_attach_data_from_opt_csv(metric_names, scheduler):
     new_data = df.loc[df["trial_index"].isin(nan_trials)]
     if new_data.empty:
         return
-    for metric, trial_results in new_data[metric_names].to_dict().items():
-        scheduler.experiment.attach_data(
-            Data(
-                df=pd.DataFrame.from_records(
-                    dict(
-                        trial_index=list(trial_results.keys()),
-                        arm_name=[f"{i}_0" for i in trial_results.keys()],
-                        metric_name=metric,
-                        mean=list(trial_results.values()),
-                        sem=0.0,
-                    )
+    metric_data = new_data[metric_names].to_dict()
+    if check_min_package_version("ax-platform", "0.3.3"):
+        kw = dict(combine_with_last_data=True)
+    else:
+        kw = dict(overwrite_existing_data=True)
+    scheduler.experiment.attach_data(
+        Data(
+            df=pd.DataFrame.from_records(
+                dict(
+                    trial_index=[idx for trial_results in metric_data.values() for idx in trial_results.keys()],
+                    arm_name=[f"{idx}_0" for trial_results in metric_data.values() for idx in trial_results.keys()],
+                    metric_name=[metric for metric, trial_results in metric_data.items() for _ in trial_results],
+                    mean=[val for trial_results in metric_data.values() for val in trial_results.values()],
+                    sem=0.0,
                 )
-            ),
-            combine_with_last_data=True,
-        )
+            )
+        ),
+        **kw,
+    )
 
 
 def get_config_options(script_options: dict = None):

@@ -1,8 +1,11 @@
 import shutil
+import sys
 
 import numpy as np
 import pandas as pd
+import pytest
 from numpy.testing import assert_almost_equal
+from pandas.testing import assert_frame_equal
 
 from boa import split_shell_command
 from boa.async_opt import main
@@ -34,6 +37,7 @@ def exp_val_vs_ins_val(exp_df: pd.DataFrame, inserted_vals: dict):
             assert_almost_equal(exp_value, inserted_value)
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Windows doesn't support moving files that are open")
 def test_async_with_no_gen_strat(tmp_path):
     config_path = TEST_CONFIG_DIR / "test_config_pass_through_metric.yaml"
 
@@ -44,18 +48,18 @@ def test_async_with_no_gen_strat(tmp_path):
     n_ran_trials += n
     assert scheduler.experiment.num_trials == n_ran_trials
 
-    vals = {metric: rng.random(n) for metric in scheduler.experiment.metrics.keys()}
-    update_opt_csv(scheduler.opt_csv, vals)
+    vals1 = {metric: rng.random(n) for metric in scheduler.experiment.metrics.keys()}
+    update_opt_csv(scheduler.opt_csv, vals1)
 
     n = 7
     scheduler = main(split_shell_command(f"-sp {scheduler.scheduler_filepath} -n {n}"), standalone_mode=False)
     n_ran_trials += n
     assert scheduler.experiment.num_trials == n_ran_trials
-    df = scheduler.experiment.fetch_data().df
-    exp_val_vs_ins_val(exp_df=df, inserted_vals=vals)
+    exp_df = scheduler.experiment.fetch_data().df
+    exp_val_vs_ins_val(exp_df=exp_df, inserted_vals=vals1)
 
-    vals = {metric: np.arange(0, n) for metric in scheduler.experiment.metrics.keys()}
-    update_opt_csv(scheduler.opt_csv, vals)
+    vals2 = {metric: np.arange(0, n) for metric in scheduler.experiment.metrics.keys()}
+    update_opt_csv(scheduler.opt_csv, vals2)
 
     output_dir = tmp_path / "output_dir"
     shutil.move(scheduler.scheduler_filepath.parent, output_dir)
@@ -65,10 +69,29 @@ def test_async_with_no_gen_strat(tmp_path):
     scheduler = main(split_shell_command(f"-sp {output_dir / 'scheduler.json'} -n {n}"), standalone_mode=False)
     n_ran_trials += n
     assert scheduler.experiment.num_trials == n_ran_trials
-    df = scheduler.experiment.fetch_data().df
-    exp_val_vs_ins_val(exp_df=df, inserted_vals=vals)
+    exp_df = scheduler.experiment.fetch_data().df
+    exp_val_vs_ins_val(exp_df=exp_df, inserted_vals=vals2)
+
+    df = pd.DataFrame(
+        {metric_name: np.concatenate((value, vals2[metric_name])) for metric_name, value in vals1.items()}
+    )
+    df = (
+        df.stack()  # stack to get metric_name and trial index as indexes
+        .reset_index()  # move metric_name and trial index to a column
+        .rename(columns={"level_1": "metric_name", "level_0": "trial_index", 0: "mean"})
+    )  # rename the columns
+
+    assert_frame_equal(
+        df.reset_index(drop=True),  # remove index to avoid index mismatch, we don't care about the index
+        (
+            exp_df[df.columns]  # only compare the columns we care about
+            .sort_values(by=df.columns.to_list())  # sort by all columns to make sure the order is the same
+            .reset_index(drop=True)
+        ),  # remove index to avoid index mismatch, we don't care about the index
+    )
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="Windows doesn't support moving files that are open")
 def test_async_gen_strat(tmp_path):
     config_path = TEST_CONFIG_DIR / "test_config_generic.yaml"
 
@@ -79,18 +102,18 @@ def test_async_gen_strat(tmp_path):
     n_ran_trials += n
     assert scheduler.experiment.num_trials == n_ran_trials
 
-    vals = {metric: rng.random(n) for metric in scheduler.experiment.metrics.keys()}
-    update_opt_csv(scheduler.opt_csv, vals)
+    vals1 = {metric: rng.random(n) for metric in scheduler.experiment.metrics.keys()}
+    update_opt_csv(scheduler.opt_csv, vals1)
 
     n = 7
     scheduler = main(split_shell_command(f"-sp {scheduler.scheduler_filepath} -n {n}"), standalone_mode=False)
     n_ran_trials += n
     assert scheduler.experiment.num_trials == n_ran_trials
-    df = scheduler.experiment.fetch_data().df
-    exp_val_vs_ins_val(exp_df=df, inserted_vals=vals)
+    exp_df = scheduler.experiment.fetch_data().df
+    exp_val_vs_ins_val(exp_df=exp_df, inserted_vals=vals1)
 
-    vals = {metric: np.arange(0, n) for metric in scheduler.experiment.metrics.keys()}
-    update_opt_csv(scheduler.opt_csv, vals)
+    vals2 = {metric: np.arange(0, n) for metric in scheduler.experiment.metrics.keys()}
+    update_opt_csv(scheduler.opt_csv, vals2)
 
     output_dir = tmp_path / "output_dir"
     shutil.move(scheduler.scheduler_filepath.parent, output_dir)
@@ -100,5 +123,23 @@ def test_async_gen_strat(tmp_path):
     scheduler = main(split_shell_command(f"-sp {output_dir / 'scheduler.json'} -n {n}"), standalone_mode=False)
     n_ran_trials += n
     assert scheduler.experiment.num_trials == n_ran_trials
-    df = scheduler.experiment.fetch_data().df
-    exp_val_vs_ins_val(exp_df=df, inserted_vals=vals)
+    exp_df = scheduler.experiment.fetch_data().df
+    exp_val_vs_ins_val(exp_df=exp_df, inserted_vals=vals2)
+
+    df = pd.DataFrame(
+        {metric_name: np.concatenate((value, vals2[metric_name])) for metric_name, value in vals1.items()}
+    )
+    df = (
+        df.stack()  # stack to get metric_name and trial index as indexes
+        .reset_index()  # move metric_name and trial index to a column
+        .rename(columns={"level_1": "metric_name", "level_0": "trial_index", 0: "mean"})
+    )  # rename the columns
+
+    assert_frame_equal(
+        df.reset_index(drop=True),  # remove index to avoid index mismatch, we don't care about the index
+        (
+            exp_df[df.columns]  # only compare the columns we care about
+            .sort_values(by=df.columns.to_list())  # sort by all columns to make sure the order is the same
+            .reset_index(drop=True)
+        ),  # remove index to avoid index mismatch, we don't care about the index
+    )
