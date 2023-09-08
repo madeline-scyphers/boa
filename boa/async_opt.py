@@ -2,6 +2,7 @@
 import dataclasses
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 import click
@@ -37,7 +38,19 @@ from boa.wrappers.wrapper_utils import load_jsonlike
     type=int,
     help="Number of trials to run. Overrides trials in config file.",
 )
-def main(config_path, scheduler_path, num_trials):
+@click.option(
+    "-td",
+    "--temporary-dir",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="Modify/add to the config file a temporary directory as the experiment_dir that will get deleted after running"
+    " (useful for testing)."
+    " This requires your Wrapper to have the ability to take experiment_dir as an argument"
+    " to ``load_config``. The default ``load_config`` does support this."
+    " This is also only done for initial run, not for reloading from scheduler json file.",
+)
+def main(config_path, scheduler_path, num_trials, temporary_dir):
     """Asynchronous optimization script. Asynchronously run your optimization.
     With this script, you can pass in a configuration file that specifies your
     optimization parameters and objective and BOA will output a
@@ -58,6 +71,26 @@ def main(config_path, scheduler_path, num_trials):
     -------
         Scheduler
     """
+    if temporary_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            experiment_dir = Path(temp_dir)
+            return run(
+                config_path=config_path,
+                scheduler_path=scheduler_path,
+                num_trials=num_trials,
+                experiment_dir=experiment_dir,
+            )
+    return run(
+        config_path=config_path,
+        scheduler_path=scheduler_path,
+        num_trials=num_trials,
+    )
+
+
+def run(config_path, scheduler_path, num_trials, experiment_dir=None):
+    if experiment_dir:
+        experiment_dir = Path(experiment_dir).resolve()
+    # set num_trials before loading config because scheduler options is frozen
     config_kw = (
         dict(
             n_trials=num_trials,
@@ -66,6 +99,7 @@ def main(config_path, scheduler_path, num_trials):
         if num_trials
         else {}
     )
+
     config = None
     if config_path:
         config = BOAConfig.from_jsonlike(config_path, **config_kw)
@@ -82,6 +116,8 @@ def main(config_path, scheduler_path, num_trials):
     for metric in config.objective.metrics:
         metric.metric = "passthrough"
         metric.metric_type = MetricType.PASSTHROUGH
+    if experiment_dir:
+        config.script_options.experiment_dir = experiment_dir
 
     if scheduler_path:
         scheduler = scheduler_from_json_file(filepath=scheduler_path)
@@ -91,7 +127,6 @@ def main(config_path, scheduler_path, num_trials):
             )
             scheduler.wrapper.config.n_trials = num_trials
             scheduler.options = dataclasses.replace(scheduler.options, total_trials=num_trials)
-
     else:
         controller = Controller(config_path=config_path, wrapper=SyntheticWrapper(config=config))
         controller.initialize_scheduler()

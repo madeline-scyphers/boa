@@ -53,7 +53,8 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     help="Modify/add to the config file a temporary directory as the experiment_dir that will get deleted after running"
     " (useful for testing)."
     " This requires your Wrapper to have the ability to take experiment_dir as an argument"
-    " to ``load_config``. The default ``load_config`` does support this.",
+    " to ``load_config``. The default ``load_config`` does support this."
+    " This is also only done for initial run, not for reloading from scheduler json file.",
 )
 @click.option(
     "--rel-to-config/--rel-to-here",  # more cli friendly name for config option of rel_to_launch
