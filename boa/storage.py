@@ -259,15 +259,7 @@ def scheduler_from_json_snapshot(
     )
 
     scheduler = Scheduler(generation_strategy=generation_strategy, experiment=experiment, options=options, **kwargs)
-    fp = serialized.pop("scheduler_filepath", None)
-    if fp:
-        scheduler.scheduler_filepath = object_from_json(
-            fp,
-            decoder_registry=decoder_registry,
-            class_decoder_registry=class_decoder_registry,
-        )
-    else:
-        scheduler.scheduler_filepath = pathlib.Path(filepath)
+    scheduler.scheduler_filepath = pathlib.Path(filepath)
     if wrapper:
         if isinstance(scheduler.experiment.runner, WrappedJobRunner):
             scheduler.experiment.runner.wrapper = wrapper
