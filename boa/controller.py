@@ -23,7 +23,6 @@ from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
-from boa.storage import scheduler_from_json_file
 from boa.utils import yaml_dump
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import get_dt_now_as_str, initialize_wrapper
@@ -88,20 +87,6 @@ class Controller:
 
         self.experiment: Experiment = None
         self.scheduler: Scheduler = None
-
-    @classmethod
-    def from_scheduler_path(cls, scheduler_path, working_dir=None, **kwargs):
-        scheduler = scheduler_from_json_file(scheduler_path, **kwargs)
-        wrapper = scheduler.experiment.runner.wrapper
-
-        inst = cls(wrapper=wrapper, working_dir=working_dir, **kwargs)
-        inst.logger.info(f"Resuming optimization from scheduler path: {scheduler_path}")
-        if inst.wrapper.config_path:
-            inst.logger.info(f"Config path: {inst.wrapper.config_path}")
-
-        inst.scheduler = scheduler
-        inst.experiment = scheduler.experiment
-        return inst
 
     @classmethod
     def from_scheduler(cls, scheduler, working_dir=None, **kwargs):
