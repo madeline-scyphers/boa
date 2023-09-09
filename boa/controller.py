@@ -23,7 +23,6 @@ from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
 from boa.scheduler import Scheduler
-from boa.storage import scheduler_from_json_file
 from boa.utils import yaml_dump
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import get_dt_now_as_str, initialize_wrapper
@@ -77,7 +76,7 @@ class Controller:
 
         if config_path:
             # Copy the experiment config to the experiment directory
-            shutil.copyfile(wrapper.config_path, wrapper.experiment_dir / Path(config_path).name)
+            shutil.copyfile(config_path, wrapper.experiment_dir / Path(config_path).name)
         else:
             yaml_dump(wrapper.config, wrapper.experiment_dir / "config.yaml")
 
@@ -90,12 +89,10 @@ class Controller:
         self.scheduler: Scheduler = None
 
     @classmethod
-    def from_scheduler_path(cls, scheduler_path, working_dir=None, **kwargs):
-        scheduler = scheduler_from_json_file(scheduler_path, **kwargs)
+    def from_scheduler(cls, scheduler, working_dir=None, **kwargs):
         wrapper = scheduler.experiment.runner.wrapper
 
         inst = cls(wrapper=wrapper, working_dir=working_dir, **kwargs)
-        inst.logger.info(f"Resuming optimization from scheduler path: {scheduler_path}")
         if inst.wrapper.config_path:
             inst.logger.info(f"Config path: {inst.wrapper.config_path}")
 
@@ -161,7 +158,7 @@ class Controller:
                 exp_dir=wrapper.experiment_dir,
                 start_time=start_tm,
                 scheduler_path=Path(wrapper.experiment_dir) / scheduler.scheduler_filepath,
-                opt_csv_path=Path(wrapper.experiment_dir) / scheduler.opt_filepath)}"""
+                opt_csv_path=Path(wrapper.experiment_dir) / scheduler.opt_csv)}"""
             f"\n{HEADER_BAR}"
         )
 
@@ -185,7 +182,7 @@ class Controller:
                     exp_dir=self.wrapper.experiment_dir,
                     start_time=start_tm,
                     scheduler_path=Path(wrapper.experiment_dir) / scheduler.scheduler_filepath,
-                    opt_csv_path=Path(wrapper.experiment_dir) / scheduler.opt_filepath)}"""
+                    opt_csv_path=Path(wrapper.experiment_dir) / scheduler.opt_csv)}"""
                 f"\nEnd Time: {get_dt_now_as_str()}"
                 f"\nTotal Run Time: {time.time() - start}"
                 "\n"

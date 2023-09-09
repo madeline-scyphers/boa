@@ -15,6 +15,7 @@ from copy import deepcopy
 from dataclasses import asdict
 from typing import Any, Callable, Dict, Optional, Type
 
+from ax import Experiment
 from ax.exceptions.core import AxError
 from ax.exceptions.storage import JSONDecodeError as AXJSONDecodeError
 from ax.exceptions.storage import JSONEncodeError as AXJSONEncodeError
@@ -134,6 +135,16 @@ def scheduler_to_json_snapshot(
             encoder_registry=encoder_registry,
             class_encoder_registry=class_encoder_registry,
         ),
+        "scheduler_filepath": object_to_json(
+            scheduler.scheduler_filepath,
+            encoder_registry=encoder_registry,
+            class_encoder_registry=class_encoder_registry,
+        ),
+        "opt_csv": object_to_json(
+            scheduler.opt_csv,
+            encoder_registry=encoder_registry,
+            class_encoder_registry=class_encoder_registry,
+        ),
         "boa_version": __version__,
     }
     if wrapper_serialization:
@@ -248,6 +259,7 @@ def scheduler_from_json_snapshot(
     )
 
     scheduler = Scheduler(generation_strategy=generation_strategy, experiment=experiment, options=options, **kwargs)
+    scheduler.scheduler_filepath = pathlib.Path(filepath)
     if wrapper:
         if isinstance(scheduler.experiment.runner, WrappedJobRunner):
             scheduler.experiment.runner.wrapper = wrapper
@@ -269,18 +281,35 @@ def recursive_deserialize(obj, **kwargs):
     return obj
 
 
-def exp_opt_to_csv(experiment, opt_filepath: PathLike = "optimization.csv", dir_: PathLike = None, **kwargs):
+def exp_opt_to_csv(
+    experiment: Experiment,
+    opt_filepath: PathLike = "optimization.csv",
+    dir_: PathLike = None,
+    *,
+    metrics_to_end: bool = False,
+    ax_kwargs: Optional[Dict[str, Any]] = None,
+    **kwargs,
+) -> pathlib.Path:
+    ax_kwargs = ax_kwargs or {}
     if dir_:
         opt_filepath = pathlib.Path(dir_) / opt_filepath
-    df = exp_to_df(experiment)
+    df = exp_to_df(experiment, **ax_kwargs)
+    metrics = list(experiment.metrics.keys())
+    isin = df.columns.isin(metrics).sum() == len(metrics)
+    if metrics_to_end and isin:
+        df = df[[col for col in df.columns if col not in metrics] + metrics]
+    kwargs.setdefault("na_rep", "NA")
     df.to_csv(path_or_buf=opt_filepath, index=False, **kwargs)
     logger.info(f"Saved optimization parametrization and objective to `{opt_filepath}`.")
+    return opt_filepath
 
 
-def scheduler_opt_to_csv(scheduler, **kwargs):
-    return exp_opt_to_csv(scheduler.experiment, **kwargs)
+def scheduler_opt_to_csv(scheduler: Scheduler, **kwargs):
+    opt_csv = exp_opt_to_csv(scheduler.experiment, **kwargs)
+    scheduler.opt_csv = opt_csv
+    return opt_csv
 
 
 def dump_scheduler_data(scheduler, scheduler_filepath, opt_filepath, **kwargs):
-    scheduler_to_json_file(scheduler, scheduler_filepath=scheduler_filepath, **kwargs)
     scheduler_opt_to_csv(scheduler, opt_filepath=opt_filepath, **kwargs)
+    scheduler_to_json_file(scheduler, scheduler_filepath=scheduler_filepath, **kwargs)

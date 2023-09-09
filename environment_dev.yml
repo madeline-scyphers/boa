@@ -1,4 +1,4 @@
-name: boa-dev3
+name: boa-dev
 channels:
 - pytorch
 - conda-forge
