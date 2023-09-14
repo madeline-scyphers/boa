@@ -9,6 +9,9 @@ import jinja2
 
 
 class JinjaTemplateVars(Enum):
+    """These are the variables that are passed to the jinja2 template.
+    They should always be able to be used in your template (config file)."""
+
     config_path = "Full path to the config file."
     config_dir_name = "Name of the directory containing the config file."
     config_file_name = "Name of the config file."
