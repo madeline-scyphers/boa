@@ -27,7 +27,7 @@ from ax.utils.common.docutils import copy_doc
 
 from boa.definitions import IS_WINDOWS, PathLike, PathLike_tup
 from boa.logger import get_logger
-from boa.template import render_template_from_path
+from boa.template import render_template
 from boa.utils import (
     _load_attr_from_module,
     _load_module_from_path,
@@ -204,28 +204,47 @@ def load_json(file: PathLike, **kwargs) -> dict:
 
     """
     file = pathlib.Path(file).expanduser()
-    s = render_template_from_path(file, **kwargs)
-    config = json.loads(s)
-    return config
+    with open(file, "r") as f:
+        data = load_json_from_str(f.read(), **kwargs)
+    return data
+
+
+def load_json_from_str(string: str, render_jinja: bool = True, **kwargs):
+    """Load json from a string with optional jinja2 templating"""
+    if render_jinja:
+        string = render_template(string, **kwargs)
+    return json.loads(string)
 
 
 @copy_doc(load_json)
 def load_yaml(file: PathLike, **kwargs) -> dict:
     file = pathlib.Path(file).expanduser()
-    s = render_template_from_path(file, **kwargs)
-    config: dict = yaml.safe_load(s)
-    return config
+    with open(file, "r") as f:
+        data = load_yaml_from_str(f.read(), **kwargs)
+    return data
+
+
+def load_yaml_from_str(string: str, render_jinja: bool = True, **kwargs):
+    """Load yaml from a string with jinja2 optional templating"""
+    if render_jinja:
+        string = render_template(string, **kwargs)
+    return yaml.safe_load(string)
 
 
 @copy_doc(load_json)
 def load_jsonlike(file: PathLike, **kwargs) -> dict:
     file = pathlib.Path(file)
-    if file.suffix.lstrip(".").lower() in {"yaml", "yml"}:
+    # use all suffixes to allow for .json.jinja2 or .yaml.j2 etc
+    suffixes = {ext.lstrip(".").lower() for ext in file.suffixes}
+    if suffixes & {"yaml", "yml"}:
         return load_yaml(file, **kwargs)
-    elif file.suffix.lstrip(".").lower() == "json":
+    elif "json" in suffixes:
         return load_json(file, **kwargs)
     else:
-        raise ValueError(f"Invalid config file format for config file {file}\nAccepted file formats are YAML and JSON.")
+        raise ValueError(
+            f"Invalid config file format for config file {file}"
+            "\nAccepted file formats are YAML and JSON. Use a `.yaml` or `.json` file extension."
+        )
 
 
 def get_dt_now_as_str(fmt: str = "%Y%m%dT%H%M%S") -> str:
