@@ -33,6 +33,9 @@ class WrappedJobRunner(Runner, metaclass=RunnerRegister):
     def run(self, trial: Trial) -> Dict[str, Any]:
         """Deploys a trial based on custom runner subclass implementation.
 
+        Add a logging queue handler to the boa and ax root loggers to capture logs from the
+        wrapper.
+
         Args:
             trial: The trial to deploy.
 
@@ -41,8 +44,9 @@ class WrappedJobRunner(Runner, metaclass=RunnerRegister):
         """
         qh = logging.handlers.QueueHandler(queue)
         logger = logging.getLogger()
-        logger.setLevel(logging.DEBUG)
         logger.addHandler(qh)
+        ax_logger = logging.getLogger("ax")
+        ax_logger.addHandler(qh)
 
         if not isinstance(trial, Trial):
             raise ValueError("This runner only handles `Trial`.")

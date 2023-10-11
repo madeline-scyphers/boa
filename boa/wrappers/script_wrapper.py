@@ -337,7 +337,11 @@ class ScriptWrapper(BaseWrapper):
         return None
 
 
-def subprocess_output(p, trial):
+def subprocess_output(p: subprocess.Popen, trial: Trial):
+    """
+    log the output of a subprocess `p` to the logger
+    and mark the trial as failed if the subprocess exits with a non-zero exit code
+    """
     while (exit_code := p.poll()) is None:
         for line in p.stdout:
             logger.info(line.strip())
