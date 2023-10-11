@@ -73,18 +73,17 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
 # or parametrize the test to use the streamlined version (doesn't use trial_status.json, only use output.json)
 @pytest.mark.parametrize(
     "r_scripts_run",
-    ["full", "light", "streamlined"],
-    indirect=True,
+    ["r_full", "r_light", "r_streamlined"],
 )
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
 def test_calling_command_line_r_test_scripts(r_scripts_run, request):
-    scheduler = r_scripts_run
+    scheduler = request.getfixturevalue(r_scripts_run)
     wrapper = scheduler.experiment.runner.wrapper
     config = wrapper.config
     assert len(scheduler.experiment.trials) == config.trials
 
     assert scheduler
-    if "r_package_full" in str(wrapper.config_path):
+    if "r_full" == r_scripts_run:
         data = load_jsonlike(get_trial_dir(wrapper.experiment_dir, 0) / "data.json")
         assert "param_names" in data
         assert "metric_properties" in data
