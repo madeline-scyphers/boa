@@ -113,11 +113,12 @@ def test_wrapper_with_custom_load_config():
 
 
 def test_parallelism(r_light, caplog):
-    log = []
-    for record in caplog.get_records("setup"):
-        line = record.message
-        if "R script started running." in line or "R script finished running." in line:
-            log.append(line)
+    scheduler = r_light
+    log_f = scheduler.wrapper.experiment_dir / "optimization.log"
+    with open(log_f, "r") as f:
+        log = f.readlines()
+    log = [line.strip() for line in log if "R script" in line]
+
     found_parallelism = False
     for line in range(len(log) - 1):
         if "R script started running." in log[line] and "R script started running." in log[line + 1]:
