@@ -110,3 +110,22 @@ def test_wrapper_with_custom_load_config():
         ),
         standalone_mode=False,
     )
+
+
+def test_parallelism(r_light, caplog):
+    log = []
+    for record in caplog.get_records("setup"):
+        line = record.message
+        if "R script started running." in line or "R script finished running." in line:
+            log.append(line)
+    found_parallelism = False
+    for line in range(len(log) - 1):
+        if "R script started running." in log[line] and "R script started running." in log[line + 1]:
+            found_parallelism = True
+    assert found_parallelism
+
+
+def test_non_zero_exit_code_fails_trial():
+    with pytest.raises(FailureRateExceededError):
+        config_path = ROOT / "tests" / f"scripts/other_langs/r_failure_exit_code/config.yaml"
+        dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
