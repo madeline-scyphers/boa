@@ -1,11 +1,14 @@
 import logging
 import logging.config
 import logging.handlers
+import multiprocessing
 
 from boa.definitions import PathLike
 
 DEFAULT_LOG_LEVEL: int = logging.INFO
 ROOT_LOGGER_NAME = "boa"
+
+queue = multiprocessing.Manager().Queue()
 
 
 def get_logger(name: str = ROOT_LOGGER_NAME, level: int = DEFAULT_LOG_LEVEL, filename=None) -> logging.Logger:
@@ -45,7 +48,7 @@ def set_handlers(logger, level=DEFAULT_LOG_LEVEL, filename=None):
 
 
 def get_formatter():
-    fmt = "[%(levelname)s %(asctime)s %(processName)s] %(name)s: %(message)s"
+    fmt = "[%(levelname)s %(asctime)s %(processName)s %(threadName)s] %(name)s: %(message)s"
     formatter = logging.Formatter(fmt=fmt)
     return formatter
 

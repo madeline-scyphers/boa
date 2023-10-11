@@ -74,9 +74,12 @@ class Scheduler(AxScheduler):
         except Exception as e:  # pragma: no cover
             best_trial_str = ""
             logger.exception(e)
+        trials_ls = [str(t.index) for t in self.running_trials]
+        if len(trials_ls) == 1:
+            trials_ls = trials_ls[0]
         update = (
             f"Trials so far: {len(self.experiment.trials)}"
-            f"\nRunning trials: {', '.join(str(t.index) for t in self.running_trials)}"
+            f"\nRunning trials: {trials_ls}"
             f"\nWill Produce next trials from generation step: {self.generation_strategy.current_step.model_name}"
             f"{best_trial_str}"
         )
