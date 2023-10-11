@@ -8,6 +8,7 @@ Runner that calls your :mod:`.wrappers` to run your model and poll the trial sta
 """
 
 import concurrent.futures
+import logging
 from collections import defaultdict
 from typing import Any, Dict, Iterable, Set
 
@@ -15,7 +16,7 @@ from ax.core.base_trial import TrialStatus
 from ax.core.runner import Runner
 from ax.core.trial import Trial
 
-from boa.logger import get_logger
+from boa.logger import get_logger, queue
 from boa.metaclasses import RunnerRegister
 from boa.utils import serialize_init_args
 from boa.wrappers.base_wrapper import BaseWrapper
@@ -38,6 +39,11 @@ class WrappedJobRunner(Runner, metaclass=RunnerRegister):
         Returns:
             Dict of run metadata from the deployment process.
         """
+        qh = logging.handlers.QueueHandler(queue)
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        logger.addHandler(qh)
+
         if not isinstance(trial, Trial):
             raise ValueError("This runner only handles `Trial`.")
 

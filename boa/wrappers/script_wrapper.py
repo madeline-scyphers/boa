@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import subprocess
+import threading
+import time
 from typing import Iterable
 
 from ax import Trial
@@ -58,7 +60,7 @@ class ScriptWrapper(BaseWrapper):
         """
         param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
         kw = {"param_names": param_names} if param_names else {}
-        self._run_subprocess_script_cmd_if_exists(trial, "write_configs", **kw)
+        self._run_subprocess_script_cmd_if_exists(trial, "write_configs", block=True, **kw)
 
     def run_model(self, trial: Trial) -> None:
         """
@@ -263,14 +265,21 @@ class ScriptWrapper(BaseWrapper):
             func_names="fetch_trial_data",
             **kw,
         )
-        data = self._read_subprocess_script_output(trial, file_names=OUTPUT_FILES)
+        loops = 0
+        while not (data := self._read_subprocess_script_output(trial, file_names=OUTPUT_FILES)):
+            time.sleep(1.5**loops)
+            loops += 1
+            if loops > 5:
+                raise ValueError(
+                    f"fetch_trial_data did not write out a file with one of the following names: {OUTPUT_FILES}"
+                )
         if data is not None:
             trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus" or k.lower() == "trial_status"]
             for key in trial_status_keys:
                 data.pop(key)
             return data
 
-    def _run_subprocess_script_cmd_if_exists(self, trial: Trial, func_names: list[str] | str, **kwargs):
+    def _run_subprocess_script_cmd_if_exists(self, trial: Trial, func_names: list[str] | str, block=False, **kwargs):
         """
         Run a script command from their config file in a subproccess.
         Dump the trial data into a json file for them to collect if need be
@@ -306,11 +315,10 @@ class ScriptWrapper(BaseWrapper):
                 p = subprocess.Popen(
                     args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, universal_newlines=True
                 )
-                # TODO move polling and print to another thread so it doesn't block but still writes to log?
-                # Grab stdout line by line as it becomes available.
-                # This will loop until p terminates.
-                for line in p.stdout:
-                    logger.info(line.strip())
+                if block:
+                    subprocess_output(p, trial)
+                t = threading.Thread(target=subprocess_output, args=(p, trial), daemon=True)
+                t.start()
         return ran_cmds
 
     def _read_subprocess_script_output(self, trial: Trial, file_names: Iterable[str] | str):
@@ -327,3 +335,17 @@ class ScriptWrapper(BaseWrapper):
                 if output_file.exists():
                     return load_jsonlike(output_file)
         return None
+
+
+def subprocess_output(p, trial):
+    while (exit_code := p.poll()) is None:
+        for line in p.stdout:
+            logger.info(line.strip())
+        p.stdout.close()
+        for line in p.stderr:
+            logger.warning(line.strip())
+        p.stderr.close()
+        time.sleep(1)
+
+    if exit_code != 0:
+        trial.mark_failed()
