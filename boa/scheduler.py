@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import pathlib
 from pprint import pformat
 from typing import Iterable, Optional
 
 from ax.core.optimization_config import OptimizationConfig
+from ax.modelbridge.base import ModelBridge
 from ax.service.scheduler import Scheduler as AxScheduler
 
+from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
 from boa.wrappers.base_wrapper import BaseWrapper
@@ -15,12 +18,40 @@ logger = get_logger()
 
 class Scheduler(AxScheduler):
     runner: WrappedJobRunner
-    scheduler_filepath: str = "scheduler.json"
-    opt_filepath: str = "optimization.csv"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._model: Optional[ModelBridge] = None
+        self._scheduler_filepath: pathlib.Path = pathlib.Path("scheduler.json")
+        self._opt_csv: pathlib.Path = pathlib.Path("optimization.csv")
 
     @property
     def wrapper(self) -> BaseWrapper:
         return self.runner.wrapper
+
+    @property
+    def model(self):
+        return self._model or self.generation_strategy.model
+
+    @model.setter
+    def model(self, model):
+        self._model = model
+
+    @property
+    def scheduler_filepath(self) -> pathlib.Path:
+        return self.wrapper.experiment_dir / self._scheduler_filepath
+
+    @scheduler_filepath.setter
+    def scheduler_filepath(self, path: PathLike):
+        self._scheduler_filepath = pathlib.Path(path)
+
+    @property
+    def opt_csv(self) -> pathlib.Path:
+        return self.wrapper.experiment_dir / self._opt_csv
+
+    @opt_csv.setter
+    def opt_csv(self, path: PathLike):
+        self._opt_csv = pathlib.Path(path)
 
     def report_results(self, force_refit: bool = False):
         """
@@ -43,9 +74,12 @@ class Scheduler(AxScheduler):
         except Exception as e:  # pragma: no cover
             best_trial_str = ""
             logger.exception(e)
+        trials_ls = [str(t.index) for t in self.running_trials]
+        if len(trials_ls) == 1:
+            trials_ls = trials_ls[0]
         update = (
             f"Trials so far: {len(self.experiment.trials)}"
-            f"\nRunning trials: {', '.join(str(t.index) for t in self.running_trials)}"
+            f"\nRunning trials: {trials_ls}"
             f"\nWill Produce next trials from generation step: {self.generation_strategy.current_step.model_name}"
             f"{best_trial_str}"
         )
@@ -224,7 +258,7 @@ class Scheduler(AxScheduler):
                 scheduler=self,
                 dir_=self.runner.wrapper.experiment_dir,
                 scheduler_filepath=self.scheduler_filepath,
-                opt_filepath=self.opt_filepath,
+                opt_filepath=self.opt_csv,
                 **kwargs,
             )
         except Exception as e:

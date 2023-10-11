@@ -5,7 +5,7 @@ import pathlib
 from dataclasses import asdict as dc_asdict
 from dataclasses import is_dataclass
 from enum import Enum
-from typing import ClassVar, Optional, Union
+from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
 import attr
 import ruamel.yaml
@@ -28,6 +28,9 @@ from boa.config.converters import (
 from boa.definitions import PathLike
 from boa.utils import StrEnum, deprecation
 from boa.wrappers.wrapper_utils import load_jsonlike
+
+if TYPE_CHECKING:
+    from boa.metrics.modular_metric import ModularMetric
 
 __all__ = [
     "BOAConfig",
@@ -106,11 +109,12 @@ class MetricType(StrEnum):
     SKLEARN_METRIC = "sklearn_metric"
     SYNTHETIC_METRIC = "synthetic_metric"
     PASSTHROUGH = "pass_through"
+    INSTANTIATED = "instantiated"
 
 
 @define(kw_only=True)
 class BOAMetric(_Utils):
-    metric: Optional[str] = field(
+    metric: Optional[str | ModularMetric] = field(
         default=None,
         metadata={
             "doc": """metrics to be used for optimization. You can use list any metric in built into BOA.
@@ -211,6 +215,15 @@ class BOAMetric(_Utils):
     def __attrs_post_init__(self):
         if not self.metric and not self.name:
             raise TypeError("Must specify at least metric name or metric")
+        from boa.metrics.modular_metric import ModularMetric
+
+        if isinstance(self.metric, ModularMetric):
+            self.metric_type = MetricType.INSTANTIATED
+            # if a passed in name, override the name of the metric
+            if self.name:
+                self.metric._name = self.name
+            else:
+                self.name = self.metric.name
         if self.name is None:
             self.name = self.metric
         elif self.metric is None:
@@ -273,6 +286,10 @@ class BOAObjective(_Utils):
                 config["metrics"][i]["weight"] = weight
 
         self.__attrs_init__(**config)
+
+    @property
+    def metric_names(self):
+        return (metric.name for metric in self.metrics)
 
 
 @define
@@ -579,7 +596,8 @@ For specific options you can pass to each step
         scheduler = config.get("scheduler", {})
         n_trials = config.get("n_trials", None)
         if isinstance(scheduler, dict):
-            n_trials = scheduler.pop("n_trials", n_trials)  # n_trials is not a valid scheduler option so we pop it
+            sch_n_trials = scheduler.pop("n_trials", None)
+            n_trials = sch_n_trials or n_trials  # n_trials is not a valid scheduler option so we pop it
             total_trials = scheduler.get("total_trials", None)
         else:
             total_trials = scheduler.total_trials
@@ -609,7 +627,7 @@ For specific options you can pass to each step
         self.__attrs_init__(**config)
 
     @classmethod
-    def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None, template_kw: Optional[dict] = None):
+    def from_jsonlike(cls, file, rel_to_config: Optional[bool] = None, template_kw: Optional[dict] = None, **kwargs):
         config_path = pathlib.Path(file).resolve()
         config = load_jsonlike(config_path, template_kw=template_kw)
 
@@ -627,6 +645,7 @@ For specific options you can pass to each step
             config["script_options"]["rel_to_launch"] = False
             config["script_options"]["base_path"] = config_path.parent
 
+        update_dict(config, kwargs)
         return cls(**config, config_path=file)
 
     # @classmethod
@@ -880,6 +899,14 @@ def add_comment_recurse(
                 d[i] = add_comment_recurse(item, new_config, where="end", depth=depth + 1, indent=indent)
 
     return d
+
+
+def update_dict(original: dict, param: dict):
+    for key in param.keys():
+        if isinstance(param[key], dict) and key in original:
+            update_dict(original[key], param[key])
+        else:
+            original[key] = param[key]
 
 
 if __name__ == "__main__":  # pragma: no cover

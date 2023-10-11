@@ -17,6 +17,7 @@ import types
 import warnings
 from collections.abc import Iterable, Mapping
 from enum import Enum
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any, Callable, Optional, Type, Union
 
@@ -24,6 +25,9 @@ import torch
 from ruamel.yaml import YAML
 
 from boa.definitions import PathLike
+from boa.logger import get_logger
+
+logger = get_logger()
 
 # Maybe at some point we can do a thing that allows you to import from a note book
 # But not right now
@@ -289,7 +293,20 @@ class StrEnum(str, Enum):  # pragma: no cover  # copied from python 3.11
         return cls(value)
 
 
-def yaml_dump(data: dict, path: PathLike) -> None:
+def check_min_package_version(package, minimum_version, should_trunc_to_same_len=True):
+    """Helper to decide if the package you are using meets minimum version requirement for some feature."""
+    real_version = version(package)
+    if should_trunc_to_same_len:
+        minimum_version = minimum_version[0 : len(real_version)]  # noqa: E203  # black bug
+
+    logger.debug(
+        "package %s, version: %s, minimum version to run certain features: %s", package, real_version, minimum_version
+    )
+
+    return real_version >= minimum_version
+
+
+def yaml_dump(data: dict | str, path: PathLike) -> None:
     yaml = YAML(typ="unsafe", pure=True)
     with open(path, "w") as file:
         yaml.dump(data, file)

@@ -73,18 +73,17 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
 # or parametrize the test to use the streamlined version (doesn't use trial_status.json, only use output.json)
 @pytest.mark.parametrize(
     "r_scripts_run",
-    ["full", "light", "streamlined"],
-    indirect=True,
+    ["r_full", "r_light", "r_streamlined"],
 )
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
 def test_calling_command_line_r_test_scripts(r_scripts_run, request):
-    scheduler = r_scripts_run
+    scheduler = request.getfixturevalue(r_scripts_run)
     wrapper = scheduler.experiment.runner.wrapper
     config = wrapper.config
     assert len(scheduler.experiment.trials) == config.trials
 
     assert scheduler
-    if "r_package_full" in str(wrapper.config_path):
+    if "r_full" == r_scripts_run:
         data = load_jsonlike(get_trial_dir(wrapper.experiment_dir, 0) / "data.json")
         assert "param_names" in data
         assert "metric_properties" in data
@@ -111,3 +110,23 @@ def test_wrapper_with_custom_load_config():
         ),
         standalone_mode=False,
     )
+
+
+def test_parallelism(r_light, caplog):
+    scheduler = r_light
+    log_f = scheduler.wrapper.experiment_dir / "optimization.log"
+    with open(log_f, "r") as f:
+        log = f.readlines()
+    log = [line.strip() for line in log if "R script" in line]
+
+    found_parallelism = False
+    for line in range(len(log) - 1):
+        if "R script started running." in log[line] and "R script started running." in log[line + 1]:
+            found_parallelism = True
+    assert found_parallelism
+
+
+def test_non_zero_exit_code_fails_trial():
+    with pytest.raises(FailureRateExceededError):
+        config_path = ROOT / "tests" / f"scripts/other_langs/r_failure_exit_code/config.yaml"
+        dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)

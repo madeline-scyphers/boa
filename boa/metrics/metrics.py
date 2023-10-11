@@ -307,6 +307,8 @@ def get_metric_from_config(config: BOAMetric, instantiate=True, **kwargs) -> Mod
         metric = setup_synthetic_metric(instantiate=instantiate, **kw)
     elif config.metric_type == MetricType.PASSTHROUGH:  # only name but no metric type
         metric = PassThroughMetric(**kw)
+    elif config.metric_type == MetricType.INSTANTIATED:
+        metric = config.metric
     else:
         # TODO link to docs for configuration when it exists
         raise KeyError("No valid configuration for metric found.")
