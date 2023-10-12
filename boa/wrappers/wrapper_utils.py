@@ -285,7 +285,7 @@ def make_experiment_dir(
         to ensure uniqueness
     exist_ok
         Whether it is ok if the directory already exists or not
-        (will throw an error if set to False and it already exists)
+        (will create a new directory with a .1, .2 etc appended to the name if the directory already exists)
 
     Returns
     -------
@@ -297,29 +297,45 @@ def make_experiment_dir(
             "`make_experiment_dir` must take either a `output_dir` and `experiment_name` "
             "or an `experiment_dir`, not both and not neither."
         )
-    if experiment_dir:
-        return _mk_exp_dir_from_exp_dir(exp_dir=experiment_dir, append_timestamp=append_timestamp, exist_ok=exist_ok)
-    return _mk_exp_dir_from_output_dir(
-        output_dir=output_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, exist_ok=exist_ok
-    )
+    retries = 0
+    while True:
+        try:
+            add_on = f".{retries}" if retries else ""
+            if experiment_dir:
+                return _mk_exp_dir_from_exp_dir(
+                    exp_dir=experiment_dir, append_timestamp=append_timestamp, exist_ok=exist_ok, add_on=add_on
+                )
+            return _mk_exp_dir_from_output_dir(
+                output_dir=output_dir,
+                experiment_name=experiment_name,
+                append_timestamp=append_timestamp,
+                exist_ok=exist_ok,
+                add_on=add_on,
+            )
+        except FileExistsError:
+            retries += 1
 
 
 def _mk_exp_dir_from_output_dir(
-    output_dir: PathLike, experiment_name: str = "", append_timestamp: bool = True, exist_ok: bool = False
+    output_dir: PathLike, experiment_name: str = "", append_timestamp: bool = True, exist_ok: bool = False, add_on=""
 ):
     ts = get_dt_now_as_str() if append_timestamp else ""
-    exp_name = "_".join(name for name in [experiment_name, ts] if name)
+    exp_name = "_".join(name for name in [experiment_name, ts] if name) + add_on
     ex_dir = pathlib.Path(output_dir).expanduser() / exp_name
     ex_dir.mkdir(exist_ok=exist_ok)
     return ex_dir
 
 
-def _mk_exp_dir_from_exp_dir(exp_dir: PathLike, append_timestamp: bool = True, exist_ok: bool = False):
+def _mk_exp_dir_from_exp_dir(exp_dir: PathLike, append_timestamp: bool = True, exist_ok: bool = False, add_on=""):
     exp_dir = pathlib.Path(exp_dir)
     output_dir = exp_dir.parent
     experiment_name = exp_dir.name
     return _mk_exp_dir_from_output_dir(
-        output_dir=output_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, exist_ok=exist_ok
+        output_dir=output_dir,
+        experiment_name=experiment_name,
+        append_timestamp=append_timestamp,
+        exist_ok=exist_ok,
+        add_on=add_on,
     )
 
 
