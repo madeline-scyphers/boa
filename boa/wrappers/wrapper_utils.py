@@ -18,13 +18,13 @@ from contextlib import contextmanager
 from functools import wraps
 from typing import TYPE_CHECKING, Type
 
-import ruamel.yaml as yaml
 from attrs import asdict
 from ax.core.base_trial import BaseTrial
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
 from ax.exceptions.core import AxError
 from ax.storage.json_store.encoder import object_to_json
 from ax.utils.common.docutils import copy_doc
+from ruamel.yaml import YAML
 
 from boa.definitions import IS_WINDOWS, PathLike, PathLike_tup
 from boa.logger import get_logger
@@ -229,7 +229,8 @@ def load_yaml_from_str(string: str, render_jinja: bool = True, **kwargs):
     """Load yaml from a string with jinja2 optional templating"""
     if render_jinja:
         string = render_template(string, **kwargs)
-    return yaml.safe_load(string)
+    yaml = YAML(typ="safe", pure=True)
+    return yaml.load(string)
 
 
 @copy_doc(load_json)
