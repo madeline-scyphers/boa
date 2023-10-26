@@ -19,6 +19,7 @@ from functools import wraps
 from typing import TYPE_CHECKING, Type
 
 import ruamel.yaml as yaml
+from attrs import asdict
 from ax.core.base_trial import BaseTrial
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
 from ax.exceptions.core import AxError
@@ -27,7 +28,7 @@ from ax.utils.common.docutils import copy_doc
 
 from boa.definitions import IS_WINDOWS, PathLike, PathLike_tup
 from boa.logger import get_logger
-from boa.template import render_template
+from boa.template import JinjaTemplateVars, render_template
 from boa.utils import (
     _load_attr_from_module,
     _load_module_from_path,
@@ -236,10 +237,11 @@ def load_jsonlike(file: PathLike, **kwargs) -> dict:
     file = pathlib.Path(file)
     # use all suffixes to allow for .json.jinja2 or .yaml.j2 etc
     suffixes = {ext.lstrip(".").lower() for ext in file.suffixes}
+    kw = asdict(JinjaTemplateVars(file))
     if suffixes & {"yaml", "yml"}:
-        return load_yaml(file, **kwargs)
+        return load_yaml(file, **kwargs, **kw)
     elif "json" in suffixes:
-        return load_json(file, **kwargs)
+        return load_json(file, **kwargs, **kw)
     else:
         raise ValueError(
             f"Invalid config file format for config file {file}"
