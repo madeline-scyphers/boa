@@ -18,16 +18,17 @@ from contextlib import contextmanager
 from functools import wraps
 from typing import TYPE_CHECKING, Type
 
-import ruamel.yaml as yaml
+from attrs import asdict
 from ax.core.base_trial import BaseTrial
 from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
 from ax.exceptions.core import AxError
 from ax.storage.json_store.encoder import object_to_json
 from ax.utils.common.docutils import copy_doc
+from ruamel.yaml import YAML
 
 from boa.definitions import IS_WINDOWS, PathLike, PathLike_tup
 from boa.logger import get_logger
-from boa.template import render_template
+from boa.template import JinjaTemplateVars, render_template
 from boa.utils import (
     _load_attr_from_module,
     _load_module_from_path,
@@ -228,7 +229,8 @@ def load_yaml_from_str(string: str, render_jinja: bool = True, **kwargs):
     """Load yaml from a string with jinja2 optional templating"""
     if render_jinja:
         string = render_template(string, **kwargs)
-    return yaml.safe_load(string)
+    yaml = YAML(typ="safe", pure=True)
+    return yaml.load(string)
 
 
 @copy_doc(load_json)
@@ -236,10 +238,11 @@ def load_jsonlike(file: PathLike, **kwargs) -> dict:
     file = pathlib.Path(file)
     # use all suffixes to allow for .json.jinja2 or .yaml.j2 etc
     suffixes = {ext.lstrip(".").lower() for ext in file.suffixes}
+    kw = asdict(JinjaTemplateVars(file))
     if suffixes & {"yaml", "yml"}:
-        return load_yaml(file, **kwargs)
+        return load_yaml(file, **kwargs, **kw)
     elif "json" in suffixes:
-        return load_json(file, **kwargs)
+        return load_json(file, **kwargs, **kw)
     else:
         raise ValueError(
             f"Invalid config file format for config file {file}"
@@ -285,7 +288,7 @@ def make_experiment_dir(
         to ensure uniqueness
     exist_ok
         Whether it is ok if the directory already exists or not
-        (will throw an error if set to False and it already exists)
+        (will create a new directory with a .1, .2 etc appended to the name if the directory already exists)
 
     Returns
     -------
@@ -297,29 +300,45 @@ def make_experiment_dir(
             "`make_experiment_dir` must take either a `output_dir` and `experiment_name` "
             "or an `experiment_dir`, not both and not neither."
         )
-    if experiment_dir:
-        return _mk_exp_dir_from_exp_dir(exp_dir=experiment_dir, append_timestamp=append_timestamp, exist_ok=exist_ok)
-    return _mk_exp_dir_from_output_dir(
-        output_dir=output_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, exist_ok=exist_ok
-    )
+    retries = 0
+    while True:
+        try:
+            add_on = f".{retries}" if retries else ""
+            if experiment_dir:
+                return _mk_exp_dir_from_exp_dir(
+                    exp_dir=experiment_dir, append_timestamp=append_timestamp, exist_ok=exist_ok, add_on=add_on
+                )
+            return _mk_exp_dir_from_output_dir(
+                output_dir=output_dir,
+                experiment_name=experiment_name,
+                append_timestamp=append_timestamp,
+                exist_ok=exist_ok,
+                add_on=add_on,
+            )
+        except FileExistsError:
+            retries += 1
 
 
 def _mk_exp_dir_from_output_dir(
-    output_dir: PathLike, experiment_name: str = "", append_timestamp: bool = True, exist_ok: bool = False
+    output_dir: PathLike, experiment_name: str = "", append_timestamp: bool = True, exist_ok: bool = False, add_on=""
 ):
     ts = get_dt_now_as_str() if append_timestamp else ""
-    exp_name = "_".join(name for name in [experiment_name, ts] if name)
+    exp_name = "_".join(name for name in [experiment_name, ts] if name) + add_on
     ex_dir = pathlib.Path(output_dir).expanduser() / exp_name
     ex_dir.mkdir(exist_ok=exist_ok)
     return ex_dir
 
 
-def _mk_exp_dir_from_exp_dir(exp_dir: PathLike, append_timestamp: bool = True, exist_ok: bool = False):
+def _mk_exp_dir_from_exp_dir(exp_dir: PathLike, append_timestamp: bool = True, exist_ok: bool = False, add_on=""):
     exp_dir = pathlib.Path(exp_dir)
     output_dir = exp_dir.parent
     experiment_name = exp_dir.name
     return _mk_exp_dir_from_output_dir(
-        output_dir=output_dir, experiment_name=experiment_name, append_timestamp=append_timestamp, exist_ok=exist_ok
+        output_dir=output_dir,
+        experiment_name=experiment_name,
+        append_timestamp=append_timestamp,
+        exist_ok=exist_ok,
+        add_on=add_on,
     )
 
 

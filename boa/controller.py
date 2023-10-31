@@ -78,7 +78,11 @@ class Controller:
             # Copy the experiment config to the experiment directory
             shutil.copyfile(config_path, wrapper.experiment_dir / Path(config_path).name)
         else:
-            yaml_dump(wrapper.config, wrapper.experiment_dir / "config.yaml")
+            if wrapper.config.orig_config:
+                d = wrapper.config.orig_config
+            else:
+                d = wrapper.config.to_dict()
+            yaml_dump(d, wrapper.experiment_dir / "config.yaml")
 
         self.wrapper = wrapper
         self.config = self.wrapper.config
