@@ -15,8 +15,11 @@ trial_dir <- args[length(args)]
 param_path <- file.path(trial_dir, "parameters.json")
 data <- read_json(path=param_path)
 
-x0 <- data$x0
-x1 <- data$x1
+# We pull these from command line arguments defined from jinja2 template in the config
+# to test that we can for testing
+x0 <- as.numeric(args[1])
+x1 <- as.numeric(args[2])
+
 x2 <- data$x2
 x3 <- data$x3
 x4 <- data$x4
