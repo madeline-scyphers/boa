@@ -11,6 +11,7 @@ import logging
 from functools import partial
 from typing import Any, Callable, Optional
 
+import pandas as pd
 from ax import Data, Metric, Trial
 from ax.core.types import TParameterization
 from ax.metrics.noisy_function import NoisyFunctionMetric
@@ -160,17 +161,21 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         return self._weight
 
     def fetch_trial_data(self, trial: Trial, **kwargs):
-        wrapper_kwargs = (
-            self.wrapper._fetch_trial_data(
-                parameters=trial.arm.parameters,
-                param_names=self.param_names,
-                trial=trial,
-                metric_name=self.name,
-                **kwargs,
+        try:
+            wrapper_kwargs = (
+                self.wrapper._fetch_trial_data(
+                    parameters=trial.arm.parameters,
+                    param_names=self.param_names,
+                    trial=trial,
+                    metric_name=self.name,
+                    **kwargs,
+                )
+                if self.wrapper
+                else {}
             )
-            if self.wrapper
-            else {}
-        )
+        except IOError:  # ScriptWrapper failed to fetch data
+            trial.mark_failed(unsafe=True)
+            return Ok(Data(df=pd.DataFrame(columns=list(Data.REQUIRED_COLUMNS))))
         wrapper_kwargs = wrapper_kwargs if wrapper_kwargs is not None else {}
         if wrapper_kwargs is not None and not isinstance(wrapper_kwargs, dict):
             wrapper_kwargs = {"wrapper_args": wrapper_kwargs}

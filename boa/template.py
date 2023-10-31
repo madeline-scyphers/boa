@@ -71,6 +71,8 @@ def render_template(source: str, template_kw: Optional[dict] = None, **kwargs):
     """
     template_kw = template_kw if template_kw is not None else {}
     template_kw.setdefault("extensions", []).append("jinja2.ext.do")
+    if "undefined" not in template_kw:
+        template_kw["undefined"] = jinja2.DebugUndefined
     kwargs["load_py"] = importlib.import_module
     template = jinja2.Template(source, **template_kw)
     return template.render(
