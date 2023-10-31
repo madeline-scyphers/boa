@@ -5,10 +5,13 @@ import threading
 import time
 from typing import Iterable
 
+from attrs import asdict
 from ax import Trial
 from ax.core.base_trial import TrialStatus
+from ax.storage.json_store.encoder import object_to_json
 
 from boa.logger import get_logger
+from boa.template import JinjaTemplateVars, render_template
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import (
     get_trial_dir,
@@ -204,7 +207,7 @@ class ScriptWrapper(BaseWrapper):
                 except ValueError as e:
                     raise ValueError(f"Invalid trial status - {trial_status} - passed to `set_trial_status`") from e
 
-    def fetch_trial_data(self, trial: Trial, metric_properties: dict, *args, **kwargs) -> dict:
+    def fetch_trial_data(self, trial: Trial, metric_properties: dict, *args, **kwargs) -> dict | None:
         """
         Retrieves the trial data and prepares it for the metric(s) used in the objective
         function.
@@ -252,9 +255,9 @@ class ScriptWrapper(BaseWrapper):
 
         Returns
         -------
-        dict
+        dict or None
             A dictionary with the keys matching the keys of the metric function
-                used in the objective
+                used in the objective or None if no file is found (trial will be marked failed)
         """
         param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
         kw = {"param_names": param_names} if param_names else {}
@@ -270,9 +273,12 @@ class ScriptWrapper(BaseWrapper):
             time.sleep(1.5**loops)
             loops += 1
             if loops > 5:
-                raise ValueError(
+                logger.warning(
                     f"fetch_trial_data did not write out a file with one of the following names: {OUTPUT_FILES}"
                 )
+                self.fetch_none_ok = True
+                trial.mark_failed(unsafe=True)
+                return None
         if data is not None:
             trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus" or k.lower() == "trial_status"]
             for key in trial_status_keys:
@@ -310,6 +316,17 @@ class ScriptWrapper(BaseWrapper):
                 # TODO BaseTrial doesn't have arm property, just arms.
                 # With issue #22, fix this to fully support Batched Trials
                 trial_dir = save_trial_data(trial, experiment_dir=self.experiment_dir, **kwargs)
+
+                parameters = object_to_json(trial.arm.parameters)
+                parameters.pop("__type", None)
+                logger.info(run_cmd)
+                if self.config_path or self.config.config_path:
+                    kw = {**asdict(JinjaTemplateVars(self.config_path or self.config.config_path)), **parameters}
+                else:
+                    kw = parameters
+                logger.info(kw)
+                run_cmd = render_template(run_cmd, **kw)
+                logger.info(run_cmd)
 
                 args = split_shell_command(f"{run_cmd} {trial_dir}")
                 p = subprocess.Popen(

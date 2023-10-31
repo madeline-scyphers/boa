@@ -79,7 +79,7 @@ class Scheduler(AxScheduler):
             trials_ls = trials_ls[0]
         update = (
             f"Trials so far: {len(self.experiment.trials)}"
-            f"\nRunning trials: {trials_ls}"
+            f"\nCurrently running trials: {trials_ls}"
             f"\nWill Produce next trials from generation step: {self.generation_strategy.current_step.model_name}"
             f"{best_trial_str}"
         )

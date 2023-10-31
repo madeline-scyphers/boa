@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Operating System :: OS Independent",
 ]
 dynamic = ["version", "dependencies", "optional-dependencies"]
@@ -35,7 +36,7 @@ write_to = "boa/_version.py"
 [tool.isort]
 profile = "black"
 multi_line_output = 3
-py_version = 39
+py_version = 311
 skip_glob = ["*env*/*"]
 
 [tool.black]
@@ -86,4 +87,3 @@ addopts = "--doctest-modules --doctest-glob='*.rst'"
 doctest_optionflags = "NORMALIZE_WHITESPACE"
 norecursedirs = "_build"
 filterwarnings = ["ignore::DeprecationWarning:invoke"]
-
