@@ -324,6 +324,7 @@ class ScriptWrapper(BaseWrapper):
                     kw = {**asdict(JinjaTemplateVars(self.config_path or self.config.config_path)), **parameters}
                 else:
                     kw = parameters
+                kw["trial_dir"] = trial_dir
                 logger.info(kw)
                 run_cmd = render_template(run_cmd, **kw)
                 logger.info(run_cmd)
