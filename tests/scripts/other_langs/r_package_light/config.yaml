@@ -38,7 +38,7 @@ parameters:
         'value_type': 'float'
 
 script_options:
-    run_model: Rscript run_model.R {{ x0 }} {{ x1 }}
+    run_model: Rscript run_model.R {{ trial_dir }} {{ x0 }} {{ x1 }}
 
 model_options:
     input_size: 15
