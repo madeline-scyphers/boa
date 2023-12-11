@@ -34,10 +34,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu
-            label: linux-64-0.3.6
-            prefix: /usr/share/miniconda3/envs/boa
-            ax_version: 0.3.6
+#          - os: ubuntu  # not available on conda yet
+#            label: linux-64-0.3.6
+#            prefix: /usr/share/miniconda3/envs/boa
+#            ax_version: 0.3.6
           - os: ubuntu
             label: linux-64-0.3.5
             prefix: /usr/share/miniconda3/envs/boa
