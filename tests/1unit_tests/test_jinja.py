@@ -1,5 +1,7 @@
 from boa import BOAConfig, load_json_from_str, load_jsonlike, load_yaml_from_str
-from tests.conftest import TEST_CONFIG_DIR
+from boa.definitions import ROOT, PathLike
+
+TEST_CONFIG_DIR = ROOT / "tests" / "test_configs"
 
 
 def test_config_with_jinja2():
