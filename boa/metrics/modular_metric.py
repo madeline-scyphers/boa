@@ -151,6 +151,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs),
         )
         self.properties = properties or {}
+        self._trial_data_cache = {}
 
     @classmethod
     def is_available_while_running(cls) -> bool:
@@ -161,21 +162,19 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         return self._weight
 
     def fetch_trial_data(self, trial: Trial, **kwargs):
-        try:
-            wrapper_kwargs = (
-                self.wrapper._fetch_trial_data(
-                    parameters=trial.arm.parameters,
-                    param_names=self.param_names,
-                    trial=trial,
-                    metric_name=self.name,
-                    **kwargs,
-                )
-                if self.wrapper
-                else {}
+        if trial.index in self._trial_data_cache:
+            return Ok(Data(df=pd.DataFrame(self._trial_data_cache[trial.index])))
+        wrapper_kwargs = (
+            self.wrapper._fetch_trial_data(
+                parameters=trial.arm.parameters,
+                param_names=self.param_names,
+                trial=trial,
+                metric_name=self.name,
+                **kwargs,
             )
-        except IOError:  # ScriptWrapper failed to fetch data
-            trial.mark_failed(unsafe=True)
-            return Ok(Data(df=pd.DataFrame(columns=list(Data.REQUIRED_COLUMNS))))
+            if self.wrapper
+            else {}
+        )
         wrapper_kwargs = wrapper_kwargs if wrapper_kwargs is not None else {}
         if wrapper_kwargs is not None and not isinstance(wrapper_kwargs, dict):
             wrapper_kwargs = {"wrapper_args": wrapper_kwargs}
@@ -196,6 +195,10 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
                 trial_df = trial_data.unwrap().df
                 trial_df["sem"] = safe_kwargs["sem"]
                 trial_data = Ok(Data(df=trial_df))
+            if not isinstance(trial_data, Err):
+                self._trial_data_cache[trial.index] = trial_data.unwrap().df.to_dict(
+                    orient="list"
+                )  # the format ax uses to put them in
         finally:
             # We remove the extra parameters from the arms for json serialization
             [arm._parameters.pop("kwargs") for arm in trial.arms_by_name.values()]

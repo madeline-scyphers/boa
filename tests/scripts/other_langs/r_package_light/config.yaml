@@ -1,7 +1,8 @@
 objective: # can also use the key moo
     metrics:
         - name: metric
-          metric: mean
+    outcome_constraints:
+        - l2norm <= 1.25
 generation_strategy:
     steps:
         - model: SOBOL
