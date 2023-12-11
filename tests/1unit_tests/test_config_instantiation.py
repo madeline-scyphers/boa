@@ -1,5 +1,7 @@
 from boa import BOAConfig
-from tests.conftest import TEST_CONFIG_DIR
+from boa.definitions import ROOT
+
+TEST_CONFIG_DIR = ROOT / "tests" / "test_configs"
 
 
 def test_config_instantiation():

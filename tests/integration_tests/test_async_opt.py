@@ -9,8 +9,9 @@ from pandas.testing import assert_frame_equal
 
 from boa import split_shell_command
 from boa.async_opt import main
-from boa.definitions import PathLike
-from tests.conftest import TEST_CONFIG_DIR
+from boa.definitions import ROOT, PathLike
+
+TEST_CONFIG_DIR = ROOT / "tests" / "test_configs"
 
 rng = np.random.default_rng()
 

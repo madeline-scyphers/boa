@@ -37,9 +37,8 @@ if (!is.na(res)) {
 
 
     out_data <- list(
-        metric=list(
-            a=res
-        )
+        metric=res,
+        l2norm=sum(X**2)**(1/2)
     )
 
     json_data <- toJSON(out_data, pretty = TRUE)
