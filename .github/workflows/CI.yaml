@@ -92,7 +92,7 @@ jobs:
 
       - name: Update base environment
         if: steps.cache.outputs.cache-hit != 'true'
-        run: mamba env update -n boa -f environment_dev.yml --prune
+        run: mamba env update -n boa -f environment_dev.yml
 
       - name: update ax versions
         if: ${{ matrix.ax_version }} # only update when ax_version is set
