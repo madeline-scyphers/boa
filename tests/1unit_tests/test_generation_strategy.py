@@ -28,4 +28,7 @@ def test_auto_gen_use_saasbo(saasbo_config, tmp_path):
         config=controller.config, runner=WrappedJobRunner(wrapper=controller.wrapper), wrapper=controller.wrapper
     )
     gs = get_generation_strategy(config=controller.config, experiment=exp)
-    assert "FullyBayesian" in gs.name
+    if "SAASBO" in Models.__members__:  # newer versions of Ax use SAASBO as model name
+        assert "SAASBO" in gs.name
+    else:
+        assert "FullyBayesian" in gs.name

@@ -249,7 +249,9 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         )
 
     @classmethod
-    def deserialize_init_args(cls, args: dict[str, Any]) -> dict[str, Any]:
+    def deserialize_init_args(
+        cls, args: dict[str, Any], decoder_registry=None, class_decoder_registry=None
+    ) -> dict[str, Any]:
         """Given a dictionary, deserialize the properties needed to initialize the
         object. Used for storage.
         """
