@@ -1,4 +1,4 @@
-name: boa-test
+name: boa
 channels:
 - pytorch
 - conda-forge
