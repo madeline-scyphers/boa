@@ -175,6 +175,20 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             if self.wrapper
             else {}
         )
+        if isinstance(wrapper_kwargs, dict):
+            nan_checks = list(wrapper_kwargs.values())
+        elif isinstance(wrapper_kwargs, list):
+            nan_checks = wrapper_kwargs
+        else:
+            nan_checks = [wrapper_kwargs]
+        for elem in nan_checks:
+            if (
+                (isinstance(elem, str) and ("nan" == elem.lower() or "na" == elem.lower()))
+                or (isinstance(elem, float) and pd.isna(elem))
+                or (elem is None)
+            ):
+                return Err(f"NaNs in Results for Trial {trial.index}, failing trial")
+
         wrapper_kwargs = wrapper_kwargs if wrapper_kwargs is not None else {}
         if wrapper_kwargs is not None and not isinstance(wrapper_kwargs, dict):
             wrapper_kwargs = {"wrapper_args": wrapper_kwargs}

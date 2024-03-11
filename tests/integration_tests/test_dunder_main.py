@@ -130,3 +130,9 @@ def test_non_zero_exit_code_fails_trial():
     with pytest.raises(FailureRateExceededError):
         config_path = ROOT / "tests" / f"scripts/other_langs/r_failure_exit_code/config.yaml"
         dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+
+
+def test_return_nan_fails_trial():
+    with pytest.raises(FailureRateExceededError):
+        config_path = ROOT / "tests" / f"scripts/other_langs/r_failure_nan/config.yaml"
+        dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)

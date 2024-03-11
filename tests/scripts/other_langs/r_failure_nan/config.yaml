@@ -1,0 +1,16 @@
+objective:
+    metrics:
+        - name: metric
+scheduler:
+    n_trials: 10
+
+parameters:
+    x0:
+        'bounds': [ 0, 1 ]
+        'type': 'range'
+        'value_type': 'float'
+
+
+script_options:
+    run_model: Rscript run_model.R
+    exp_name: "r_error_nan"

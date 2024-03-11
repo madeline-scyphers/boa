@@ -156,20 +156,19 @@ def run(config_path, scheduler_path, num_trials, experiment_dir=None):
     if scheduler.experiment.fetch_data().df.empty:
         trials = scheduler.experiment.trials
         metrics = scheduler.experiment.metrics
-        for metric in metrics.keys():
-            scheduler.experiment.attach_data(
-                Data(
-                    df=pd.DataFrame.from_records(
-                        dict(
-                            trial_index=list(trials.keys()),
-                            arm_name=[f"{i}_0" for i in trials.keys()],
-                            metric_name=metric,
-                            mean=None,
-                            sem=0.0,
-                        )
+        scheduler.experiment.attach_data(
+            Data(
+                df=pd.DataFrame(
+                    dict(
+                        trial_index=[i for i in trials.keys() for m in metrics.keys()],
+                        arm_name=[f"{i}_0" for i in trials.keys() for m in metrics.keys()],
+                        metric_name=[m for i in trials.keys() for m in metrics.keys()],
+                        mean=None,
+                        sem=0.0,
                     )
                 )
             )
+        )
 
     scheduler.save_data(metrics_to_end=True, ax_kwargs=dict(always_include_field_columns=True))
     return scheduler
