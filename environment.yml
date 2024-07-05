@@ -1,6 +1,5 @@
 name: boa
 channels:
-- pytorch
 - conda-forge
 dependencies:
 - python=3.11
@@ -8,7 +7,7 @@ dependencies:
   # so if on either of those, it should install pytorch>2 by default
   # but if not and something doesn't work, upgrade pytorch, torchvision,
   # and torchaudio
-- pytorch::pytorch
+- pytorch<3
 - numpy<2
 - pandas<3
 - scipy<2
