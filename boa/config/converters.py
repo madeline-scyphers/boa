@@ -14,6 +14,9 @@ if TYPE_CHECKING:
     from .config import BOAMetric
 
 
+STOPPING_STRATEGY_MAPPING = {"improvement": "ImprovementGlobalStoppingStrategy"}
+
+
 def _convert_noton_type(converter, type_, default_if_none=None) -> Any:
     def type_converter(val):
         if default_if_none is not None and val is None:
@@ -66,6 +69,8 @@ def _load_stopping_strategy(d: Optional[dict], module: ModuleType):
     if "type" not in d:
         raise ValueError("Type missing from stopping strategy key")  # can't work with it if type not set
     type_ = d.pop("type")
+    if type_ in STOPPING_STRATEGY_MAPPING:
+        type_ = STOPPING_STRATEGY_MAPPING[type_]
     for key, value in d.items():
         if isinstance(value, dict):
             d[key] = _load_stopping_strategy(d=value, module=module)

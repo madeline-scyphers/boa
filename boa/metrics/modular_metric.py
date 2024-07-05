@@ -13,6 +13,7 @@ from typing import Any, Callable, Optional
 
 import pandas as pd
 from ax import Data, Metric, Trial
+from ax.core.metric import MetricFetchE
 from ax.core.types import TParameterization
 from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.utils.common.result import Err, Ok
@@ -107,6 +108,9 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     properties
         Arbitrary dictionary of properties to store. Properties need to be json
         serializable
+    check_for_nans
+        If True, check for NaNs in the results of the metric and fail the trial if found.
+        If nans are not dealt with in some way, they can cause the optimization to fail.
     kwargs
     """
 
@@ -122,6 +126,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         wrapper: Optional[BaseWrapper] = None,
         properties: Optional[dict[str]] = None,
         weight: Optional[float] = None,
+        check_for_nans: Optional[bool] = True,
         **kwargs,
     ):
         """"""  # remove init docstring from parent class to stop it showing in sphinx
@@ -152,6 +157,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         )
         self.properties = properties or {}
         self._trial_data_cache = {}
+        self.check_for_nans = check_for_nans
 
     @classmethod
     def is_available_while_running(cls) -> bool:
@@ -175,19 +181,21 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             if self.wrapper
             else {}
         )
-        if isinstance(wrapper_kwargs, dict):
-            nan_checks = list(wrapper_kwargs.values())
-        elif isinstance(wrapper_kwargs, list):
-            nan_checks = wrapper_kwargs
-        else:
-            nan_checks = [wrapper_kwargs]
-        for elem in nan_checks:
-            if (
-                (isinstance(elem, str) and ("nan" == elem.lower() or "na" == elem.lower()))
-                or (isinstance(elem, float) and pd.isna(elem))
-                or (elem is None)
-            ):
-                return Err(f"NaNs in Results for Trial {trial.index}, failing trial")
+        if self.check_for_nans:
+            if isinstance(wrapper_kwargs, dict):
+                nan_checks = list(wrapper_kwargs.values())
+            elif isinstance(wrapper_kwargs, list):
+                nan_checks = wrapper_kwargs
+            else:
+                nan_checks = [wrapper_kwargs]
+            for elem in nan_checks:
+                if (
+                    (isinstance(elem, str) and ("nan" == elem.lower() or "na" == elem.lower()))
+                    or (isinstance(elem, float) and pd.isna(elem))
+                    or (elem is None)
+                ):
+                    m = f"NaNs in Results for Trial {trial.index}, failing trial"
+                    return Err(MetricFetchE(message=m, exception=ValueError(m)))
 
         wrapper_kwargs = wrapper_kwargs if wrapper_kwargs is not None else {}
         if wrapper_kwargs is not None and not isinstance(wrapper_kwargs, dict):

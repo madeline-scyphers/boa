@@ -96,6 +96,13 @@ def test_cli_interface_with_failing_test_that_sends_back_failed_trial_status():
         dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
 
 
+@pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
+def test_cli_interface_with_failing_test_that_sends_back_failed_trial_status():
+    with pytest.raises(FailureRateExceededError):
+        config_path = ROOT / "tests" / f"scripts/other_langs/r_pass_back_fail_trial_status/config.yaml"
+        dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+
+
 def test_wrapper_with_custom_load_config():
     # This should fail with a failing config
     config_path = ROOT / "tests" / f"scripts/other_langs/r_package_streamlined/config_fail.yaml"
