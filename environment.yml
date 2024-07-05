@@ -7,6 +7,7 @@ dependencies:
   # so if on either of those, it should install pytorch>2 by default
   # but if not and something doesn't work, upgrade pytorch, torchvision,
   # and torchaudio
+  # Windows will need to install pytorch from the pytorch channel first
 - pytorch<3
 - numpy<2
 - pandas<3
@@ -18,6 +19,6 @@ dependencies:
 - notebook>=5.3
 - ipywidgets>=7.5
 - ax-platform  >=0.3.1,<=0.3.5
-- ruamel.yaml<1
+- ruamel.yaml <1
 - attrs<24
 - jinja2<4
