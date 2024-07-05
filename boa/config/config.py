@@ -289,7 +289,7 @@ class BOAObjective(_Utils):
 
     @property
     def metric_names(self):
-        return (metric.name for metric in self.metrics)
+        return [metric.name for metric in self.metrics]
 
 
 @define

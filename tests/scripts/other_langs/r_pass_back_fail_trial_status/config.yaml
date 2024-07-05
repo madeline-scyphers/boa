@@ -1,0 +1,46 @@
+objective: # can also use the key moo
+    metrics:
+        - name: metric
+    outcome_constraints:
+        - l2norm <= 1.25
+generation_strategy:
+    steps:
+        - model: SOBOL
+          num_trials: 5
+        - model: GPEI
+          num_trials: -1
+scheduler:
+    total_trials: 15
+
+parameters:
+    x0:
+        'bounds': [ 0, 1 ]
+        'type': 'range'
+        'value_type': 'float'
+    x1:
+        'bounds': [ 0, 1]
+        'type': 'range'
+        'value_type': 'float'
+    x2:
+        'bounds': [ 0, 1 ]
+        'type': 'range'
+        'value_type': 'float'
+    x3:
+        'bounds': [ 0, 1]
+        'type': 'range'
+        'value_type': 'float'
+    x4:
+        'bounds': [ 0, 1 ]
+        'type': 'range'
+        'value_type': 'float'
+    x5:
+        'bounds': [ 0, 1]
+        'type': 'range'
+        'value_type': 'float'
+
+script_options:
+    run_model: Rscript run_model.R {{ trial_dir }} {{ x0 }} {{ x1 }}
+
+model_options:
+    input_size: 15
+    model_dir: .

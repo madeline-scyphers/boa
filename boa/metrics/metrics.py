@@ -301,7 +301,7 @@ def get_metric_from_config(config: BOAMetric, instantiate=True, **kwargs) -> Mod
     if config.metric_type == MetricType.METRIC or config.metric_type == MetricType.BOA_METRIC:
         metric = get_metric_by_class_name(instantiate=instantiate, **kw)
     elif config.metric_type == MetricType.SKLEARN_METRIC:
-        kwargs["sklearn_"] = True
+        kw["sklearn_"] = True
         metric = get_metric_by_class_name(instantiate=instantiate, **kw)
     elif config.metric_type == MetricType.SYNTHETIC_METRIC:
         metric = setup_synthetic_metric(instantiate=instantiate, **kw)

@@ -130,7 +130,7 @@ def run(config_path, scheduler_path, num_trials, experiment_dir=None):
             scheduler.options = dataclasses.replace(scheduler.options, total_trials=num_trials)
     else:
         controller = Controller(config_path=config_path, wrapper=SyntheticWrapper(config=config))
-        controller.initialize_scheduler()
+        controller.initialize_scheduler(get_exp_kw={"check_for_nans": False})
         scheduler = controller.scheduler
 
     if not scheduler.opt_csv.exists() and scheduler.experiment.trials:
@@ -140,7 +140,7 @@ def run(config_path, scheduler_path, num_trials, experiment_dir=None):
         )
 
     if scheduler.opt_csv.exists():
-        exp_attach_data_from_opt_csv(list(config.objective.metric_names), scheduler)
+        exp_attach_data_from_opt_csv(config.objective.metric_names, scheduler)
 
     generator_runs = scheduler.generation_strategy._gen_multiple(
         experiment=scheduler.experiment, num_generator_runs=scheduler.wrapper.config.trials
@@ -156,20 +156,19 @@ def run(config_path, scheduler_path, num_trials, experiment_dir=None):
     if scheduler.experiment.fetch_data().df.empty:
         trials = scheduler.experiment.trials
         metrics = scheduler.experiment.metrics
-        for metric in metrics.keys():
-            scheduler.experiment.attach_data(
-                Data(
-                    df=pd.DataFrame.from_records(
-                        dict(
-                            trial_index=list(trials.keys()),
-                            arm_name=[f"{i}_0" for i in trials.keys()],
-                            metric_name=metric,
-                            mean=None,
-                            sem=0.0,
-                        )
+        scheduler.experiment.attach_data(
+            Data(
+                df=pd.DataFrame(
+                    dict(
+                        trial_index=[i for i in trials.keys() for m in metrics.keys()],
+                        arm_name=[f"{i}_0" for i in trials.keys() for m in metrics.keys()],
+                        metric_name=[m for i in trials.keys() for m in metrics.keys()],
+                        mean=None,
+                        sem=0.0,
                     )
                 )
             )
+        )
 
     scheduler.save_data(metrics_to_end=True, ax_kwargs=dict(always_include_field_columns=True))
     return scheduler
@@ -187,7 +186,7 @@ def exp_attach_data_from_opt_csv(metric_names, scheduler):
     new_data = df.loc[df["trial_index"].isin(nan_trials)]
     if new_data.empty:
         return
-    metric_data = new_data[metric_names].to_dict()
+    metric_data = new_data[list(metric_names)].to_dict()
     if check_min_package_version("ax-platform", "0.3.3"):
         kw = dict(combine_with_last_data=True)
     else:
