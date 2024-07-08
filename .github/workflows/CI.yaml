@@ -34,14 +34,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu
-            label: linux-64-0.4.0
-            prefix: /usr/share/miniconda3/envs/boa
-            ax_version: 0.4.0
-          - os: ubuntu
-            label: linux-64-0.3.7
-            prefix: /usr/share/miniconda3/envs/boa
-            ax_version: 0.3.7
+#          # something in 0.3.7 was introduced that caused both run_n_trials and run_all_trials to not run
+#          # the expected number of trials. Removing support for 0.3.7 and above until we can figure out what's going on
+#          - os: ubuntu
+#            label: linux-64-0.4.0
+#            prefix: /usr/share/miniconda3/envs/boa
+#            ax_version: 0.4.0
+#          - os: ubuntu
+#            label: linux-64-0.3.7
+#            prefix: /usr/share/miniconda3/envs/boa
+#            ax_version: 0.3.7
           - os: ubuntu
             label: linux-64-0.3.6
             prefix: /usr/share/miniconda3/envs/boa
