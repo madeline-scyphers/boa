@@ -18,7 +18,7 @@ dependencies:
 - plotly>=5.10.0
 - notebook>=5.3
 - ipywidgets>=7.5
-- ax-platform==0.3.7
+- ax-platform==0.4.0
 - ruamel.yaml<1
 - domdfcoding::attr_utils
 - attrs<24
