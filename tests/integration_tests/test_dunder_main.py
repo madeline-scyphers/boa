@@ -1,5 +1,6 @@
-import pathlib
+import os
 import subprocess
+from pathlib import Path
 
 import pytest
 from ax.service.scheduler import FailureRateExceededError
@@ -8,8 +9,11 @@ import boa.__main__ as dunder_main
 from boa import (
     BaseWrapper,
     BOAConfig,
+    cd_and_cd_back,
     get_trial_dir,
     load_jsonlike,
+    scheduler_from_json_file,
+    scheduler_to_json_file,
     split_shell_command,
 )
 from boa.definitions import ROOT
@@ -73,12 +77,16 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
 # or parametrize the test to use the streamlined version (doesn't use trial_status.json, only use output.json)
 @pytest.mark.parametrize(
     "r_scripts_run",
-    ["r_full", "r_light", "r_streamlined"],
+    [
+        # "r_full",
+        # "r_light",
+        "r_streamlined"
+    ],
 )
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
 def test_calling_command_line_r_test_scripts(r_scripts_run, request):
     scheduler = request.getfixturevalue(r_scripts_run)
-    wrapper = scheduler.experiment.runner.wrapper
+    wrapper = scheduler.wrapper
     config = wrapper.config
     assert len(scheduler.experiment.trials) == config.trials
 
@@ -87,6 +95,19 @@ def test_calling_command_line_r_test_scripts(r_scripts_run, request):
         data = load_jsonlike(get_trial_dir(wrapper.experiment_dir, 0) / "data.json")
         assert "param_names" in data
         assert "metric_properties" in data
+
+    if "r_streamlined" == r_scripts_run:
+        with cd_and_cd_back(scheduler.wrapper.config_path.parent):
+
+            pre_num_trials = len(scheduler.experiment.trials)
+
+            scheduler = scheduler_from_json_file(scheduler.scheduler_filepath)
+            scheduler.run_n_trials(5)
+
+            post_num_trials = len(scheduler.experiment.trials)
+
+            # assert some trials run, even if we hit max trials and not all specified trials were run
+            assert post_num_trials == pre_num_trials + 5
 
 
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")

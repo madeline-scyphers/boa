@@ -48,11 +48,12 @@ def set_handlers(logger, level=DEFAULT_LOG_LEVEL, filename=None):
 
 
 def get_formatter():
-    fmt = "[%(levelname)s %(asctime)s %(processName)s %(threadName)s] %(name)s: %(message)s"
+    fmt = "[%(levelname)s %(asctime)s %(processName)s %(threadName)s {%(filename)s:%(lineno)d}] %(name)s: %(message)s"
     formatter = logging.Formatter(fmt=fmt)
     return formatter
 
 
+# PosixPath('/private/var/folders/10/qs3h5zj10bn52ys456cjq0z40000gn/T/tmpqt74j2js_20240709T180234/run_model.R')
 def build_stream_handler(level: int = DEFAULT_LOG_LEVEL) -> logging.StreamHandler:
     """Build the default stream handler used for most BOA logging. Sets
     default level to INFO, instead of WARNING.

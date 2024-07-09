@@ -184,7 +184,7 @@ def test_can_pass_custom_wrapper_path_when_loading_scheduler(branin_main_run, tm
     post_num_trials = len(scheduler.experiment.trials)
 
     # assert some trials run, even if we hit max trials and not all specified trials were run
-    assert post_num_trials > pre_num_trials
+    assert post_num_trials == pre_num_trials + 5
 
 
 def test_can_pass_custom_wrapper_path_when_loading_scheduler_from_cli(stand_alone_opt_package_run, tmp_path_factory):
@@ -210,7 +210,7 @@ def test_can_pass_custom_wrapper_path_when_loading_scheduler_from_cli(stand_alon
     post_num_trials = len(scheduler.experiment.trials)
 
     # assert some trials run, even if we hit max trials and not all specified trials were run
-    assert post_num_trials > pre_num_trials
+    assert post_num_trials == pre_num_trials + 5
 
 
 def test_boa_version_in_scheduler(stand_alone_opt_package_run, tmp_path_factory):
