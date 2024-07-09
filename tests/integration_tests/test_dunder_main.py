@@ -128,7 +128,7 @@ def test_wrapper_with_custom_load_config():
     # This should fail with a failing config
     config_path = ROOT / "tests" / f"scripts/other_langs/r_package_streamlined/config_fail.yaml"
     # But we override the failing config in our wrapper with a working one in a custom load_config
-    wrapper_path = pathlib.Path(__file__)
+    wrapper_path = Path(__file__)
     dunder_main.main(
         split_shell_command(
             f"--config-path {config_path}"
