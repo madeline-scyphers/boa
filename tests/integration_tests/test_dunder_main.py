@@ -77,11 +77,7 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
 # or parametrize the test to use the streamlined version (doesn't use trial_status.json, only use output.json)
 @pytest.mark.parametrize(
     "r_scripts_run",
-    [
-        # "r_full",
-        # "r_light",
-        "r_streamlined"
-    ],
+    ["r_full", "r_light", "r_streamlined"],
 )
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
 def test_calling_command_line_r_test_scripts(r_scripts_run, request):
