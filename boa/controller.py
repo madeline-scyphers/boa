@@ -114,14 +114,16 @@ class Controller:
         get_logger("ax", filename=str(Path(self.wrapper.experiment_dir) / "optimization.log"))
         return self.logger
 
-    def initialize_scheduler(self, **kwargs) -> tuple[Scheduler, BaseWrapper]:
+    def initialize_scheduler(self, get_exp_kw=None, get_scheduler_kw=None) -> tuple[Scheduler, BaseWrapper]:
         """
         Sets experiment and scheduler
 
         Parameters
         ----------
-        kwargs
-            kwargs to pass to get_experiment and get_scheduler
+        get_exp_kw
+            keyword arguments for :meth:`.get_experiment`
+        get_scheduler_kw
+            keyword arguments for :meth:`.get_scheduler`
 
         Returns
         -------
@@ -129,9 +131,13 @@ class Controller:
         and the second element being your wrapper (both initialized
         and ready to go)
         """
+        get_exp_kw = get_exp_kw or {}
+        get_scheduler_kw = get_scheduler_kw or {}
 
-        self.experiment = get_experiment(self.config, WrappedJobRunner(wrapper=self.wrapper), self.wrapper, **kwargs)
-        self.scheduler = get_scheduler(self.experiment, config=self.config, **kwargs)
+        self.experiment = get_experiment(
+            self.config, WrappedJobRunner(wrapper=self.wrapper), self.wrapper, **get_exp_kw
+        )
+        self.scheduler = get_scheduler(self.experiment, config=self.config, **get_scheduler_kw)
         return self.scheduler, self.wrapper
 
     def run(self, scheduler: Scheduler = None, wrapper: BaseWrapper = None) -> Scheduler:

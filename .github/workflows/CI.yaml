@@ -34,6 +34,24 @@ jobs:
       fail-fast: false
       matrix:
         include:
+#          # something in 0.3.7 was introduced that caused both run_n_trials and run_all_trials to not run
+#          # the expected number of trials. Removing support for 0.3.7 and above until we can figure out what's going on
+#          - os: ubuntu
+#            label: linux-64-0.4.0
+#            prefix: /usr/share/miniconda3/envs/boa
+#            ax_version: 0.4.0
+#          - os: ubuntu
+#            label: linux-64-0.3.7
+#            prefix: /usr/share/miniconda3/envs/boa
+#            ax_version: 0.3.7
+          - os: ubuntu
+            label: linux-64-0.3.6
+            prefix: /usr/share/miniconda3/envs/boa
+            ax_version: 0.3.6
+          - os: ubuntu
+            label: linux-64-0.3.5
+            prefix: /usr/share/miniconda3/envs/boa
+            ax_version: 0.3.5
           - os: ubuntu
             label: linux-64-0.3.4
             prefix: /usr/share/miniconda3/envs/boa
@@ -69,7 +87,7 @@ jobs:
         with:
             miniforge-variant: Mambaforge
             miniforge-version: latest
-            python-version: 3.9
+            python-version: '3.11'
             activate-environment: boa
             use-mamba: true
 
@@ -84,7 +102,7 @@ jobs:
 
       - name: Update base environment
         if: steps.cache.outputs.cache-hit != 'true'
-        run: mamba env update -n boa -f environment_dev.yml --prune
+        run: mamba env update -n boa -f environment_dev.yml
 
       - name: update ax versions
         if: ${{ matrix.ax_version }} # only update when ax_version is set

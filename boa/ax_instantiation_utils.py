@@ -87,13 +87,10 @@ def get_experiment(config: BOAConfig, runner: Runner, wrapper: BaseWrapper = Non
     search_space = instantiate_search_space_from_json(config.parameters, config.parameter_constraints)
 
     info_only_metrics = BoaInstantiationBase.get_metrics_from_obj_config(
-        config.objective, wrapper=wrapper, info_only=True
+        config.objective, wrapper=wrapper, info_only=True, **kwargs
     )
 
-    optimization_config = BoaInstantiationBase.make_optimization_config(
-        config.objective,
-        wrapper=wrapper,
-    )
+    optimization_config = BoaInstantiationBase.make_optimization_config(config.objective, wrapper=wrapper, **kwargs)
 
     exp = Experiment(
         search_space=search_space,

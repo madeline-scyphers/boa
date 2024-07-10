@@ -62,5 +62,7 @@ generation_strategy:
 scheduler:
     total_trials: 10
     global_stopping_strategy:
-        type: ImprovementGlobalStoppingStrategy
+        type: improvement
         min_trials: 7
+        window_size: 3
+        improvement_bar: 0.01

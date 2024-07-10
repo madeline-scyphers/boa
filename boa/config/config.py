@@ -289,7 +289,7 @@ class BOAObjective(_Utils):
 
     @property
     def metric_names(self):
-        return (metric.name for metric in self.metrics)
+        return [metric.name for metric in self.metrics]
 
 
 @define
@@ -910,6 +910,8 @@ def update_dict(original: dict, param: dict):
 
 
 if __name__ == "__main__":  # pragma: no cover
-    from tests.conftest import TEST_CONFIG_DIR
+    from boa.definitions import ROOT
+
+    TEST_CONFIG_DIR = ROOT / "tests" / "test_configs"
 
     c = BOAConfig.from_jsonlike(pathlib.Path(TEST_CONFIG_DIR / "test_config_generic.yaml"))

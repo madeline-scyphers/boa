@@ -1,5 +1,6 @@
-import pathlib
+import os
 import subprocess
+from pathlib import Path
 
 import pytest
 from ax.service.scheduler import FailureRateExceededError
@@ -8,8 +9,11 @@ import boa.__main__ as dunder_main
 from boa import (
     BaseWrapper,
     BOAConfig,
+    cd_and_cd_back,
     get_trial_dir,
     load_jsonlike,
+    scheduler_from_json_file,
+    scheduler_to_json_file,
     split_shell_command,
 )
 from boa.definitions import ROOT
@@ -78,7 +82,7 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
 def test_calling_command_line_r_test_scripts(r_scripts_run, request):
     scheduler = request.getfixturevalue(r_scripts_run)
-    wrapper = scheduler.experiment.runner.wrapper
+    wrapper = scheduler.wrapper
     config = wrapper.config
     assert len(scheduler.experiment.trials) == config.trials
 
@@ -88,6 +92,19 @@ def test_calling_command_line_r_test_scripts(r_scripts_run, request):
         assert "param_names" in data
         assert "metric_properties" in data
 
+    if "r_streamlined" == r_scripts_run:
+        with cd_and_cd_back(scheduler.wrapper.config_path.parent):
+
+            pre_num_trials = len(scheduler.experiment.trials)
+
+            scheduler = scheduler_from_json_file(scheduler.scheduler_filepath)
+            scheduler.run_n_trials(5)
+
+            post_num_trials = len(scheduler.experiment.trials)
+
+            # assert some trials run, even if we hit max trials and not all specified trials were run
+            assert post_num_trials == pre_num_trials + 5
+
 
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
 def test_cli_interface_with_failing_test_that_sends_back_failed_trial_status():
@@ -96,11 +113,18 @@ def test_cli_interface_with_failing_test_that_sends_back_failed_trial_status():
         dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
 
 
+@pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
+def test_cli_interface_with_failing_test_that_sends_back_failed_trial_status():
+    with pytest.raises(FailureRateExceededError):
+        config_path = ROOT / "tests" / f"scripts/other_langs/r_pass_back_fail_trial_status/config.yaml"
+        dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+
+
 def test_wrapper_with_custom_load_config():
     # This should fail with a failing config
     config_path = ROOT / "tests" / f"scripts/other_langs/r_package_streamlined/config_fail.yaml"
     # But we override the failing config in our wrapper with a working one in a custom load_config
-    wrapper_path = pathlib.Path(__file__)
+    wrapper_path = Path(__file__)
     dunder_main.main(
         split_shell_command(
             f"--config-path {config_path}"
@@ -129,4 +153,10 @@ def test_parallelism(r_light, caplog):
 def test_non_zero_exit_code_fails_trial():
     with pytest.raises(FailureRateExceededError):
         config_path = ROOT / "tests" / f"scripts/other_langs/r_failure_exit_code/config.yaml"
+        dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+
+
+def test_return_nan_fails_trial():
+    with pytest.raises(FailureRateExceededError):
+        config_path = ROOT / "tests" / f"scripts/other_langs/r_failure_nan/config.yaml"
         dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)

@@ -10,7 +10,7 @@ DEV_ENV = Path(__file__).resolve().parent / "environment_dev.yml"
 # ex) PyTorch is pytorch on conda, but listed as torch on PyPI
 # also if you are installing a pkg from a git rep, you should remap it
 # to "git+https/etc": "pkg_name @ git+https/etc"
-pkg_renames = {"pytorch": "torch"}
+pkg_renames = {"pytorch<3": "torch<3"}
 
 
 # list of any packages in your environment files you don't want to include

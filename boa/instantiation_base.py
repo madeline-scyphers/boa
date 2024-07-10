@@ -5,8 +5,9 @@ from ax.core.objective import ScalarizedObjective
 from ax.service.utils.instantiation import InstantiationBase
 
 from boa.config import BOAMetric, BOAObjective
-from boa.metrics.metrics import get_metric_from_config
+from boa.metrics.metrics import PassThroughMetric, get_metric_from_config
 from boa.metrics.modular_metric import ModularMetric
+from boa.wrappers.base_wrapper import BaseWrapper
 
 
 class BoaInstantiationBase(InstantiationBase):
@@ -14,13 +15,21 @@ class BoaInstantiationBase(InstantiationBase):
     def make_optimization_config(
         cls,
         objective: BOAObjective,
+        wrapper: BaseWrapper = None,
         status_quo_defined: bool = False,
         **kwargs,
     ):
+        outcome_constraints = cls.make_outcome_constraints(objective.outcome_constraints, status_quo_defined)
+        for constraint in outcome_constraints:
+            if not isinstance(constraint.metric, ModularMetric) or not getattr(constraint.metric, "wrapper", None):
+                constraint.metric = PassThroughMetric(
+                    name=constraint.metric.name, lower_is_better=constraint.metric.lower_is_better, wrapper=wrapper
+                )
+
         return cls.optimization_config_from_objectives(
-            cls.make_objectives(objective, **kwargs),
+            cls.make_objectives(objective, wrapper=wrapper, **kwargs),
             cls.make_objective_thresholds(objective.objective_thresholds, status_quo_defined),
-            cls.make_outcome_constraints(objective.outcome_constraints, status_quo_defined),
+            outcome_constraints,
         )
 
     @classmethod

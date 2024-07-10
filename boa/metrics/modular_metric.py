@@ -13,6 +13,7 @@ from typing import Any, Callable, Optional
 
 import pandas as pd
 from ax import Data, Metric, Trial
+from ax.core.metric import MetricFetchE
 from ax.core.types import TParameterization
 from ax.metrics.noisy_function import NoisyFunctionMetric
 from ax.utils.common.result import Err, Ok
@@ -107,6 +108,9 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     properties
         Arbitrary dictionary of properties to store. Properties need to be json
         serializable
+    check_for_nans
+        If True, check for NaNs in the results of the metric and fail the trial if found.
+        If nans are not dealt with in some way, they can cause the optimization to fail.
     kwargs
     """
 
@@ -122,6 +126,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         wrapper: Optional[BaseWrapper] = None,
         properties: Optional[dict[str]] = None,
         weight: Optional[float] = None,
+        check_for_nans: Optional[bool] = True,
         **kwargs,
     ):
         """"""  # remove init docstring from parent class to stop it showing in sphinx
@@ -151,6 +156,8 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs),
         )
         self.properties = properties or {}
+        self._trial_data_cache = {}
+        self.check_for_nans = check_for_nans
 
     @classmethod
     def is_available_while_running(cls) -> bool:
@@ -161,21 +168,35 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         return self._weight
 
     def fetch_trial_data(self, trial: Trial, **kwargs):
-        try:
-            wrapper_kwargs = (
-                self.wrapper._fetch_trial_data(
-                    parameters=trial.arm.parameters,
-                    param_names=self.param_names,
-                    trial=trial,
-                    metric_name=self.name,
-                    **kwargs,
-                )
-                if self.wrapper
-                else {}
+        if trial.index in self._trial_data_cache:
+            return Ok(Data(df=pd.DataFrame(self._trial_data_cache[trial.index])))
+        wrapper_kwargs = (
+            self.wrapper._fetch_trial_data(
+                parameters=trial.arm.parameters,
+                param_names=self.param_names,
+                trial=trial,
+                metric_name=self.name,
+                **kwargs,
             )
-        except IOError:  # ScriptWrapper failed to fetch data
-            trial.mark_failed(unsafe=True)
-            return Ok(Data(df=pd.DataFrame(columns=list(Data.REQUIRED_COLUMNS))))
+            if self.wrapper
+            else {}
+        )
+        if self.check_for_nans:
+            if isinstance(wrapper_kwargs, dict):
+                nan_checks = list(wrapper_kwargs.values())
+            elif isinstance(wrapper_kwargs, list):
+                nan_checks = wrapper_kwargs
+            else:
+                nan_checks = [wrapper_kwargs]
+            for elem in nan_checks:
+                if (
+                    (isinstance(elem, str) and ("nan" == elem.lower() or "na" == elem.lower()))
+                    or (isinstance(elem, float) and pd.isna(elem))
+                    or (elem is None)
+                ):
+                    m = f"NaNs in Results for Trial {trial.index}, failing trial"
+                    return Err(MetricFetchE(message=m, exception=ValueError(m)))
+
         wrapper_kwargs = wrapper_kwargs if wrapper_kwargs is not None else {}
         if wrapper_kwargs is not None and not isinstance(wrapper_kwargs, dict):
             wrapper_kwargs = {"wrapper_args": wrapper_kwargs}
@@ -196,6 +217,10 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
                 trial_df = trial_data.unwrap().df
                 trial_df["sem"] = safe_kwargs["sem"]
                 trial_data = Ok(Data(df=trial_df))
+            if not isinstance(trial_data, Err):
+                self._trial_data_cache[trial.index] = trial_data.unwrap().df.to_dict(
+                    orient="list"
+                )  # the format ax uses to put them in
         finally:
             # We remove the extra parameters from the arms for json serialization
             [arm._parameters.pop("kwargs") for arm in trial.arms_by_name.values()]
@@ -246,7 +271,9 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         )
 
     @classmethod
-    def deserialize_init_args(cls, args: dict[str, Any]) -> dict[str, Any]:
+    def deserialize_init_args(
+        cls, args: dict[str, Any], decoder_registry=None, class_decoder_registry=None
+    ) -> dict[str, Any]:
         """Given a dictionary, deserialize the properties needed to initialize the
         object. Used for storage.
         """
