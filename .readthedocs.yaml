@@ -6,9 +6,8 @@ build:
     python: "mambaforge-latest"
   jobs:
     post_install:
-      - mamba env update -f environment_addition_r_rtd.yml
-      - Rscript -e 'devtools::install_github("chrisschuerz/SWATdata")'
-      - Rscript -e 'devtools::install_github("chrisschuerz/SWATrunR")'
+      - mamba env update -f docs/environment_addition_r_rtd.yml
+      - Rscript docs/install_github_r_deps.R
       - conda list
 
 conda:
