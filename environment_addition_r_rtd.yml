@@ -1,0 +1,17 @@
+channels:
+- conda-forge
+dependencies:
+- r
+- r-jsonlite
+- r-base<4.3.1
+- r-devtools
+- r-data.table
+- r-here
+- r-hydroGOF
+#############################
+# Install SWAT dependencies #
+#   Doesn't work on Mac     #
+#############################
+  # when environment is solved, enter R terminal and run::
+  # devtools::install_github("chrisschuerz/SWATdata")
+  # devtools::install_github("chrisschuerz/SWATrunR")

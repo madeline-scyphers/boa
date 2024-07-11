@@ -3,9 +3,12 @@ version: 2
 build:
   os: "ubuntu-20.04"
   tools:
-    python: "mambaforge-4.10"
+    python: "mambaforge-latest"
   jobs:
     post_install:
+      - mamba env update -f environment_addition_r_rtd.yml
+      - Rscript -e 'devtools::install_github("chrisschuerz/SWATdata")'
+      - Rscript -e 'devtools::install_github("chrisschuerz/SWATrunR")'
       - conda list
 
 conda:
