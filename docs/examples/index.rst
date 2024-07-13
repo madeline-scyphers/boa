@@ -3,7 +3,7 @@ Examples
 ########
 
 .. toctree::
-    :caption: Examples with Synthetic Functions in R on the BOA Paper Examples Page
+    :caption: Examples with Synthetic Functions in R on the `BOA Paper Examples Page <https://boa-paper.readthedocs.io/en/latest/>`_
     :maxdepth: 2
 
     Branin <https://boa-paper.readthedocs.io/en/latest/r_branin.html>
@@ -14,7 +14,7 @@ Examples
 
 
 .. toctree::
-    :caption: Examples with Environmental Models on the BOA Paper Examples Page
+    :caption: Examples with Environmental Models on the `BOA Paper Examples Page <https://boa-paper.readthedocs.io/en/latest/>`_
     :maxdepth: 2
 
     SWAT+ <https://boa-paper.readthedocs.io/en/latest/swat_plus.html>
