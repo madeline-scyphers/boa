@@ -115,3 +115,10 @@ if using pip to install BOA, run::
     pip install -U boa-framework
 
 If you have errors, see the :doc:`/troubleshooting` section.
+
+
+******************************
+Bayesian Optimization Overview
+******************************
+
+Head over to the :doc:`/user_guide/bo_overview` to read about Bayesian Optimization and how it works.
