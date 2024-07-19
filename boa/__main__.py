@@ -3,7 +3,7 @@ def main():
 
     # Main entry point
     # Can be invoked with `python -m boa`
-    # or just `boa` (see pypoject.toml`
+    # or just `boa` (see pypoject.toml`)
     _main()
 
 

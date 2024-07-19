@@ -3,9 +3,11 @@
 Plotting & EDA CLI
 ###################################
 
-You can launch a basic EDA plot view
+You can launch a basic EDA plot dashboard view
 of your optimization with::
 
+    boa.plot path/to/scheduler.json
+    or
     python -m boa.plot path/to/scheduler.json
 
 
