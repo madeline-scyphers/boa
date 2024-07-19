@@ -24,10 +24,6 @@ Key features
   - Customizable objective functions, multi-objective optimization, acquisition functions, etc
   - Choice of built-in evaluation metrics, but it’s also easy to implement custom metrics
 
-.. important::
-
-    This site is still under construction. More content will be added soon!
-
 Contents
 --------
 .. toctree::

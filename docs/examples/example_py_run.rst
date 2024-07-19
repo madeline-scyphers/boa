@@ -30,7 +30,7 @@ You can start and run your optimization like this:
 
 ..  code-block:: console
 
-    $ python -m boa -c config.json
+    $ boa -c config.json
     Start time: 20221026T210522
     [INFO 10-26 21:05:22] ax.service.utils.instantiation: Inferred value type of ParameterType.FLOAT for parameter x0. If that is not the expected value type, you can explicity specify 'value_type' ('int', 'float', 'bool' or 'str') in parameter dict.
     [INFO 10-26 21:05:22] ax.service.utils.instantiation: Inferred value type of ParameterType.FLOAT for parameter x1. If that is not the expected value type, you can explicity specify 'value_type' ('int', 'float', 'bool' or 'str') in parameter dict.

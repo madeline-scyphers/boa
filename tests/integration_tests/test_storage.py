@@ -15,7 +15,6 @@ from ax.storage.json_store.registry import (
     CORE_ENCODER_REGISTRY,
 )
 
-import boa.__main__ as dunder_main
 from boa import (
     BaseWrapper,
     BOAConfig,
@@ -31,6 +30,7 @@ from boa import (
     split_shell_command,
 )
 from boa.__version__ import __version__
+from boa.cli import main as cli_main
 from boa.definitions import ROOT
 
 TEST_DIR = ROOT / "tests"
@@ -200,7 +200,7 @@ def test_can_pass_custom_wrapper_path_when_loading_scheduler_from_cli(stand_alon
 
     pre_num_trials = len(scheduler.experiment.trials)
 
-    scheduler = dunder_main.main(
+    scheduler = cli_main(
         split_shell_command(f"--scheduler-path {file_out} --wrapper-path {orig_wrapper_path} -td"),
         standalone_mode=False,
     )

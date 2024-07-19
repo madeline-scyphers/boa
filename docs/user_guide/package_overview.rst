@@ -45,7 +45,7 @@ Creating a Python launch script (Usually Not Needed)
 ****************************************************
 
 Most of the time you won't need to write a launch script because BOA has an built-in launch script in
-its :mod:`.controller` that is called when calling `python -m boa`. But if you do need more control over your launch script than the default
+its :mod:`.controller` that is called when calling `boa`. But if you do need more control over your launch script than the default
 provides, you can either subclass :class:`.Controller` or write your own launch script. Subclassing
 :class:`.Controller` might be easier if you just need to modify :meth:`.Controller.run` or :meth:`.Controller.initialize_wrapper` or :meth:`.Controller.initialize_scheduler`
 but can utilize the rest of the functions. If you need a lot of customization, writing your own script might be
@@ -63,24 +63,24 @@ you can start your run easily from the command line.
 
 With your conda environment for boa activated, run::
 
-    python -m boa --config-path path/to/your/config/file
+    boa --config-path path/to/your/config/file
 
 or::
 
-    python -m boa -c path/to/your/config/file
+    boa -c path/to/your/config/file
 
 :doc:`BOA's </index>` will save the its current state automatically to a `scheduler.json` file in your output experiment directory every 1-few trials (depending on parallelism settings). It will also save a optimization.csv at the end of your run with the trial information as well in the same directory as scheduler.json. The console will output the Output directory at the start and end of your runs to the console, it will also throughout the run, whenever it saves the `scheduler.json` file, output to the console the location where the file is being saved. You can resume a stopped run from a scheduler file::
 
-    python -m boa --scheduler-path path/to/your/scheduler.json
+    boa --scheduler-path path/to/your/scheduler.json
 
 or::
 
-    python -m boa -sp path/to/your/scheduler.json
+    boa -sp path/to/your/scheduler.json
 
 
 For a list of options and descriptions, type::
 
-    python -m boa --help
+    boa --help
 
 A fuller example using the command line interface can be found  :doc:`here </examples/example_py_run>`
 
