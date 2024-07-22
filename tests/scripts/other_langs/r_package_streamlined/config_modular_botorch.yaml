@@ -54,7 +54,7 @@ generation_strategy:
                   botorch_model_class: SingleTaskGP  # BoTorch model class name
 
                   covar_module_class: RBFKernel  # GPyTorch kernel class name
-                  mll_class: LeaveOneOutPseudoLikelihood
+                  mll_class: LeaveOneOutPseudoLikelihood  # GPyTorch MarginalLogLikelihood class name
               botorch_acqf_class: qUpperConfidenceBound  # BoTorch acquisition function class name
               acquisition_options:
                   beta: 0.5
