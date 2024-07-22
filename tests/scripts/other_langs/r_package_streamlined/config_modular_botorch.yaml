@@ -1,0 +1,60 @@
+objective:
+    metrics:
+        - name: metric
+scheduler:
+    n_trials: 15
+
+parameters:
+    x0:
+        'bounds': [ 0, 1 ]
+        'type': 'range'
+        'value_type': 'float'
+    x1:
+        'bounds': [ 0, 1]
+        'type': 'range'
+        'value_type': 'float'
+    x2:
+        'bounds': [ 0, 1 ]
+        'type': 'range'
+        'value_type': 'float'
+    x3:
+        'bounds': [ 0, 1]
+        'type': 'range'
+        'value_type': 'float'
+    x4:
+        'bounds': [ 0, 1 ]
+        'type': 'range'
+        'value_type': 'float'
+    x5:
+        'bounds': [ 0, 1]
+        'type': 'range'
+        'value_type': 'float'
+
+script_options:
+    # notice here that this is a shell command
+    # this is what BOA will do to launch your script
+    # it will also pass as a command line argument the current trial directory
+    # that is being parameterized
+
+    # This can either be a relative path or absolute path
+    # (by default when BOA launches from a config file
+    # it uses the config file directory as your working directory)
+    # here config.yaml and run_model.R are in the same directory
+    run_model: Rscript run_model.R
+    exp_name: "r_streamlined_botorch_modular"
+
+generation_strategy:
+    steps:
+        - model: SOBOL
+          num_trials: 5
+        - model: BOTORCH_MODULAR
+          num_trials: -1  # No limitation on how many trials should be produced from this step
+          model_kwargs:
+              surrogate:
+                  botorch_model_class: SingleTaskGP  # BoTorch model class name
+
+                  covar_module_class: RBFKernel  # GPyTorch kernel class name
+                  mll_class: LeaveOneOutPseudoLikelihood  # GPyTorch MarginalLogLikelihood class name
+              botorch_acqf_class: qUpperConfidenceBound  # BoTorch acquisition function class name
+              acquisition_options:
+                  beta: 0.5

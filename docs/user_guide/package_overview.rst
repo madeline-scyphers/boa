@@ -26,8 +26,6 @@ Objective functions
 
 When specifying your objective function to minimize or maximize, :doc:`BOA </index>` comes with a number of metrics you can use with your model output, such as MSE, :math:`R^2`, and others. For a list of current list of premade available of metrics, see See :mod:`.metrics.metrics`
 
-
-
 ************************************************************************
 Creating a model wrapper (Language Agnostic or Python API)
 ************************************************************************
@@ -39,6 +37,17 @@ and there is a standard interface to follow.
 
 
 See the :mod:`instructions for creating a model wrapper <.boa.wrappers>` for details.
+See the :doc:`examples of model wrappers <.boa.wrappers>` for examples.
+See :doc:`tutorials </examples/index>`  for a number of examples of model wrappers in both Python and R.
+
+
+************************************************************************
+Choosing a Custom Kernel and Acquisition Function
+************************************************************************
+
+BOA tries to make it easy to use the default kernel and acquisition function, but if you need to specify a different kernel or acquisition function, you can do so in the configuration file.
+
+See :doc:`details on how to specify kernel and acquisition function <customizing_gp_acq.>` for details.
 
 ****************************************************
 Creating a Python launch script (Usually Not Needed)

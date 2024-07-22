@@ -5,10 +5,17 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import ax.early_stopping.strategies as early_stopping_strats
 import ax.global_stopping.strategies as global_stopping_strats
+import botorch.acquisition
+import botorch.models
+import gpytorch.kernels
+import gpytorch.mlls
 from ax.modelbridge.generation_node import GenerationStep
 from ax.modelbridge.registry import Models
+from ax.models.torch.botorch_modular.surrogate import Surrogate
 from ax.service.utils.instantiation import TParameterRepresentation
 from ax.service.utils.scheduler_options import SchedulerOptions
+
+from boa.utils import check_min_package_version
 
 if TYPE_CHECKING:
     from .config import BOAMetric
@@ -49,6 +56,42 @@ def _gen_strat_converter(gs: Optional[dict] = None) -> dict:
                 gs["steps"][i] = step
                 steps.append(step)
                 continue
+            if step["model"] == "BOTORCH_MODULAR" and not check_min_package_version("ax-platform", "0.3.5"):
+                raise ValueError(
+                    "BOTORCH_MODULAR model is not available in BOA with Ax version < 0.3.5. "
+                    "Please upgrade to a newer version of Ax."
+                )
+
+            if "model_kwargs" in step:
+                if "botorch_acqf_class" in step["model_kwargs"] and not isinstance(
+                    step["model_kwargs"]["botorch_acqf_class"], botorch.acquisition.AcquisitionFunction
+                ):
+                    step["model_kwargs"]["botorch_acqf_class"] = getattr(
+                        botorch.acquisition, step["model_kwargs"]["botorch_acqf_class"]
+                    )
+
+                if "surrogate" in step["model_kwargs"]:
+                    if "mll_class" in step["model_kwargs"]["surrogate"] and not isinstance(
+                        step["model_kwargs"]["surrogate"]["mll_class"], gpytorch.mlls.MarginalLogLikelihood
+                    ):
+                        step["model_kwargs"]["surrogate"]["mll_class"] = getattr(
+                            gpytorch.mlls, step["model_kwargs"]["surrogate"]["mll_class"]
+                        )
+                    if "botorch_model_class" in step["model_kwargs"]["surrogate"] and not isinstance(
+                        step["model_kwargs"]["surrogate"]["botorch_model_class"], botorch.models.model.Model
+                    ):
+                        step["model_kwargs"]["surrogate"]["botorch_model_class"] = getattr(
+                            botorch.models, step["model_kwargs"]["surrogate"]["botorch_model_class"]
+                        )
+                    if "covar_module_class" in step["model_kwargs"]["surrogate"] and not isinstance(
+                        step["model_kwargs"]["surrogate"]["covar_module_class"], gpytorch.kernels.Kernel
+                    ):
+                        step["model_kwargs"]["surrogate"]["covar_module_class"] = getattr(
+                            gpytorch.kernels, step["model_kwargs"]["surrogate"]["covar_module_class"]
+                        )
+
+                    step["model_kwargs"]["surrogate"] = Surrogate(**step["model_kwargs"]["surrogate"])
+
             try:
                 step["model"] = Models[step["model"]]
             except KeyError:
