@@ -15,6 +15,8 @@ from ax.models.torch.botorch_modular.surrogate import Surrogate
 from ax.service.utils.instantiation import TParameterRepresentation
 from ax.service.utils.scheduler_options import SchedulerOptions
 
+from boa.utils import check_min_package_version
+
 if TYPE_CHECKING:
     from .config import BOAMetric
 
@@ -54,6 +56,12 @@ def _gen_strat_converter(gs: Optional[dict] = None) -> dict:
                 gs["steps"][i] = step
                 steps.append(step)
                 continue
+            if step["model"] == "BOTORCH_MODULAR" and not check_min_package_version("ax-platform", "0.3.5"):
+                raise ValueError(
+                    "BOTORCH_MODULAR model is not available in BOA with Ax version < 0.3.5. "
+                    "Please upgrade to a newer version of Ax."
+                )
+
             if "model_kwargs" in step:
                 if "botorch_acqf_class" in step["model_kwargs"] and not isinstance(
                     step["model_kwargs"]["botorch_acqf_class"], botorch.acquisition.AcquisitionFunction

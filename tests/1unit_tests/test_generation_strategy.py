@@ -2,6 +2,7 @@ import botorch.acquisition
 import botorch.models
 import gpytorch.kernels
 import gpytorch.mlls
+import pytest
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
 
@@ -47,6 +48,9 @@ def test_auto_gen_use_saasbo(saasbo_config, tmp_path):
         assert "FullyBayesian" in gs.name
 
 
+@pytest.importorskip(
+    "ax-platform", minversion="0.3.5", reason="BOTORCH_MODULAR model is not available in BOA with Ax version < 0.3.5."
+)
 def test_modular_botorch(gen_strat_modular_botorch_config, tmp_path):
     controller = Controller(
         config=gen_strat_modular_botorch_config,

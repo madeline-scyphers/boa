@@ -12,7 +12,6 @@ from boa import (
     get_trial_dir,
     load_jsonlike,
     scheduler_from_json_file,
-    scheduler_to_json_file,
     split_shell_command,
 )
 from boa.cli import main as cli_main
@@ -80,7 +79,20 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
 # (which can customize the GP process even more)
 @pytest.mark.parametrize(
     "r_scripts_run",
-    ["r_full", "r_light", "r_streamlined", "r_streamlined_botorch_modular"],
+    [
+        "r_full",
+        "r_light",
+        "r_streamlined",
+        "r_streamlined_botorch_modular",
+        pytest.param(
+            "r_streamlined_botorch_modular",
+            marks=pytest.importorskip(
+                "ax-platform",
+                minversion="0.3.5",
+                reason="BOTORCH_MODULAR model is not available in BOA with Ax version < 0.3.5.",
+            ),
+        ),
+    ],
 )
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
 def test_calling_command_line_r_test_scripts(r_scripts_run, request):
