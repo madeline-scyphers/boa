@@ -3,7 +3,7 @@ Examples
 ########
 
 .. toctree::
-    :caption: Examples with Synthetic Functions in R on the `BOA Paper Examples Page <https://boa-paper.readthedocs.io/en/latest/>`_
+    :caption: Examples with Synthetic Functions in R on the BOA Paper Examples Page (https://boa-paper.readthedocs.io/en/latest/)
     :maxdepth: 2
 
     Branin <https://boa-paper.readthedocs.io/en/latest/r_branin.html>
@@ -12,9 +12,8 @@ Examples
     Hartmann6 with Constraints <https://boa-paper.readthedocs.io/en/latest/r_hartmann_param_constraints.html>
     Hartmann6 with Global Stopping Strategy <https://boa-paper.readthedocs.io/en/latest/r_hartmann_stopping_strat.html>
 
-
 .. toctree::
-    :caption: Examples with Environmental Models on the `BOA Paper Examples Page <https://boa-paper.readthedocs.io/en/latest/>`_
+    :caption: Examples with Environmental Models on the BOA Paper Examples Page (https://boa-paper.readthedocs.io/en/latest/)
     :maxdepth: 2
 
     SWAT+ <https://boa-paper.readthedocs.io/en/latest/swat_plus.html>
