@@ -26,7 +26,6 @@ Contents
     troubleshooting
     changelog
     Code reference <code_reference>
-    gallery
     contributing
 
 
