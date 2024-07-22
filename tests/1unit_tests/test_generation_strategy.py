@@ -1,3 +1,7 @@
+import botorch.acquisition
+import botorch.models
+import gpytorch.kernels
+import gpytorch.mlls
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
 
@@ -41,3 +45,32 @@ def test_auto_gen_use_saasbo(saasbo_config, tmp_path):
         assert "SAASBO" in gs.name
     else:
         assert "FullyBayesian" in gs.name
+
+
+def test_modular_botorch(gen_strat_modular_botorch_config, tmp_path):
+    controller = Controller(
+        config=gen_strat_modular_botorch_config,
+        wrapper=ScriptWrapper(config=gen_strat_modular_botorch_config, experiment_dir=tmp_path),
+    )
+    exp = get_experiment(
+        config=controller.config, runner=WrappedJobRunner(wrapper=controller.wrapper), wrapper=controller.wrapper
+    )
+    gs = get_generation_strategy(config=controller.config, experiment=exp)
+    cfg_botorch_modular = gen_strat_modular_botorch_config.orig_config["generation_strategy"]["steps"][-1]
+    step = gs._steps[-1]
+    assert step.model == Models.BOTORCH_MODULAR
+    mdl_kw = step.model_kwargs
+    assert mdl_kw["botorch_acqf_class"] == getattr(
+        botorch.acquisition, cfg_botorch_modular["model_kwargs"]["botorch_acqf_class"]
+    )
+    assert mdl_kw["acquisition_options"] == cfg_botorch_modular["model_kwargs"]["acquisition_options"]
+
+    assert mdl_kw["surrogate"].mll_class == getattr(
+        gpytorch.mlls, cfg_botorch_modular["model_kwargs"]["surrogate"]["mll_class"]
+    )
+    assert mdl_kw["surrogate"].botorch_model_class == getattr(
+        botorch.models, cfg_botorch_modular["model_kwargs"]["surrogate"]["botorch_model_class"]
+    )
+    assert mdl_kw["surrogate"].covar_module_class == getattr(
+        gpytorch.kernels, cfg_botorch_modular["model_kwargs"]["surrogate"]["covar_module_class"]
+    )

@@ -75,9 +75,12 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
 
 # parametrize the test to use the full version (all scripts) or the light version (only run_model.R)
 # or parametrize the test to use the streamlined version (doesn't use trial_status.json, only use output.json)
+# the botorch modular version is the same as the streamlined version, but also uses botorch modular
+# which uses a custom kernel, acquisition function, mll and botorch model class
+# (which can customize the GP process even more)
 @pytest.mark.parametrize(
     "r_scripts_run",
-    ["r_full", "r_light", "r_streamlined"],
+    ["r_full", "r_light", "r_streamlined", "r_streamlined_botorch_modular"],
 )
 @pytest.mark.skipif(not R_INSTALLED, reason="requires R to be installed")
 def test_calling_command_line_r_test_scripts(r_scripts_run, request):
@@ -92,7 +95,7 @@ def test_calling_command_line_r_test_scripts(r_scripts_run, request):
         assert "param_names" in data
         assert "metric_properties" in data
 
-    if "r_streamlined" == r_scripts_run:
+    if r_scripts_run in ("r_streamlined", "r_streamlined_botorch_modular"):
         with cd_and_cd_back(scheduler.wrapper.config_path.parent):
 
             pre_num_trials = len(scheduler.experiment.trials)

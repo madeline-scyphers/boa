@@ -86,6 +86,12 @@ def gen_strat1_config():
 
 
 @pytest.fixture
+def gen_strat_modular_botorch_config():
+    config_path = TEST_DIR / f"scripts/other_langs/r_package_streamlined/config_modular_botorch.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
 def synth_config():
     config_path = TEST_CONFIG_DIR / "test_config_synth.yaml"
     return BOAConfig.from_jsonlike(file=config_path)
@@ -233,3 +239,9 @@ def r_streamlined(tmp_path_factory, cd_to_root_and_back_session):
     config_path = TEST_DIR / f"scripts/other_langs/r_package_streamlined/config.yaml"
 
     yield cli_main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+
+
+@pytest.fixture(scope="session")
+def r_streamlined_botorch_modular(tmp_path_factory, cd_to_root_and_back_session):
+    config_path = TEST_DIR / f"scripts/other_langs/r_package_streamlined/config_modular_botorch.yaml"
+    return cli_main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
