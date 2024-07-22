@@ -30,7 +30,7 @@ Here are instructions on how to install python through Anaconda or miniconda:
 Install boa
 ===========
 
-If using conda and you don't already have a dedicated conda environment for your model::
+If using conda and you don't already have a dedicated conda environment for your model (if using mamba, replace all conda calls with mamba)::
 
      conda create -n boa
      conda activate boa
@@ -42,11 +42,11 @@ or if not using Python, make sure you have a virtual environment create::
 and activate the virtual environment,
 on windows::
 
-    venv\Scripts\activate.bat
+    . venv\Scripts\activate.bat
 
 on linux and mac::
 
-    source tutorial-env/bin/activate
+    . venv/bin/activate
 
 Once your environment is activated, if using conda, run::
 
@@ -78,6 +78,10 @@ so if on either of those, it should install pytorch>2 by default
 but if not and something doesn't work, upgrade pytorch, torchvision,
 and torchaudio
 
+and then activate this environment::
+
+    conda activate boa-dev
+
 :doc:`/contributing`
 
 ********
@@ -86,9 +90,15 @@ Test run
 
 Once everything is installed, run the test script to ensure everything is install properly::
 
-    python -m boa.scripts.run_branin
+    boa.scripts.run_branin
 
 If this test case runs successfully, you can move on to the next steps.
+
+If you encounter a problem, make sure you environment that you install boa into is activated (`conda activate boa`, `. venv/bin/activate`, or `. venv\Scripts\activate.bat` for conda or pip (unix or windows), see above)), and then try again. If it still doesn't work, you can try::
+
+    python -m boa.scripts.run_branin
+
+If this works, it may mean it installed an older version of BOA or that the boa command is not found on your path. If this works, you should be able to run boa commands by using the `python -m boa` instead of just `boa` and the plot command with `python -m boa.plot`.
 
 **********
 Update BOA
@@ -105,3 +115,10 @@ if using pip to install BOA, run::
     pip install -U boa-framework
 
 If you have errors, see the :doc:`/troubleshooting` section.
+
+
+******************************
+Bayesian Optimization Overview
+******************************
+
+Head over to the :doc:`/user_guide/bo_overview` to read about Bayesian Optimization and how it works.

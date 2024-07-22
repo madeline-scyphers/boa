@@ -1,14 +1,11 @@
 import logging
 import logging.config
 import logging.handlers
-import multiprocessing
 
 from boa.definitions import PathLike
 
 DEFAULT_LOG_LEVEL: int = logging.INFO
 ROOT_LOGGER_NAME = "boa"
-
-queue = multiprocessing.Manager().Queue()
 
 
 def get_logger(name: str = ROOT_LOGGER_NAME, level: int = DEFAULT_LOG_LEVEL, filename=None) -> logging.Logger:

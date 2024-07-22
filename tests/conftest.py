@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 
-import boa.__main__ as dunder_main
 import boa.scripts.moo as run_moo
 import boa.scripts.run_branin as run_branin
 from boa import BOAConfig, cd_and_cd_back, split_shell_command
+from boa.cli import main as cli_main
 from boa.definitions import ROOT, TEST_SCRIPTS_DIR
 
 logger = logging.getLogger(__file__)
@@ -82,6 +82,12 @@ def soo_config():
 @pytest.fixture
 def gen_strat1_config():
     config_path = TEST_CONFIG_DIR / "test_config_gen_strat1.yaml"
+    return BOAConfig.from_jsonlike(file=config_path)
+
+
+@pytest.fixture
+def gen_strat_modular_botorch_config():
+    config_path = TEST_DIR / f"scripts/other_langs/r_package_streamlined/config_modular_botorch.yaml"
     return BOAConfig.from_jsonlike(file=config_path)
 
 
@@ -192,7 +198,7 @@ def denormed_custom_wrapper_run(tmp_path_factory, cd_to_root_and_back_session):
     config_path = temp_dir / "different_name_config.json"
     with open(Path(config_path), "w") as file:
         json.dump(config, file)
-    scheduler = dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+    scheduler = cli_main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
     os.remove(config_path)
     yield scheduler
 
@@ -211,25 +217,31 @@ def moo_main_run(tmp_path_factory, cd_to_root_and_back_session):
 def stand_alone_opt_package_run(tmp_path_factory, cd_to_root_and_back_session):
     config_path = TEST_DIR / "scripts/stand_alone_opt_package/stand_alone_pkg_config.yaml"
     args = f"--config-path {config_path} -td"
-    yield dunder_main.main(split_shell_command(args), standalone_mode=False)
+    yield cli_main(split_shell_command(args), standalone_mode=False)
 
 
 @pytest.fixture(scope="session")
 def r_full(tmp_path_factory, cd_to_root_and_back_session):
     config_path = TEST_DIR / f"scripts/other_langs/r_package_full/config.yaml"
 
-    yield dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+    yield cli_main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
 
 
 @pytest.fixture(scope="session")
 def r_light(tmp_path_factory, cd_to_root_and_back_session):
     config_path = TEST_DIR / f"scripts/other_langs/r_package_light/config.yaml"
 
-    yield dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+    yield cli_main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
 
 
 @pytest.fixture(scope="session")
 def r_streamlined(tmp_path_factory, cd_to_root_and_back_session):
     config_path = TEST_DIR / f"scripts/other_langs/r_package_streamlined/config.yaml"
 
-    yield dunder_main.main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+    yield cli_main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)
+
+
+@pytest.fixture(scope="session")
+def r_streamlined_botorch_modular(tmp_path_factory, cd_to_root_and_back_session):
+    config_path = TEST_DIR / f"scripts/other_langs/r_package_streamlined/config_modular_botorch.yaml"
+    return cli_main(split_shell_command(f"--config-path {config_path} -td"), standalone_mode=False)

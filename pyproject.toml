@@ -27,6 +27,10 @@ dynamic = ["version", "dependencies", "optional-dependencies"]
 "Bug Tracker" = "https://github.com/madeline-scyphers/boa/issues"
 Documentation = "http://boa-framework.readthedocs.io"
 
+[project.scripts]
+boa = "boa.cli:main"
+"boa-plot" = "boa.plot:main"
+
 [tool.setuptools.packages.find]
 include = ["boa*"]
 
