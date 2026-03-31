@@ -5,8 +5,8 @@ from pathlib import Path
 
 import click
 from attrs import fields_dict
-from ax.storage.json_store.decoder import object_from_json
 
+from boa.ax_api import object_from_json
 from boa.config import BOAScriptOptions
 from boa.controller import Controller
 from boa.storage import scheduler_from_json_file

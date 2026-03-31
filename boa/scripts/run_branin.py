@@ -4,8 +4,6 @@ import tempfile
 import time
 from pathlib import Path
 
-from ax.service.utils.report_utils import exp_to_df
-
 try:
     from script_wrappers import BraninWrapper  # pragma: no cover
 except ImportError:
@@ -18,6 +16,7 @@ from boa import (
     get_experiment,
     get_scheduler,
 )
+from boa.ax_api import exp_to_df
 from boa.logger import get_logger
 
 

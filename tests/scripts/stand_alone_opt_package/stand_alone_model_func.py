@@ -1,5 +1,4 @@
-from ax import Trial
-from ax.utils.measurement.synthetic_functions import branin
+from boa.ax_api import Trial, branin
 
 
 def run_branin_from_trial(trial: Trial) -> float:

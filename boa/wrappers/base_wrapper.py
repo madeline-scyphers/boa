@@ -11,10 +11,7 @@ import copy
 import pathlib
 from typing import Optional
 
-from ax import Trial
-from ax.core.types import TParameterization
-from ax.storage.json_store.encoder import object_to_json
-
+from boa.ax_api import TParameterization, Trial, object_to_json
 from boa.config import BOAConfig
 from boa.definitions import PathLike
 from boa.logger import get_logger
@@ -363,7 +360,7 @@ class BaseWrapper(metaclass=WrapperRegister):
 
         You can also do:
 
-            from ax.core.base_trial import TrialStatus
+            from ax.core.trial_status import TrialStatus
             trial.mark_as(TrialStatus.COMPLETED)
 
         or:

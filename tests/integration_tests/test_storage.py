@@ -5,15 +5,6 @@ import sys
 
 import numpy as np
 import pytest
-from ax import Experiment, Objective, OptimizationConfig
-from ax.storage.json_store.decoder import object_from_json
-from ax.storage.json_store.encoder import object_to_json
-from ax.storage.json_store.registry import (
-    CORE_CLASS_DECODER_REGISTRY,
-    CORE_CLASS_ENCODER_REGISTRY,
-    CORE_DECODER_REGISTRY,
-    CORE_ENCODER_REGISTRY,
-)
 
 from boa import (
     BaseWrapper,
@@ -30,6 +21,17 @@ from boa import (
     split_shell_command,
 )
 from boa.__version__ import __version__
+from boa.ax_api import (
+    CORE_CLASS_DECODER_REGISTRY,
+    CORE_CLASS_ENCODER_REGISTRY,
+    CORE_DECODER_REGISTRY,
+    CORE_ENCODER_REGISTRY,
+    Experiment,
+    Objective,
+    OptimizationConfig,
+    object_from_json,
+    object_to_json,
+)
 from boa.cli import main as cli_main
 from boa.definitions import ROOT
 

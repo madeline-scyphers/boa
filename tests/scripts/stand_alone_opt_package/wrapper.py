@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ax import Trial
 from stand_alone_model_func import run_branin_from_trial
 
 import boa
+from boa.ax_api import Trial
 
 
 class WrapperStandAlone(boa.BaseWrapper):

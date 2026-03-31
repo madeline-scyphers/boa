@@ -11,18 +11,31 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ax import Experiment, Runner, SearchSpace
-from ax.modelbridge.dispatch_utils import choose_generation_strategy
-from ax.modelbridge.generation_strategy import GenerationStrategy
-from ax.modelbridge.torch import TorchModelBridge
-from ax.models.torch.botorch_moo import MultiObjectiveBotorchModel
-from ax.service.utils.instantiation import TParameterRepresentation
-
+from boa.ax_api import (
+    Experiment,
+    GenerationStrategy,
+    Runner,
+    SearchSpace,
+    TorchModelBridge,
+    TParameterRepresentation,
+    choose_generation_strategy,
+)
 from boa.config import BOAConfig
 from boa.instantiation_base import BoaInstantiationBase
 from boa.logger import get_logger
 from boa.scheduler import Scheduler
 from boa.wrappers.base_wrapper import BaseWrapper
+
+# from ax.core import Experiment, Runner, SearchSpace
+# # from ax.modelbridge.dispatch_utils import choose_generation_strategy
+# from ax.generation_strategy.dispatch_utils import choose_generation_strategy_legacy as choose_generation_strategy
+# # from ax.modelbridge.generation_strategy import GenerationStrategy
+# from ax.generation_strategy.generation_strategy import GenerationStrategy
+# # from ax.modelbridge.torch import TorchModelBridge
+# from ax.adapter.torch import TorchAdapter as TorchModelBridge
+# # *from ax.models.torch.botorch_moo import MultiObjectiveBotorchModel   ***************
+# from ax.service.utils.instantiation import TParameterRepresentation
+
 
 logger = get_logger()
 
@@ -106,6 +119,7 @@ def get_experiment(config: BOAConfig, runner: Runner, wrapper: BaseWrapper = Non
 
 
 def _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy):
+    pass
     if experiment.is_moo_problem:
         for step in generation_strategy._steps:
             model_bridge = step.model.model_bridge_class
@@ -114,8 +128,8 @@ def _check_moo_has_right_aqf_mode_bridge_cls(experiment, generation_strategy):
                 model_bridge and issubclass(model_bridge, TorchModelBridge) and experiment.is_moo_problem
             )
             if is_moo_modelbridge and not (
-                isinstance(model_bridge, MultiObjectiveBotorchModel)
-                or issubclass(model_cls, MultiObjectiveBotorchModel)
+                isinstance(model_bridge, MultiObjectiveBotorchModel)  # noqa # need to convert this line first
+                or issubclass(model_cls, MultiObjectiveBotorchModel)  # noqa # need to convert this line first
             ):
                 logger.warning(
                     "Multi Objective Optimization was specified,"

@@ -4,10 +4,10 @@ import pathlib
 from pprint import pformat
 from typing import Iterable, Optional
 
-from ax.core.optimization_config import OptimizationConfig
-from ax.modelbridge.base import ModelBridge
-from ax.service.scheduler import Scheduler as AxScheduler
+from typing_extensions import deprecated
 
+from boa.ax_api import Adapter, OptimizationConfig
+from boa.ax_api import Scheduler as AxScheduler
 from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.runner import WrappedJobRunner
@@ -21,7 +21,7 @@ class Scheduler(AxScheduler):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._model: Optional[ModelBridge] = None
+        self._adapter: Optional[Adapter] = None
         self._scheduler_filepath: pathlib.Path = pathlib.Path("scheduler.json")
         self._opt_csv: pathlib.Path = pathlib.Path("optimization.csv")
 
@@ -30,12 +30,17 @@ class Scheduler(AxScheduler):
         return self.runner.wrapper
 
     @property
-    def model(self):
-        return self._model or self.generation_strategy.model
+    def adapter(self):
+        return self._adapter or self.generation_strategy.adapter
 
-    @model.setter
-    def model(self, model):
-        self._model = model
+    @adapter.setter
+    def adapter(self, adapter):
+        self._adapter = adapter
+
+    @property
+    @deprecated("model property is deprecated. Please use adapter instead.")
+    def model(self):
+        return self.adapter
 
     @property
     def scheduler_filepath(self) -> pathlib.Path:
@@ -80,7 +85,7 @@ class Scheduler(AxScheduler):
         update = (
             f"Trials so far: {len(self.experiment.trials)}"
             f"\nCurrently running trials: {trials_ls}"
-            f"\nWill Produce next trials from generation step: {self.generation_strategy.current_step.model_name}"
+            f"\nWill Produce next trials from node: {self.generation_strategy.current_node_name}"
             f"{best_trial_str}"
         )
         logger.info(update)

@@ -9,13 +9,15 @@ import botorch.acquisition
 import botorch.models
 import gpytorch.kernels
 import gpytorch.mlls
-from ax.modelbridge.generation_node import GenerationStep
-from ax.modelbridge.registry import Models
-from ax.models.torch.botorch_modular.surrogate import Surrogate
-from ax.service.utils.instantiation import TParameterRepresentation
-from ax.service.utils.scheduler_options import SchedulerOptions
 
-from boa.utils import check_min_package_version
+from boa.ax_api import (  # SurrogateSpec,
+    GenerationStep,
+    Models,
+    SchedulerOptions,
+    Surrogate,
+    TParameterRepresentation,
+)
+from boa.utils import check_min_package_version, deprecation
 
 if TYPE_CHECKING:
     from .config import BOAMetric
@@ -50,6 +52,9 @@ def _gen_strat_converter(gs: Optional[dict] = None) -> dict:
     if len(gs) > 1 and "steps" in gs:
         raise ValueError("Cannot specify both `steps` and options for automatic generation strategy.")
     if gs.get("steps"):
+        gs["nodes"] = gs.pop("steps")
+        deprecation("steps keyword is deprecated in Ax, please switch over to `nodes`")
+    if gs.get("nodes"):
         steps = []
         for i, step in enumerate(gs["steps"]):
             if isinstance(step, GenerationStep):

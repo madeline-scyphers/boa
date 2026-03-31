@@ -3,7 +3,6 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from ax.service.scheduler import FailureRateExceededError
 
 from boa import (
     BaseWrapper,
@@ -14,6 +13,7 @@ from boa import (
     scheduler_from_json_file,
     split_shell_command,
 )
+from boa.ax_api import FailureRateExceededError
 from boa.cli import main as cli_main
 from boa.definitions import ROOT
 

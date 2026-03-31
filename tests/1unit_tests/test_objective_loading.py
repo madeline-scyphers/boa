@@ -1,14 +1,13 @@
-from ax import (
+from boa import BoaInstantiationBase
+from boa.ax_api import (
     Metric,
     MultiObjective,
     MultiObjectiveOptimizationConfig,
     Objective,
     OptimizationConfig,
     OutcomeConstraint,
+    ScalarizedObjective,
 )
-from ax.core.objective import ScalarizedObjective
-
-from boa import BoaInstantiationBase
 
 
 def test_soo_config_loading(soo_config):

@@ -15,18 +15,24 @@ import numpy as np
 import pandas as pd
 import panel as pn
 import plotly.graph_objs as go
-from ax.modelbridge.registry import get_model_from_generator_run
-from ax.plot.contour import plot_contour_plotly
-from ax.plot.helper import get_range_parameters_from_list
-from ax.plot.pareto_frontier import plot_pareto_frontier as ax_plot_pareto_frontier
-from ax.plot.pareto_utils import compute_posterior_pareto_frontier
-from ax.plot.slice import interact_slice_plotly
-from ax.plot.trace import optimization_trace_single_method_plotly
-from ax.service.utils.report_utils import exp_to_df
 
-from boa.definitions import PathLike_tup
+from boa.ax_api import (
+    compute_posterior_pareto_frontier,
+    exp_to_df,
+    get_range_parameters_from_list,
+    interact_slice_plotly,
+    optimization_trace_single_method_plotly,
+    plot_contour_plotly,
+)
+from boa.ax_api import plot_pareto_frontier as ax_plot_pareto_frontier
+
+# from boa.definitions import PathLike_tup
 from boa.scheduler import Scheduler
-from boa.storage import scheduler_from_json_file
+
+# from boa.storage import scheduler_from_json_file
+
+# from ax.modelbridge.registry import get_model_from_generator_run
+
 
 SchedulerOrPath = Union[Scheduler, os.PathLike, str]
 SchedulersOrPathList = Union[List[Scheduler], List[Union[os.PathLike, str]], Scheduler, os.PathLike, str]
@@ -47,16 +53,16 @@ __all__ = [
 
 
 def _maybe_load_scheduler(scheduler: SchedulerOrPath):
-    if isinstance(scheduler, PathLike_tup):
-        scheduler = scheduler_from_json_file(scheduler)
-        model = get_model_from_generator_run(
-            generator_run=scheduler.generation_strategy.last_generator_run,
-            experiment=scheduler.experiment,
-            data=scheduler.experiment.fetch_data(),
-            models_enum=type(scheduler.generation_strategy.current_step.model),
-            after_gen=False,
-        )
-        scheduler.model = model
+    # if isinstance(scheduler, PathLike_tup):
+    #     scheduler = scheduler_from_json_file(scheduler)
+    #     model = get_model_from_generator_run(
+    #         generator_run=scheduler.generation_strategy.last_generator_run,
+    #         experiment=scheduler.experiment,
+    #         data=scheduler.experiment.fetch_data(),
+    #         models_enum=type(scheduler.generation_strategy.current_step.model),
+    #         after_gen=False,
+    #     )
+    #     scheduler.model = model
 
     return scheduler
 

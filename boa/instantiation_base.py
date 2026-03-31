@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from ax import Objective as AxObjective
-from ax.core.objective import ScalarizedObjective
-from ax.service.utils.instantiation import InstantiationBase
-
+from boa.ax_api import InstantiationBase
+from boa.ax_api import Objective as AxObjective
+from boa.ax_api import ScalarizedObjective
 from boa.config import BOAMetric, BOAObjective
 from boa.metrics.metrics import PassThroughMetric, get_metric_from_config
 from boa.metrics.modular_metric import ModularMetric

@@ -15,25 +15,24 @@ from copy import deepcopy
 from dataclasses import asdict
 from typing import Any, Callable, Dict, Optional, Type
 
-from ax import Experiment
-from ax.exceptions.core import AxError
-from ax.exceptions.storage import JSONDecodeError as AXJSONDecodeError
-from ax.exceptions.storage import JSONEncodeError as AXJSONEncodeError
-from ax.service.scheduler import SchedulerOptions
-from ax.service.utils.report_utils import exp_to_df
-from ax.storage.json_store.decoder import (
-    generation_strategy_from_json,
-    object_from_json,
-)
-from ax.storage.json_store.encoder import object_to_json
-from ax.storage.json_store.registry import (
+from boa.__version__ import __version__
+from boa.ax_api import (
     CORE_CLASS_DECODER_REGISTRY,
     CORE_CLASS_ENCODER_REGISTRY,
     CORE_DECODER_REGISTRY,
     CORE_ENCODER_REGISTRY,
+    AxError,
+    Experiment,
 )
-
-from boa.__version__ import __version__
+from boa.ax_api import JSONDecodeError as AXJSONDecodeError
+from boa.ax_api import JSONEncodeError as AXJSONEncodeError
+from boa.ax_api import (
+    SchedulerOptions,
+    exp_to_df,
+    generation_strategy_from_json,
+    object_from_json,
+    object_to_json,
+)
 from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metrics.modular_metric import ModularMetric

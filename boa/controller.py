@@ -13,10 +13,8 @@ import time
 from pathlib import Path
 from typing import Type
 
-from ax import Experiment
-from ax.service.utils.report_utils import exp_to_df
-
 from boa.__version__ import __version__ as VERSION
+from boa.ax_api import Experiment, exp_to_df
 from boa.ax_instantiation_utils import get_experiment, get_scheduler
 from boa.config import BOAConfig
 from boa.definitions import PathLike

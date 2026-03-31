@@ -3,22 +3,17 @@ channels:
 - conda-forge
 - domdfcoding
 dependencies:
-- python=3.11
+- python>=3.13
   # mac x86 or apple silicone macs on rosetta python need pytorch>2
   # so if on either of those, it should install pytorch>2 by default
   # but if not and something doesn't work, upgrade pytorch, torchvision,
   # and torchaudio
-- pytorch::pytorch<3
-- numpy<2
-- pandas<3
-- scipy<2
-- scikit-learn<2
+- pytorch<3
 - click<9
 - panel<2
-- plotly>=5.10.0
 - notebook>=5.3
 - ipywidgets>=7.5
-- ax-platform==0.3.6
+- ax-platform>=1
 - ruamel.yaml<1
 - domdfcoding::attr_utils
 - attrs<24
@@ -55,5 +50,3 @@ dependencies:
   - sphinx>=4.4,<6  # <6 b/c pydata (<=0.12) doesn't work with sphinx 6, 4.4 is when certain sphinx options were introduced that we use
   - pydata-sphinx-theme>=0.13.0  # pydata 0.12 has a flyout menu bug
   - sphinxext-remoteliteralinclude
-
-  - -e . --global-option="--no-deps"

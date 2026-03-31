@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
-from ax import Trial
-
+from boa.ax_api import Trial
 from boa.wrappers.base_wrapper import BaseWrapper
 
 

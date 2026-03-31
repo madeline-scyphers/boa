@@ -13,10 +13,7 @@ import multiprocessing
 from collections import defaultdict
 from typing import Any, Dict, Iterable, Set
 
-from ax.core.base_trial import TrialStatus
-from ax.core.runner import Runner
-from ax.core.trial import Trial
-
+from boa.ax_api import Runner, Trial, TrialStatus
 from boa.logger import get_logger
 from boa.metaclasses import RunnerRegister
 from boa.utils import serialize_init_args

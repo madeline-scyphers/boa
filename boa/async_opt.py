@@ -8,9 +8,8 @@ from pathlib import Path
 import click
 import pandas as pd
 from attrs import fields_dict
-from ax import Data
-from ax.storage.json_store.decoder import object_from_json
 
+from boa.ax_api import Data, object_from_json
 from boa.config import BOAConfig, BOAScriptOptions, MetricType
 from boa.controller import Controller
 from boa.storage import scheduler_from_json_file

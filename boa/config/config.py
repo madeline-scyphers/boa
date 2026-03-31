@@ -12,12 +12,14 @@ import ruamel.yaml
 import ruamel.yaml.comments
 from attr import asdict
 from attrs import Factory, converters, define, field, fields_dict
-from ax.modelbridge.dispatch_utils import choose_generation_strategy
-from ax.service.utils.instantiation import TParameterRepresentation
-from ax.service.utils.scheduler_options import SchedulerOptions
-from ax.storage.json_store.encoder import object_to_json
-from ax.utils.common.base import Base as AxBase
 
+from boa.ax_api import (
+    AxBase,
+    SchedulerOptions,
+    TParameterRepresentation,
+    choose_generation_strategy,
+    object_to_json,
+)
 from boa.config.converters import (
     _convert_noton_type,
     _gen_strat_converter,

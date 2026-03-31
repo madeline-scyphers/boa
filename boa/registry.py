@@ -4,12 +4,11 @@ from typing import Type
 
 import botorch.acquisition
 import gpytorch.kernels
-from ax.storage.botorch_modular_registry import (
+
+from boa.ax_api import (
     ACQUISITION_FUNCTION_REGISTRY,
     CLASS_TO_REGISTRY,
     CLASS_TO_REVERSE_REGISTRY,
-)
-from ax.storage.json_store.registry import (
     CORE_CLASS_DECODER_REGISTRY,
     CORE_CLASS_ENCODER_REGISTRY,
     CORE_DECODER_REGISTRY,

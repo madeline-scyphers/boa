@@ -6,10 +6,8 @@ import time
 from typing import Iterable
 
 from attrs import asdict
-from ax import Trial
-from ax.core.base_trial import TrialStatus
-from ax.storage.json_store.encoder import object_to_json
 
+from boa.ax_api import Trial, TrialStatus, object_to_json
 from boa.logger import get_logger
 from boa.template import JinjaTemplateVars, render_template
 from boa.wrappers.base_wrapper import BaseWrapper

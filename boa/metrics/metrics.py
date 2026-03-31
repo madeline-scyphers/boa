@@ -91,11 +91,15 @@ from typing import Iterable, Type
 import numpy as np
 
 from boa.config import BOAMetric, MetricType
-from boa.metrics.metric_funcs import get_sklearn_func
+from boa.metrics.metric_funcs import (
+    get_sklearn_func,
+)
 from boa.metrics.metric_funcs import (
     normalized_root_mean_squared_error as normalized_root_mean_squared_error_,
 )
-from boa.metrics.metric_funcs import setup_sklearn_metric
+from boa.metrics.metric_funcs import (
+    setup_sklearn_metric,
+)
 from boa.metrics.modular_metric import ModularMetric
 from boa.metrics.synthetic_funcs import setup_synthetic_metric
 

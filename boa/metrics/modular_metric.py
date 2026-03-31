@@ -12,13 +12,18 @@ from functools import partial
 from typing import Any, Callable, Optional
 
 import pandas as pd
-from ax import Data, Metric, Trial
-from ax.core.metric import MetricFetchE
-from ax.core.types import TParameterization
-from ax.metrics.noisy_function import NoisyFunctionMetric
-from ax.utils.common.result import Err, Ok
-from ax.utils.measurement.synthetic_functions import FromBotorch
 
+from boa.ax_api import (
+    Data,
+    Err,
+    FromBotorch,
+    Metric,
+    MetricFetchE,
+    NoisyFunctionMetric,
+    Ok,
+    TParameterization,
+    Trial,
+)
 from boa.metaclasses import MetricRegister
 from boa.utils import (
     extract_init_args,

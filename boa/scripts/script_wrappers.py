@@ -4,9 +4,9 @@ import subprocess
 from pathlib import Path
 
 import numpy as np
-from ax import Trial
 
 import boa
+from boa.ax_api import Trial
 from boa.definitions import TEST_SCRIPTS_DIR
 
 

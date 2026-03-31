@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from ax import MultiObjectiveOptimizationConfig, OptimizationConfig
 
 from boa import (
     BaseWrapper,
@@ -11,6 +10,7 @@ from boa import (
     setup_sklearn_metric,
     setup_synthetic_metric,
 )
+from boa.ax_api import MultiObjectiveOptimizationConfig, OptimizationConfig
 
 
 class WrapperForTestss(BaseWrapper):

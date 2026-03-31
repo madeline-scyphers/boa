@@ -9,12 +9,11 @@ from __future__ import annotations
 import sys
 from inspect import isclass
 
-import ax.utils
 import botorch.test_functions
-from ax.utils.measurement.synthetic_functions import from_botorch
 from botorch.test_functions.synthetic import Hartmann
 from torch import Tensor
 
+from boa.ax_api import ax_utils, from_botorch
 from boa.metrics.modular_metric import ModularMetric
 
 
@@ -41,11 +40,11 @@ hartmann4 = from_botorch(Hartmann4())
 def get_synth_func(
     metric_name: str,
 ) -> (
-    botorch.test_functions.synthetic.SyntheticTestFunction | ax.utils.measurement.synthetic_functions.SyntheticFunction
+    botorch.test_functions.synthetic.SyntheticTestFunction | ax_utils.measurement.synthetic_functions.SyntheticFunction
 ):
     synthetic_funcs_modules = [
         sys.modules[__name__],  # this module
-        ax.utils.measurement.synthetic_functions,
+        ax_utils.measurement.synthetic_functions,
         botorch.test_functions.synthetic,
         botorch.test_functions.multi_objective,
     ]
@@ -61,7 +60,7 @@ def get_synth_func(
 def setup_synthetic_metric(metric_name, instantiate=True, **kw):
     metric = get_synth_func(metric_name)
 
-    if isclass(metric) and issubclass(metric, ax.utils.measurement.synthetic_functions.SyntheticFunction):
+    if isclass(metric) and issubclass(metric, ax_utils.measurement.synthetic_functions.SyntheticFunction):
         metric = metric()  # if they pass a ax synthetic metric class, not instance
     elif isclass(metric) and issubclass(metric, botorch.test_functions.synthetic.SyntheticTestFunction):
         # botorch synthetic functions need to be converted

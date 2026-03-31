@@ -3,8 +3,6 @@ import botorch.models
 import gpytorch.kernels
 import gpytorch.mlls
 import pytest
-from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
-from ax.modelbridge.registry import Models
 
 from boa import (
     Controller,
@@ -13,6 +11,7 @@ from boa import (
     get_experiment,
     get_generation_strategy,
 )
+from boa.ax_api import GenerationStep, GenerationStrategy, Models
 from boa.utils import check_min_package_version
 
 
