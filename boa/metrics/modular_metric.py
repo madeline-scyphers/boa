@@ -137,6 +137,7 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         """"""  # remove init docstring from parent class to stop it showing in sphinx
         # some classes put their metric_to_evals as class attributes to access non instantiated for deserialization
         # also, if we don't access through __class__, it bounds it to self and passes self as first arg
+        kwargs.pop("lower_is_better")
         metric_to_eval = self.__class__._metric_to_eval or metric_to_eval
         if not metric_to_eval:
             raise TypeError("__init__() missing 1 required positional argument: 'metric_to_eval'")

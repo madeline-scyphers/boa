@@ -16,6 +16,9 @@ from ax.api.types import TParameterization
 from ax.api.utils.generation_strategy_dispatch import (
     choose_generation_strategy as choose_generation_strategy_new,
 )
+from ax.api.utils.structs import GenerationStrategyDispatchStruct
+# Model configuration
+from ax.generators.torch.botorch_modular.surrogate import ModelConfig
 from ax.core import (
     BatchTrial,
     ChoiceParameter,
@@ -52,10 +55,9 @@ from ax.generation_strategy.generation_node import GenerationNode as GenerationS
 from ax.generation_strategy.generation_strategy import GenerationStrategy
 from ax.generators.torch.botorch_modular.surrogate import Surrogate, SurrogateSpec
 from ax.metrics.noisy_function import NoisyFunctionMetric
-from ax.orchestration.orchestrator import FailureRateExceededError
-from ax.orchestration.orchestrator import Orchestrator as Scheduler
+from ax.orchestration.orchestrator import FailureRateExceededError, Orchestrator
 from ax.orchestration.orchestrator_options import (
-    OrchestratorOptions as SchedulerOptions,
+    OrchestratorOptions,
 )
 from ax.plot.contour import plot_contour_plotly
 from ax.plot.helper import get_range_parameters_from_list
@@ -91,4 +93,9 @@ from ax.utils.common.base import Base as AxBase
 from ax.utils.common.docutils import copy_doc
 from ax.utils.common.result import Err, Ok
 from ax.utils.measurement.synthetic_functions import FromBotorch, branin, from_botorch
+from ax.api.utils.instantiation.from_string import optimization_config_from_string
 from botorch.optim import optimize_acqf
+from botorch.models.map_saas import EnsembleMapSaasSingleTaskGP
+
+Scheduler = Orchestrator
+SchedulerOptions = OrchestratorOptions

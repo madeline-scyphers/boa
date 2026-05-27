@@ -13,6 +13,7 @@ import gpytorch.mlls
 from boa.ax_api import (  # SurrogateSpec,
     GenerationStep,
     Models,
+    OrchestratorOptions,
     SchedulerOptions,
     Surrogate,
     TParameterRepresentation,
@@ -127,18 +128,22 @@ def _load_stopping_strategy(d: Optional[dict], module: ModuleType):
     return instance
 
 
+def _orchestrator_converter(orchestrator_options: dict) -> OrchestratorOptions:
+    if "early_stopping_strategy" in orchestrator_options:
+        orchestrator_options["early_stopping_strategy"] = _load_stopping_strategy(
+            d=orchestrator_options["early_stopping_strategy"], module=early_stopping_strats
+        )
+
+    if "global_stopping_strategy" in orchestrator_options:
+        orchestrator_options["global_stopping_strategy"] = _load_stopping_strategy(
+            d=orchestrator_options["global_stopping_strategy"], module=global_stopping_strats
+        )
+
+    return OrchestratorOptions(**orchestrator_options)
+
+
 def _scheduler_converter(scheduler_options: dict) -> SchedulerOptions:
-    if "early_stopping_strategy" in scheduler_options:
-        scheduler_options["early_stopping_strategy"] = _load_stopping_strategy(
-            d=scheduler_options["early_stopping_strategy"], module=early_stopping_strats
-        )
-
-    if "global_stopping_strategy" in scheduler_options:
-        scheduler_options["global_stopping_strategy"] = _load_stopping_strategy(
-            d=scheduler_options["global_stopping_strategy"], module=global_stopping_strats
-        )
-
-    return SchedulerOptions(**scheduler_options)
+    return _orchestrator_converter(scheduler_options)
 
 
 def _parameter_normalization(
