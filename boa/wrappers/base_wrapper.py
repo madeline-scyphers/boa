@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import copy
 import pathlib
+from dataclasses import dataclass
+from typing import Any, Mapping
 from typing import Optional
 
 from boa.ax_api import TParameterization, Trial, object_to_json
@@ -16,7 +18,7 @@ from boa.config import BOAConfig
 from boa.definitions import PathLike
 from boa.logger import get_logger
 from boa.metaclasses import WrapperRegister
-from boa.utils import yaml_dump
+from boa.utils import get_dictionary_from_callable, yaml_dump
 from boa.wrappers.wrapper_utils import (
     initialize_wrapper,
     load_jsonlike,
@@ -24,6 +26,13 @@ from boa.wrappers.wrapper_utils import (
 )
 
 logger = get_logger()
+
+
+@dataclass
+class BOATrialContext:
+    index: int
+    parameters: TParameterization
+    metadata: Mapping[str, Any]
 
 
 class BaseWrapper(metaclass=WrapperRegister):
@@ -109,7 +118,16 @@ class BaseWrapper(metaclass=WrapperRegister):
     @property
     def metric_params(self) -> dict:
         """dictionary of metric name to list of parameter names associated with each metric"""
-        return {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        return {metric.name: metric.param_names for metric in self._configured_metrics()}
+
+    def _configured_metrics(self):
+        if not self.config:
+            return []
+        if getattr(self.config, "optimization", None):
+            return list(self.config.optimization.metrics.values())
+        if getattr(self.config, "objective", None):
+            return self.config.objective.metrics
+        return []
 
     @property
     def config(self) -> BOAConfig:
@@ -124,7 +142,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         self.model_settings = self._config.model_options
         self.script_options = self._config.script_options
         metric_propertis = {}
-        for metric in self._config.objective.metrics:
+        for metric in self._configured_metrics():
             if metric.properties:
                 name = metric.name
                 metric_propertis[name] = metric.properties
@@ -390,25 +408,36 @@ class BaseWrapper(metaclass=WrapperRegister):
         self,
         parameters: TParameterization,
         metric_name: str,
-        trial: Trial,
+        trial: Trial | BOATrialContext = None,
+        trial_index: int = None,
+        trial_metadata: Mapping[str, Any] = None,
+        metric_properties: dict = None,
         param_names: list[str] = None,
         **kwargs,
     ):
+        trial_metadata = trial_metadata or {}
+        if trial is None:
+            if trial_index is None:
+                raise TypeError("Either `trial` or `trial_index` must be provided when fetching metric data.")
+            trial = BOATrialContext(index=trial_index, parameters=parameters, metadata=trial_metadata)
+        trial_index = trial_index if trial_index is not None else trial.index
         # in case users don't subclass with super
         if not hasattr(self, "_metric_cache"):
             self._metric_cache = {}
-        if trial.index not in self._metric_cache:
-            self._metric_cache[trial.index] = {}
-        if metric_name in self._metric_cache[trial.index]:
-            return self._metric_cache[trial.index][metric_name]
-        res = self.fetch_trial_data(
+        if trial_index not in self._metric_cache:
+            self._metric_cache[trial_index] = {}
+        if metric_name in self._metric_cache[trial_index]:
+            return self._metric_cache[trial_index][metric_name]
+        fetch_kwargs = dict(
             parameters=parameters,
             metric_name=metric_name,
-            metric_properties=self._metric_properties,
+            metric_properties=metric_properties or self._metric_properties,
             trial=trial,
             param_names=param_names,
+            trial_metadata=trial_metadata,
             **kwargs,
         )
+        res = self.fetch_trial_data(**get_dictionary_from_callable(self.fetch_trial_data, fetch_kwargs))
         if res is None and not self.fetch_none_ok:
             raise ValueError(
                 "No data returned when fetching Metric!"
@@ -420,16 +449,16 @@ class BaseWrapper(metaclass=WrapperRegister):
             res = {"wrapper_args": res}
         if metric_name not in res:
             res = {metric_name: res}
-        self._metric_cache[trial.index].update(res)
+        self._metric_cache[trial_index].update(res)
 
-        for name in self._metric_cache[trial.index].keys():
+        for name in self._metric_cache[trial_index].keys():
             if self.metric_names and name not in self.metric_names:
                 raise ValueError(
                     f"found extra returned metric: {name} in returned metrics from fetch_trial_data"
                     "Check the name of your metrics in your config file line up with the metric names "
                     "you return from your wrapper class or wrapper script."
                 )
-        return self._metric_cache[trial.index][metric_name]
+        return self._metric_cache[trial_index][metric_name]
 
     def fetch_trial_data(
         self,

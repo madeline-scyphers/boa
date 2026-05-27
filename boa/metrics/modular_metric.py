@@ -8,21 +8,16 @@ Modular Metric
 from __future__ import annotations
 
 import logging
+import random
 from functools import partial
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Mapping, Optional
 
 import pandas as pd
 
 from boa.ax_api import (
-    Data,
-    Err,
     FromBotorch,
-    Metric,
-    MetricFetchE,
-    NoisyFunctionMetric,
-    Ok,
+    IMetric,
     TParameterization,
-    Trial,
 )
 from boa.metaclasses import MetricRegister
 from boa.utils import (
@@ -30,7 +25,7 @@ from boa.utils import (
     get_dictionary_from_callable,
     serialize_init_args,
 )
-from boa.wrappers.base_wrapper import BaseWrapper
+from boa.wrappers.base_wrapper import BOATrialContext, BaseWrapper
 
 logger = logging.getLogger(__file__)
 
@@ -74,13 +69,13 @@ def _get_name(obj):
     return _get_name(obj)
 
 
-class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
+class ModularMetric(IMetric, metaclass=MetricRegister):
     """
     A wrappable metric defined by a generic deterministic function with the
     ability to inject a wrapper for higher customizability.
     The metric function can have some known or unknown noise such that each
     evaluation may be different, they will be centered around a true value with
-    some ``noise_sd``
+    some optional ``sem``
 
     The deterministic metric function to compute is implemented by passing
     some callable (a function or class with ``__call__``) to argument
@@ -98,9 +93,6 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     metric_to_eval
     metric_func_kwargs
         dictionary of keyword arguments to pass to the metric to eval function
-    noise_sd
-        Scale of normal noise added to the function result. If None, interpret the function as
-        noisy with unknown noise level.
     param_names
         A list of names of parameters to be passed to your wrapper.
         Useful for filtering out parameters before those parameters are passed to
@@ -116,7 +108,6 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     check_for_nans
         If True, check for NaNs in the results of the metric and fail the trial if found.
         If nans are not dealt with in some way, they can cause the optimization to fail.
-    kwargs
     """
 
     _metric_to_eval = None
@@ -126,18 +117,16 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         metric_to_eval: Callable | str = None,
         metric_func_kwargs: Optional[dict] = None,
         param_names: list[str] = None,
-        noise_sd: Optional[float] = 0.0,
         name: Optional[str] = None,
         wrapper: Optional[BaseWrapper] = None,
         properties: Optional[dict[str]] = None,
         weight: Optional[float] = None,
         check_for_nans: Optional[bool] = True,
-        **kwargs,
+        **kwargs
     ):
         """"""  # remove init docstring from parent class to stop it showing in sphinx
         # some classes put their metric_to_evals as class attributes to access non instantiated for deserialization
         # also, if we don't access through __class__, it bounds it to self and passes self as first arg
-        kwargs.pop("lower_is_better")
         metric_to_eval = self.__class__._metric_to_eval or metric_to_eval
         if not metric_to_eval:
             raise TypeError("__init__() missing 1 required positional argument: 'metric_to_eval'")
@@ -153,14 +142,11 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         if name is None:
             name = self._to_eval_name
 
-        kwargs["param_names"] = param_names or []
-        self.wrapper = wrapper or BaseWrapper()
+        self.param_names = param_names or []
+        self.wrapper = wrapper
         self._weight = weight
-        super().__init__(
-            noise_sd=noise_sd,
-            name=name,
-            **get_dictionary_from_callable(NoisyFunctionMetric.__init__, kwargs),
-        )
+        self._lower_is_better = None
+        super().__init__(name=name)
         self.properties = properties or {}
         self._trial_data_cache = {}
         self.check_for_nans = check_for_nans
@@ -173,68 +159,71 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
     def weight(self):
         return self._weight
 
-    def fetch_trial_data(self, trial: Trial, **kwargs):
-        if trial.index in self._trial_data_cache:
-            return Ok(Data(df=pd.DataFrame(self._trial_data_cache[trial.index])))
-        wrapper_kwargs = (
-            self.wrapper._fetch_trial_data(
-                parameters=trial.arm.parameters,
+    @property
+    def lower_is_better(self):
+        return self._lower_is_better
+
+    @lower_is_better.setter
+    def lower_is_better(self, value):
+        self._lower_is_better = value
+
+    def fetch(
+        self,
+        trial_index: int,
+        trial_metadata: Mapping[str, Any],
+    ) -> tuple[int, float | tuple[float, float]]:
+        trial_metadata = trial_metadata or {}
+        if trial_index in self._trial_data_cache:
+            return self._trial_data_cache[trial_index]
+
+        parameterization = trial_metadata.get("parameterization", {})
+        progression = trial_metadata.get("progression", 0)
+        trial = BOATrialContext(index=trial_index, parameters=parameterization, metadata=trial_metadata)
+        if self.wrapper:
+            wrapper_kwargs = self.wrapper._fetch_trial_data(
+                parameters=parameterization,
                 param_names=self.param_names,
+                trial_index=trial_index,
+                trial_metadata=trial_metadata,
                 trial=trial,
                 metric_name=self.name,
-                **kwargs,
             )
-            if self.wrapper
-            else {}
-        )
-        if self.check_for_nans:
-            if isinstance(wrapper_kwargs, dict):
-                nan_checks = list(wrapper_kwargs.values())
-            elif isinstance(wrapper_kwargs, list):
-                nan_checks = wrapper_kwargs
-            else:
-                nan_checks = [wrapper_kwargs]
-            for elem in nan_checks:
-                if (
-                    (isinstance(elem, str) and ("nan" == elem.lower() or "na" == elem.lower()))
-                    or (isinstance(elem, float) and pd.isna(elem))
-                    or (elem is None)
-                ):
-                    m = f"NaNs in Results for Trial {trial.index}, failing trial"
-                    return Err(MetricFetchE(message=m, exception=ValueError(m)))
+        elif self.name in trial_metadata:
+            wrapper_kwargs = trial_metadata[self.name]
+        else:
+            wrapper_kwargs = parameterization
 
         wrapper_kwargs = wrapper_kwargs if wrapper_kwargs is not None else {}
         if wrapper_kwargs is not None and not isinstance(wrapper_kwargs, dict):
             wrapper_kwargs = {"wrapper_args": wrapper_kwargs}
-        safe_kwargs = {"trial": trial, **kwargs, **wrapper_kwargs}
-        trial = safe_kwargs.pop("trial")
-        # We add our extra kwargs to the arm parameters so they can be passed to evaluate
-        for arm in trial.arms_by_name.values():
-            arm._parameters["kwargs"] = safe_kwargs
-        try:
-            if isinstance(self.metric_to_eval, Metric):
-                trial_data = self.metric_to_eval.fetch_trial_data(
-                    trial=trial,
-                    **get_dictionary_from_callable(self.metric_to_eval.fetch_trial_data, safe_kwargs),
-                )
-            else:
-                trial_data = super().fetch_trial_data(trial=trial, **safe_kwargs)
-            if "sem" in safe_kwargs and not isinstance(trial_data, Err):
-                trial_df = trial_data.unwrap().df
-                trial_df["sem"] = safe_kwargs["sem"]
-                trial_data = Ok(Data(df=trial_df))
-            if not isinstance(trial_data, Err):
-                self._trial_data_cache[trial.index] = trial_data.unwrap().df.to_dict(
-                    orient="list"
-                )  # the format ax uses to put them in
-        finally:
-            # We remove the extra parameters from the arms for json serialization
-            [arm._parameters.pop("kwargs") for arm in trial.arms_by_name.values()]
-        return trial_data
+
+        if self.check_for_nans and self._has_invalid_result(wrapper_kwargs):
+            raise ValueError(f"NaNs in Results for Trial {trial_index}, failing trial")
+
+        eval_source = dict(wrapper_kwargs)
+        sem = eval_source.pop("sem", None)
+        args = eval_source.pop("wrapper_args", [])
+        if args is None:
+            args = []
+        elif not isinstance(args, (list, tuple)):
+            args = [args]
+
+        eval_kwargs = get_dictionary_from_callable(self.metric_to_eval, eval_source)
+        mean = self.f(*args, **eval_kwargs)
+        if self.check_for_nans and self._has_invalid_result(mean):
+            raise ValueError(f"NaNs in Results for Trial {trial_index}, failing trial")
+
+        outcome = (float(mean), float(sem)) if sem is not None else float(mean)
+        result = (int(progression), outcome)
+        self._trial_data_cache[trial_index] = result
+        return result
 
     def _evaluate(self, params: TParameterization, **kwargs) -> float:
-        kwargs.update(params.pop("kwargs"))
+        params = dict(params)
+        kwargs.update(params.pop("kwargs", {}))
         args = kwargs.pop("wrapper_args", [])
+        if not isinstance(args, (list, tuple)):
+            args = [args]
         return self.f(*args, **get_dictionary_from_callable(self.metric_to_eval, kwargs))
 
     def f(self, *args, **kwargs):
@@ -242,11 +231,31 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
             kwargs.update(self.metric_func_kwargs)
         return self.metric_to_eval(*args, **kwargs)
 
-    def clone(self) -> "Metric":
+    @staticmethod
+    def _has_invalid_result(value: Any) -> bool:
+        if value is None:
+            return True
+        if isinstance(value, str):
+            return value.lower() in {"nan", "na"}
+        if isinstance(value, Mapping):
+            return any(ModularMetric._has_invalid_result(v) for v in value.values())
+        if isinstance(value, (list, tuple, set)):
+            return any(ModularMetric._has_invalid_result(v) for v in value)
+        try:
+            invalid = pd.isna(value)
+        except TypeError:
+            return False
+        if isinstance(invalid, bool):
+            return invalid
+        if hasattr(invalid, "any"):
+            return bool(invalid.any())
+        return False
+
+    def clone(self) -> "ModularMetric":
         """Create a copy of this Metric."""
         cls = type(self)
         return cls(
-            **serialize_init_args(self, parents=[NoisyFunctionMetric], match_private=True),
+            **self.serialize_init_args(self),
         )
 
     def to_dict(self) -> dict:
@@ -261,19 +270,8 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         """Serialize the properties needed to initialize the object.
         Used for storage.
         """
-        parents = cls.mro()[1:]  # index 0 is the class itself
-
-        # We don't want to match init args for Metric class and back, because
-        # NoisyFunctionMetric changes the init parameters and doesn't pass and take
-        # arbitrary *args and **kwargs
-        try:
-            index_of_metric = parents.index(Metric)
-        except ValueError:
-            index_of_metric = None
-        parents_b4_metric = parents[:index_of_metric]
-
         return serialize_init_args(
-            class_=obj, parents=parents_b4_metric, match_private=True, exclude_fields=["wrapper"]
+            class_=obj, match_private=True, exclude_fields=["wrapper"]
         )
 
     @classmethod
@@ -283,17 +281,6 @@ class ModularMetric(NoisyFunctionMetric, metaclass=MetricRegister):
         """Given a dictionary, deserialize the properties needed to initialize the
         object. Used for storage.
         """
-        parents = cls.mro()[1:]  # index 0 is the class itself
-
-        # We don't want to match init args for Metric class and back, because
-        # NoisyFunctionMetric changes the init parameters and doesn't pass and take
-        # arbitrary *args and **kwargs
-        try:
-            index_of_metric = parents.index(Metric)
-        except ValueError:
-            index_of_metric = None
-        parents_b4_metric = parents[:index_of_metric]
-
         return extract_init_args(
-            args=args, class_=cls, parents=parents_b4_metric, match_private=True, exclude_fields=["wrapper"]
+            args=args, class_=cls, match_private=True, exclude_fields=["wrapper"]
         )
