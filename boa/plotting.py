@@ -26,16 +26,10 @@ from boa.ax_api import (
 )
 from boa.ax_api import plot_pareto_frontier as ax_plot_pareto_frontier
 
-# from boa.definitions import PathLike_tup
-from boa.scheduler import Scheduler
+from boa.client import BOAClient
 
-# from boa.storage import scheduler_from_json_file
-
-# from ax.modelbridge.registry import get_model_from_generator_run
-
-
-SchedulerOrPath = Union[Scheduler, os.PathLike, str]
-SchedulersOrPathList = Union[List[Scheduler], List[Union[os.PathLike, str]], Scheduler, os.PathLike, str]
+SchedulerOrPath = Union[BOAClient, os.PathLike, str]
+SchedulersOrPathList = Union[List[BOAClient], List[Union[os.PathLike, str]], BOAClient, os.PathLike, str]
 
 
 DEFAULT_CI_LEVEL: float = 0.9

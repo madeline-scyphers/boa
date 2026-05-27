@@ -3,10 +3,10 @@ from __future__ import annotations
 import pathlib
 from pprint import pformat
 from typing import Iterable, Optional
-
+from dataclasses import replace
 from typing_extensions import deprecated
 
-from boa.ax_api import Adapter, OptimizationConfig
+from boa.ax_api import Adapter, OptimizationConfig, Client, Orchestrator, OrchestratorOptions, TrialStatus, db_settings_from_storage_config
 from boa.ax_api import Scheduler as AxScheduler
 from boa.definitions import PathLike
 from boa.logger import get_logger
@@ -268,3 +268,156 @@ class Scheduler(AxScheduler):
             )
         except Exception as e:
             logger.exception("failed to save scheduler to json! Reason: %s" % repr(e))
+
+
+
+class BOAClient(Client):
+    """BOA's Ax >=1 client runtime.
+
+    This class keeps Ax ``Client`` as the public optimization API while adding
+    BOA-owned wrapper, persistence, reporting, and full ``OrchestratorOptions``
+    support.
+    """
+
+    def __init__(
+        self,
+        *args,
+        wrapper: Optional[BaseWrapper] = None,
+        orchestrator_options: Optional[OrchestratorOptions] = None,
+        client_filepath: PathLike = "client.json",
+        optimization_csv: PathLike = "optimization.csv",
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self.wrapper = wrapper
+        self.orchestrator_options = orchestrator_options
+        self._client_filepath = pathlib.Path(client_filepath)
+        self._optimization_csv = pathlib.Path(optimization_csv)
+        self._last_orchestrator: Orchestrator | None = None
+
+    @property
+    def experiment(self):
+        return self._experiment
+
+    @property
+    def generation_strategy(self):
+        return self._generation_strategy_or_choose()
+
+    @property
+    def client_filepath(self) -> pathlib.Path:
+        return self._resolve_output_path(self._client_filepath)
+
+    @client_filepath.setter
+    def client_filepath(self, path: PathLike):
+        self._client_filepath = pathlib.Path(path)
+
+    @property
+    def optimization_csv(self) -> pathlib.Path:
+        return self._resolve_output_path(self._optimization_csv)
+
+    @optimization_csv.setter
+    def optimization_csv(self, path: PathLike):
+        self._optimization_csv = pathlib.Path(path)
+
+    @property
+    def last_orchestrator(self) -> Orchestrator | None:
+        return self._last_orchestrator
+
+    def _resolve_output_path(self, path: pathlib.Path) -> pathlib.Path:
+        if path.is_absolute() or self.wrapper is None or self.wrapper.experiment_dir is None:
+            return path
+        return self.wrapper.experiment_dir / path
+
+    def _resolve_orchestrator_options(
+        self,
+        orchestrator_options: OrchestratorOptions | None = None,
+        parallelism: int | None = None,
+        tolerated_trial_failure_rate: float | None = None,
+        initial_seconds_between_polls: int | None = None,
+    ) -> OrchestratorOptions:
+        options = orchestrator_options or self.orchestrator_options or OrchestratorOptions()
+        replacements = {}
+        if parallelism is not None:
+            replacements["max_pending_trials"] = parallelism
+        if tolerated_trial_failure_rate is not None:
+            replacements["tolerated_trial_failure_rate"] = tolerated_trial_failure_rate
+        if initial_seconds_between_polls is not None:
+            replacements["init_seconds_between_polls"] = initial_seconds_between_polls
+        return replace(options, **replacements) if replacements else options
+
+    def run_trials(
+        self,
+        max_trials: int | None = None,
+        parallelism: int | None = None,
+        tolerated_trial_failure_rate: float | None = None,
+        initial_seconds_between_polls: int | None = None,
+        orchestrator_options: OrchestratorOptions | None = None,
+    ) -> None:
+        """Run trials using the complete BOA/Ax ``OrchestratorOptions``."""
+
+        options = self._resolve_orchestrator_options(
+            orchestrator_options=orchestrator_options,
+            parallelism=parallelism,
+            tolerated_trial_failure_rate=tolerated_trial_failure_rate,
+            initial_seconds_between_polls=initial_seconds_between_polls,
+        )
+        storage_config = getattr(self, "_storage_config", None)
+        orchestrator = Orchestrator(
+            experiment=self._experiment,
+            generation_strategy=self._generation_strategy_or_choose(),
+            options=options,
+            db_settings=db_settings_from_storage_config(storage_config) if storage_config is not None else None,
+        )
+        self._last_orchestrator = orchestrator
+        if max_trials is not None:
+            orchestrator.run_n_trials(max_trials=max_trials)
+        else:
+            orchestrator.run_all_trials()
+
+    def save_data(self, *, metrics_to_end: bool = False, **to_csv_kwargs) -> None:
+        """Save Ax Client state and BOA's optimization summary CSV."""
+
+        self.client_filepath.parent.mkdir(parents=True, exist_ok=True)
+        self.optimization_csv.parent.mkdir(parents=True, exist_ok=True)
+        self.save_to_json_file(filepath=str(self.client_filepath))
+        df = self.summarize()
+        if metrics_to_end:
+            metric_names = list(self.experiment.metrics.keys())
+            metric_cols = [col for col in df.columns if col in metric_names]
+            df = df[[col for col in df.columns if col not in metric_cols] + metric_cols]
+        to_csv_kwargs.setdefault("na_rep", "NA")
+        df.to_csv(self.optimization_csv, index=False, **to_csv_kwargs)
+        logger.info(f"Saved client to `{self.client_filepath}`.")
+        logger.info(f"Saved optimization summary to `{self.optimization_csv}`.")
+
+    def report_results(self, force_refit: bool = False) -> None:
+        """Save current state and log a concise optimization progress update."""
+
+        self.save_data()
+        try:
+            trials = self.get_best_trials(use_model_predictions=False)
+            best_trial_map = {idx: trial_dict["means"] for idx, trial_dict in trials.items()} if trials else {}
+            best_trial_str = f"\nBest trial so far: {pformat(best_trial_map)}"
+        except Exception as e:  # pragma: no cover
+            best_trial_str = ""
+            logger.exception(e)
+
+        running_trials = [
+            str(trial.index)
+            for trial in self.experiment.trials.values()
+            if trial.status in {TrialStatus.RUNNING, TrialStatus.STAGED}
+        ]
+        running_trials = running_trials[0] if len(running_trials) == 1 else running_trials
+        generation_node = getattr(self.generation_strategy, "current_node_name", None)
+        update = (
+            f"Trials so far: {len(self.experiment.trials)}"
+            f"\nCurrently running trials: {running_trials}"
+            f"\nWill produce next trials from node: {generation_node}"
+            f"{best_trial_str}"
+        )
+        logger.info(update)
+
+    def get_best_trials(self, use_model_predictions: bool = False) -> dict[int, dict]:
+        """Return BOA's compact best-trial/Pareto summary using Ax Client APIs."""
+
+Scheduler = BOAClient

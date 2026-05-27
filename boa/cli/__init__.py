@@ -6,10 +6,9 @@ from pathlib import Path
 import click
 from attrs import fields_dict
 
-from boa.ax_api import object_from_json
 from boa.config import BOAScriptOptions
 from boa.controller import Controller
-from boa.storage import scheduler_from_json_file
+from boa.storage import client_from_json_file
 from boa.wrappers.script_wrapper import ScriptWrapper
 from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
 
@@ -22,18 +21,18 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     help="Path to configuration YAML file.",
 )
 @click.option(
-    "-sp",
-    "--scheduler-path",
+    "-cp",
+    "--client-path",
     type=click.Path(),
     default="",
-    help="Path to scheduler json file.",
+    help="Path to client json file.",
 )
 @click.option(
     "-wp",
     "--wrapper-path",
     type=click.Path(),
     default="",
-    help="Path to where file where your wrapper is located. Used when loaded from scheduler json file,"
+    help="Path to where file where your wrapper is located. Used when loaded from client json file,"
     " and the path to your wrapper has changed (such as when loading on a different computer then"
     " originally ran from).",
 )
@@ -42,7 +41,7 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     "--wrapper-name",
     type=str,
     default="",
-    help="Name of the wrapper class to use. Used when loaded from scheduler json file,",
+    help="Name of the wrapper class to use. Used when loaded from client json file,",
 )
 @click.option(
     "-td",
@@ -54,7 +53,7 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     " (useful for testing)."
     " This requires your Wrapper to have the ability to take experiment_dir as an argument"
     " to ``load_config``. The default ``load_config`` does support this."
-    " This is also only done for initial run, not for reloading from scheduler json file.",
+    " This is also only done for initial run, not for reloading from client json file.",
 )
 @click.option(
     "--rel-to-config/--rel-to-here",  # more cli friendly name for config option of rel_to_launch
@@ -66,34 +65,34 @@ from boa.wrappers.wrapper_utils import cd_and_cd_back, load_jsonlike
     " if you don't pass --rel-to-here then path/to/dir is defined in terms of where your config file is"
     " if you do pass --rel-to-here then path/to/dir is defined in terms of where you launch boa from",
 )
-def main(config_path, scheduler_path, wrapper_path, wrapper_name, temporary_dir, rel_to_config):
-    """Run experiment run from config path or scheduler path"""
+def main(config_path, client_path, wrapper_path, wrapper_name, temporary_dir, rel_to_config):
+    """Run experiment run from config path or client path"""
 
     if temporary_dir:
         with tempfile.TemporaryDirectory() as temp_dir:
             experiment_dir = Path(temp_dir)
             return run(
                 config_path,
-                scheduler_path=scheduler_path,
+                client_path=client_path,
                 wrapper_path=wrapper_path,
                 wrapper_name=wrapper_name,
                 rel_to_config=rel_to_config,
                 experiment_dir=experiment_dir,
             )
-    return run(config_path, scheduler_path=scheduler_path, wrapper_path=wrapper_path, rel_to_config=rel_to_config)
+    return run(config_path, client_path=client_path, wrapper_path=wrapper_path, rel_to_config=rel_to_config)
 
 
-def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, wrapper_name=None, experiment_dir=None):
-    """Run experiment run from config path or scheduler path
+def run(config_path, client_path, rel_to_config, wrapper_path=None, wrapper_name=None, experiment_dir=None):
+    """Run experiment run from config path or client path
 
     Parameters
     ----------
     config_path
         Path to configuration YAML file.
-    scheduler_path
-        Path to scheduler json file.
+    client_path
+        Path to client json file.
     wrapper_path
-        Path to where file where your wrapper is located. Used when loaded from scheduler json file,
+        Path to where file where your wrapper is located. Used when loaded from client json file,
          and the path to your wrapper has changed (such as when loading on a different computer then
          originally ran from).
     rel_to_config
@@ -101,11 +100,11 @@ def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, wrapper_n
         or rel_to_here (relative to cli launch)
     experiment_dir
         experiment output directory to save BOA run to, can only be specified during an initial run
-        (when passing in a config_path, not a scheduler_path)
+        (when passing in a config_path, not a client_path)
 
     Returns
     -------
-        Scheduler
+        BOAClient
     """
     config = {}
     script_options = {}
@@ -115,15 +114,8 @@ def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, wrapper_n
         script_options = config.get("script_options", {})
         if rel_to_config is None:
             rel_to_config = get_rel_from_script_options(script_options)
-    if scheduler_path:
-        scheduler_path = Path(scheduler_path).resolve()
-        if not config:
-            sch_jsn = load_jsonlike(scheduler_path)
-            config = object_from_json(sch_jsn["wrapper"]["config"])
-            config_path = object_from_json(sch_jsn["wrapper"]["config_path"])
-            script_options = config.get("script_options", {})
-            if rel_to_config is None:
-                rel_to_config = get_rel_from_script_options(script_options)
+    if client_path:
+        client_path = Path(client_path).resolve()
 
     if experiment_dir:
         experiment_dir = Path(experiment_dir).resolve()
@@ -142,9 +134,9 @@ def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, wrapper_n
         options["wrapper_name"] = wrapper_name
 
     with cd_and_cd_back(options["working_dir"]):
-        if scheduler_path:
-            scheduler = scheduler_from_json_file(filepath=scheduler_path, wrapper_path=options["wrapper_path"])
-            controller = Controller.from_scheduler(scheduler=scheduler, **options)
+        if client_path:
+            client = client_from_json_file(filepath=client_path)
+            controller = Controller.from_client(client=client, **options)
         else:
             if options["wrapper_path"] and Path(options["wrapper_path"]).exists():
                 options["wrapper"] = options["wrapper_path"]
@@ -154,10 +146,10 @@ def run(config_path, scheduler_path, rel_to_config, wrapper_path=None, wrapper_n
                 config_path=config_path,
                 **options,
             )
-            controller.initialize_scheduler()
+            controller.initialize_client()
 
-        scheduler = controller.run()
-        return scheduler
+        client = controller.run()
+        return client
 
 
 def get_rel_from_script_options(script_options):

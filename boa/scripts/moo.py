@@ -36,7 +36,7 @@ def main():
         config_path = Path(__file__).resolve().parent / "moo.yaml"
         wrapper = WrapperMoo(config_path=config_path, experiment_dir=experiment_dir)
         controller = Controller(wrapper=wrapper)
-        controller.initialize_scheduler()
+        controller.initialize_client()
         return controller.run()
 
 

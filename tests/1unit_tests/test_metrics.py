@@ -93,7 +93,7 @@ def test_load_metric_from_config(synth_config, generic_config):
 
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_and_test_sem_passing(moo_config, tmp_path):
     controller = Controller(config=moo_config, wrapper=WrapperForTestss, experiment_dir=tmp_path)
-    controller.initialize_scheduler()
+    controller.initialize_client()
 
     scheduler = controller.scheduler
     experiment = controller.experiment
@@ -122,7 +122,7 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_all_data_and_tes
     orig_metrics = moo_config.objective.metrics
     moo_config.objective.metrics = orig_metrics[:1]
     controller = Controller(config=moo_config, wrapper=WrapperForTestss, experiment_dir=tmp_path)
-    controller.initialize_scheduler()
+    controller.initialize_client()
 
     scheduler = controller.scheduler
     experiment = controller.experiment
@@ -135,7 +135,7 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_all_data_and_tes
 
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_test_sem_passing(moo_config, tmp_path):
     controller = Controller(config=moo_config, wrapper=WrapperForTestss, fetch_all=False, experiment_dir=tmp_path)
-    controller.initialize_scheduler()
+    controller.initialize_client()
 
     scheduler = controller.scheduler
     experiment = controller.experiment
@@ -161,7 +161,7 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_
 
 def test_can_create_info_only_metrics(generic_config, tmp_path):
     controller = Controller(config=generic_config, wrapper=WrapperForTestss, experiment_dir=tmp_path)
-    controller.initialize_scheduler()
+    controller.initialize_client()
 
     assert isinstance(controller.scheduler.experiment.optimization_config, OptimizationConfig)
     assert not isinstance(controller.scheduler.experiment.optimization_config, MultiObjectiveOptimizationConfig)
@@ -173,7 +173,7 @@ def test_pass_through_metric_passes_through_value(pass_through_config, tmp_path)
     controller = Controller(
         config=pass_through_config, wrapper=WrapperPassThrough, fetch_all=False, experiment_dir=tmp_path
     )
-    controller.initialize_scheduler()
+    controller.initialize_client()
 
     scheduler = controller.scheduler
     experiment = controller.experiment

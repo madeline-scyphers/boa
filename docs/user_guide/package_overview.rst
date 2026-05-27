@@ -56,7 +56,7 @@ Creating a Python launch script (Usually Not Needed)
 Most of the time you won't need to write a launch script because BOA has an built-in launch script in
 its :mod:`.controller` that is called when calling `boa`. But if you do need more control over your launch script than the default
 provides, you can either subclass :class:`.Controller` or write your own launch script. Subclassing
-:class:`.Controller` might be easier if you just need to modify :meth:`.Controller.run` or :meth:`.Controller.initialize_wrapper` or :meth:`.Controller.initialize_scheduler`
+:class:`.Controller` might be easier if you just need to modify :meth:`.Controller.run` or :meth:`.Controller.initialize_wrapper` or :meth:`.Controller.initialize_client`
 but can utilize the rest of the functions. If you need a lot of customization, writing your own script might be
 easier. Some Custom scripts are included in the link below.
 

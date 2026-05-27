@@ -18,6 +18,7 @@ from ax.api.utils.generation_strategy_dispatch import (
 )
 from ax.api.utils.structs import GenerationStrategyDispatchStruct
 # Model configuration
+from ax.api.utils.storage import db_settings_from_storage_config
 from ax.generators.torch.botorch_modular.surrogate import ModelConfig
 from ax.core import (
     BatchTrial,
