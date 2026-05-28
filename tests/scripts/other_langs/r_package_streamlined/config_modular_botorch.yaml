@@ -1,34 +1,36 @@
-objective:
+optimization:
+    objective: metric
     metrics:
-        - name: metric
-scheduler:
-    n_trials: 15
+        metric:
+            name: metric
+            metric_type: passthrough
+n_trials: 15
 
 parameters:
     x0:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x1:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x2:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x3:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x4:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x5:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
 
 script_options:
     # notice here that this is a shell command
@@ -44,17 +46,11 @@ script_options:
     exp_name: "r_streamlined_botorch_modular"
 
 generation_strategy:
-    steps:
-        - model: SOBOL
-          num_trials: 5
-        - model: BOTORCH_MODULAR
-          num_trials: -1  # No limitation on how many trials should be produced from this step
-          model_kwargs:
-              surrogate:
-                  botorch_model_class: SingleTaskGP  # BoTorch model class name
-
-                  covar_module_class: RBFKernel  # GPyTorch kernel class name
-                  mll_class: LeaveOneOutPseudoLikelihood  # GPyTorch MarginalLogLikelihood class name
-              botorch_acqf_class: qUpperConfidenceBound  # BoTorch acquisition function class name
-              acquisition_options:
-                  beta: 0.5
+    method: custom
+    initialization_budget: 5
+    model_config:
+        botorch_model_class: SingleTaskGP
+        covar_module_class: RBFKernel
+        mll_class: LeaveOneOutPseudoLikelihood
+        name: custom_single_task_gp
+    botorch_acqf_class: qUpperConfidenceBound

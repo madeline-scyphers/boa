@@ -1,25 +1,29 @@
 # Single objective optimization config
-objective:
+optimization:
+    objective: Mean
+    tracking_metrics: [RMSE]
     metrics:
-        - metric: mean
-          name: Mean
-        - metric: RMSE
-          info_only: True
+        Mean:
+            metric: mean
+            name: Mean
+            metric_type: boa
+        RMSE:
+            metric: RMSE
+            metric_type: boa
 generation_strategy:
-    steps:
-        - model: SOBOL
-          num_trials: 5
-        - model: GPEI
-          num_trials: -1
-scheduler:
-    n_trials: 10
+    method: fast
+    initialization_budget: 5
+n_trials: 10
 
 parameters:
     x0:
         type: range
         bounds: [-5.0, 10.0]
-    # test that a parameter that is just set likes this gets turned into a fixed parameter
-    x1: 10
+        parameter_type: float
+    x1:
+        type: fixed
+        value: 10
+        parameter_type: int
 
 script_options:
 #    wrapper_path: ./wrapper.py  # This is the default

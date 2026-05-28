@@ -1,6 +1,9 @@
-objective:
+optimization:
+    objective: some_metric
     metrics:
-        -   name: some metric
+        some_metric:
+            name: some_metric
+            metric_type: passthrough
 
 parameters:
     x1: 1.0
@@ -14,10 +17,13 @@ parameters:
     x5: 5.0
 
 
-# Here we turn on SAASBO: Sparse Axis-Aligned Subspace Bayesian Optimization
-# See https://ax.dev/tutorials/saasbo.html for more information
 generation_strategy:
-    use_saasbo: true
+    method: custom
+    initialization_budget: 10
+    model_config:
+        botorch_model_class: EnsembleMapSaasSingleTaskGP
+        mll_class: ExactMarginalLogLikelihood
+        name: BONSAI
+    botorch_acqf_class: PosteriorMean
 
-scheduler:
-    n_trials: 10
+n_trials: 10

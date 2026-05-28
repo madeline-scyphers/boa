@@ -1,42 +1,42 @@
-objective: # can also use the key moo
+optimization:
+    objective: metric
     metrics:
-        - name: metric
+        metric:
+            name: metric
+            metric_type: passthrough
     outcome_constraints:
         - l2norm <= 1.25
 generation_strategy:
-    steps:
-        - model: SOBOL
-          num_trials: 5
-        - model: GPEI
-          num_trials: -1
-scheduler:
+    method: fast
+    initialization_budget: 5
+orchestrator:
     total_trials: 15
 
 parameters:
     x0:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x1:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x2:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x3:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x4:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x5:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
 
 script_options:
     run_model: Rscript run_model.R {{ trial_dir }} {{ x0 }} {{ x1 }}

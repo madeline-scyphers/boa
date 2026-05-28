@@ -1,17 +1,17 @@
-objective: # can also use the key moo
+optimization:
+    objective: metric
     metrics:
-        - name: metric
-          metric: mean
-          param_names: [ x0, x1, x2, x3, x4, x5 ]
-          properties:
-              anything: "you want"
+        metric:
+            name: metric
+            metric: mean
+            metric_type: boa
+            param_names: [ x0, x1, x2, x3, x4, x5 ]
+            properties:
+                anything: "you want"
 generation_strategy:
-    steps:
-        - model: SOBOL
-          num_trials: 5
-        - model: GPEI
-          num_trials: -1
-scheduler:
+    method: fast
+    initialization_budget: 5
+orchestrator:
     total_trials: 15
     tolerated_trial_failure_rate: 0.8
 
@@ -19,27 +19,27 @@ parameters:
     x0:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x1:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x2:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x3:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x4:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x5:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
 
 script_options:
     write_configs: Rscript write_configs.R

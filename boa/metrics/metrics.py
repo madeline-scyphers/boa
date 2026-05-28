@@ -194,7 +194,7 @@ class RootMeanSquaredError(BOASklearnMetric):
         For information on all parameters various metrics in general can be supplied
     """
 
-    _metric_to_eval = "mean_squared_error"
+    _metric_to_eval = "root_mean_squared_error"
 
     def __init__(
         self,
@@ -203,10 +203,6 @@ class RootMeanSquaredError(BOASklearnMetric):
         *args,
         **kwargs,
     ):
-        if isinstance(metric_func_kwargs, dict):
-            metric_func_kwargs.update({"squared": False})
-        else:
-            metric_func_kwargs = {"squared": False}
         super().__init__(
             lower_is_better=lower_is_better,
             metric_func_kwargs=metric_func_kwargs,

@@ -1,4 +1,3 @@
-from boa import BoaInstantiationBase
 from boa.ax_api import (
     Metric,
     MultiObjective,
@@ -7,12 +6,14 @@ from boa.ax_api import (
     OptimizationConfig,
     OutcomeConstraint,
     ScalarizedObjective,
+    optimization_config_from_string,
 )
 
 
 def test_soo_config_loading(soo_config):
-    optimization_config = BoaInstantiationBase.make_optimization_config(
-        soo_config.objective,
+    optimization_config = optimization_config_from_string(
+        objective_str=soo_config.optimization.objective,
+        outcome_constraint_strs=soo_config.optimization.outcome_constraints,
     )
     assert isinstance(optimization_config, OptimizationConfig)
 
@@ -25,15 +26,13 @@ def test_soo_config_loading(soo_config):
     for metric in obj.metrics:
         assert isinstance(metric, Metric)
 
-    weights = [metric.weight for metric in soo_config.objective.metrics]
-
-    for w1, w2 in zip(obj.weights, weights):
-        assert w1 == w2
+    assert obj.weights == [-1.0, -2.0]
 
 
 def test_moo_config_loading(moo_config):
-    optimization_config = BoaInstantiationBase.make_optimization_config(
-        moo_config.objective,
+    optimization_config = optimization_config_from_string(
+        objective_str=moo_config.optimization.objective,
+        outcome_constraint_strs=moo_config.optimization.outcome_constraints,
     )
     assert isinstance(optimization_config, MultiObjectiveOptimizationConfig)
 

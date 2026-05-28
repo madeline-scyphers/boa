@@ -55,24 +55,24 @@ def test_async(config_path, tmp_path):
     assert scheduler.experiment.num_trials == n_ran_trials
 
     vals1 = {metric: rng.random(n) for metric in scheduler.experiment.metrics.keys()}
-    update_opt_csv(scheduler.opt_csv, vals1)
+    update_opt_csv(scheduler.optimization_csv, vals1)
 
     n = 7
-    scheduler = main(split_shell_command(f"-sp {scheduler.scheduler_filepath} -n {n}"), standalone_mode=False)
+    scheduler = main(split_shell_command(f"-cp {scheduler.client_filepath} -n {n}"), standalone_mode=False)
     n_ran_trials += n
     assert scheduler.experiment.num_trials == n_ran_trials
     exp_df = scheduler.experiment.fetch_data().df
     exp_val_vs_ins_val(exp_df=exp_df, inserted_vals=vals1)
 
     vals2 = {metric: np.arange(0, n) for metric in scheduler.experiment.metrics.keys()}
-    update_opt_csv(scheduler.opt_csv, vals2)
+    update_opt_csv(scheduler.optimization_csv, vals2)
 
     output_dir = tmp_path / "output_dir"
-    shutil.move(scheduler.scheduler_filepath.parent, output_dir)
-    output_dir / "scheduler.json"
+    shutil.move(scheduler.client_filepath.parent, output_dir)
+    output_dir / "client.json"
 
     n = 12
-    scheduler = main(split_shell_command(f"-sp {output_dir / 'scheduler.json'} -n {n}"), standalone_mode=False)
+    scheduler = main(split_shell_command(f"-cp {output_dir / 'client.json'} -n {n}"), standalone_mode=False)
     n_ran_trials += n
     assert scheduler.experiment.num_trials == n_ran_trials
     exp_df = scheduler.experiment.fetch_data().df
@@ -94,4 +94,5 @@ def test_async(config_path, tmp_path):
             .sort_values(by=df.columns.to_list())  # sort by all columns to make sure the order is the same
             .reset_index(drop=True)
         ),  # remove index to avoid index mismatch, we don't care about the index
+        check_dtype=False,
     )

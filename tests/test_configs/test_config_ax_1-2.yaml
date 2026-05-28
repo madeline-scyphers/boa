@@ -1,0 +1,81 @@
+
+optimization:
+    objective: -hartmann6 + 2*score
+    metrics:
+        hartmann6:
+            metric_type: synthetic
+        score:
+            metric_type: passthrough
+
+
+generation_strategy:
+    method: fast
+    initialization_budget: 10
+    initialization_random_seed: 42
+    initialize_with_center: True
+    use_existing_trials_for_initialization: True
+    # min_observed_initialization_trials: max(1, initialization_budget // 2)
+    allow_exceeding_initialization_budget: False
+    # Misc options
+    # torch_device: None
+    simplify_parameter_changes: False
+
+# generation_strategy:
+#     method: custom
+#     initialization_budget: 10
+#     initialization_random_seed: 42
+#     initialize_with_center: True
+#     use_existing_trials_for_initialization: True
+#     # min_observed_initialization_trials: max(1, initialization_budget // 2)
+#     allow_exceeding_initialization_budget: False
+#     # Misc options
+#     # torch_device: None
+#     simplify_parameter_changes: False
+#     model_config:
+#         botorch_model_class: EnsembleMapSaasSingleTaskGP
+#         mll_class: ExactMarginalLogLikelihood
+#         name: BONSAI
+#     botorch_acqf_class: PosteriorMean
+
+orchestrator:
+    total_trials: 10
+    
+parameters:
+    x1:
+        type: range
+        bounds: [0, 1]
+        parameter_type: float
+
+    x2:
+        type: range
+        bounds: [0, 1]
+        parameter_type: float
+
+    x3:
+        type: range
+        bounds: [0, 1]
+        parameter_type: float
+
+    x4:
+        type: range
+        bounds: [0, 1]
+        parameter_type: float
+
+    x5: 
+        type: range
+        bounds: [ 0, 1 ]
+        parameter_type: float
+    x6:
+        type: range
+        bounds: [0, 1]
+        parameter_type: float
+
+
+# options only needed by the model and not BOA
+# You can put anything here that your model might need
+model_options:
+    input_size: 15
+
+script_options:
+    wrapper_path: ../../boa/scripts/script_wrappers.py
+    wrapper_name: BraninWrapper

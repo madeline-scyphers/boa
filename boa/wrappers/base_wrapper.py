@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import pathlib
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Any, Mapping
 from typing import Optional
 
@@ -33,6 +34,10 @@ class BOATrialContext:
     index: int
     parameters: TParameterization
     metadata: Mapping[str, Any]
+
+    @property
+    def arm(self):
+        return SimpleNamespace(parameters=self.parameters)
 
 
 class BaseWrapper(metaclass=WrapperRegister):
@@ -303,10 +308,11 @@ class BaseWrapper(metaclass=WrapperRegister):
         for example, if you have a config file with the following:
 
         .. code-block:: yaml
-            objective:
+            optimization:
+                objective: some_name
                 metrics:
-                    - metric: mean
-                      name: some name
+                    some_name:
+                        metric: mean
             parameters:
                 x:
                   type: range
@@ -318,7 +324,8 @@ class BaseWrapper(metaclass=WrapperRegister):
               exp_name: my_experiment
               append_timestamp: True
 
-        You can access these options as `self.config.objective.metrics[0].name`, `self.config.parameters`, etc.
+        You can access these options as `self.config.optimization.metrics["some_name"].name`,
+        `self.config.parameters`, etc.
         You can also access various other wrapper attributes, such as `self.experiment_dir` and others.
         See :class:`.BaseWrapper` and :class:`.BOAConfig` for more information about what options are available.
         """

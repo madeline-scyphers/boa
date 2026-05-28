@@ -121,6 +121,7 @@ class ModularMetric(IMetric, metaclass=MetricRegister):
         wrapper: Optional[BaseWrapper] = None,
         properties: Optional[dict[str]] = None,
         weight: Optional[float] = None,
+        noise_sd: Optional[float] = 0,
         check_for_nans: Optional[bool] = True,
         **kwargs
     ):
@@ -145,6 +146,7 @@ class ModularMetric(IMetric, metaclass=MetricRegister):
         self.param_names = param_names or []
         self.wrapper = wrapper
         self._weight = weight
+        self.noise_sd = noise_sd
         self._lower_is_better = None
         super().__init__(name=name)
         self.properties = properties or {}
@@ -201,7 +203,7 @@ class ModularMetric(IMetric, metaclass=MetricRegister):
             raise ValueError(f"NaNs in Results for Trial {trial_index}, failing trial")
 
         eval_source = dict(wrapper_kwargs)
-        sem = eval_source.pop("sem", None)
+        sem = eval_source.pop("sem", self.noise_sd)
         args = eval_source.pop("wrapper_args", [])
         if args is None:
             args = []

@@ -23,8 +23,9 @@ class WrapperMoo(BaseWrapper):
     def set_trial_status(self, trial) -> None:
         trial.mark_completed()
 
-    def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
-        evaluation = problem(torch.tensor([trial.arm.parameters["x0"], trial.arm.parameters["x1"]]))
+    def fetch_trial_data(self, trial, metric_properties, metric_name, parameters=None, *args, **kwargs):
+        parameters = parameters or trial.parameters
+        evaluation = problem(torch.tensor([parameters["x0"], parameters["x1"]]))
         a = float(evaluation[0])
         b = float(evaluation[1])
         return {"branin": a, "currin": b}

@@ -59,7 +59,7 @@ class ScriptWrapper(BaseWrapper):
         ----------
         trial : Trial
         """
-        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        param_names = self.metric_params
         kw = {"param_names": param_names} if param_names else {}
         self._run_subprocess_script_cmd_if_exists(trial, "write_configs", block=True, **kw)
 
@@ -86,7 +86,7 @@ class ScriptWrapper(BaseWrapper):
         ----------
         trial Trial
         """
-        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        param_names = self.metric_params
         kw = {"param_names": param_names} if param_names else {}
         self._run_subprocess_script_cmd_if_exists(trial, "run_model", **kw)
 
@@ -177,7 +177,7 @@ class ScriptWrapper(BaseWrapper):
         :meth:`~boa.wrappers.script_wrapper.ScriptWrapper.run_model`
         # TODO add sphinx link to ax trial status
         """
-        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        param_names = self.metric_params
         kw = {"param_names": param_names} if param_names else {}
         self._run_subprocess_script_cmd_if_exists(trial, "set_trial_status", **kw)
         data = self._read_subprocess_script_output(trial, file_names=["trial_status", "TrialStatus", *OUTPUT_FILES])
@@ -257,7 +257,7 @@ class ScriptWrapper(BaseWrapper):
             A dictionary with the keys matching the keys of the metric function
                 used in the objective or None if no file is found (trial will be marked failed)
         """
-        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        param_names = self.metric_params
         kw = {"param_names": param_names} if param_names else {}
         if metric_properties:
             kw["metric_properties"] = metric_properties

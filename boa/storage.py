@@ -7,29 +7,27 @@ Helpers for saving and loading BOA Ax Client runs.
 """
 from __future__ import annotations
 
+import json
 import pathlib
 from typing import Any, Optional
 
 from boa.client import BOAClient
 from boa.definitions import PathLike
 from boa.logger import get_logger
-from boa.metrics.modular_metric import ModularMetric
 from boa.wrappers.base_wrapper import BaseWrapper
+from boa.wrappers.wrapper_utils import _load_attr_from_module, _load_module_from_path
 
 logger = get_logger()
 
 
+def _path_from_json_value(value):
+    if isinstance(value, dict) and "pathsegments" in value:
+        return pathlib.Path(*value["pathsegments"])
+    return pathlib.Path(value)
+
+
 def _reattach_wrapper(client: BOAClient, wrapper: BaseWrapper | None) -> BOAClient:
-    if wrapper is None:
-        return client
-    client.wrapper = wrapper
-    runner = getattr(client.experiment, "runner", None)
-    if runner is not None and hasattr(runner, "wrapper"):
-        runner.wrapper = wrapper
-    for metric in client.experiment.metrics.values():
-        if isinstance(metric, ModularMetric):
-            metric.wrapper = wrapper
-    return client
+    return client.attach_wrapper(wrapper)
 
 
 def client_to_json_file(client: BOAClient, client_filepath: PathLike = "client.json", dir_: PathLike = None) -> None:
@@ -46,13 +44,31 @@ def client_to_json_file(client: BOAClient, client_filepath: PathLike = "client.j
 def client_from_json_file(
     filepath: PathLike = "client.json",
     wrapper: Optional[BaseWrapper] = None,
+    wrapper_path: Optional[PathLike] = None,
+    wrapper_name: Optional[str] = None,
     **kwargs: Any,
 ) -> BOAClient:
     """Restore a BOA Client from an Ax Client JSON file."""
 
-    client = BOAClient.load_from_json_file(filepath=str(filepath), **kwargs)
-    client.client_filepath = pathlib.Path(filepath)
-    return _reattach_wrapper(client=client, wrapper=wrapper)
+    filepath = pathlib.Path(filepath)
+    with open(filepath) as file:
+        snapshot = json.load(file)
+    if snapshot.get("wrapper") is not None:
+        experiment_dir = snapshot["wrapper"].get("experiment_dir")
+        if experiment_dir is not None and not _path_from_json_value(experiment_dir).exists():
+            snapshot["wrapper"]["experiment_dir"] = str(filepath.parent)
+    if wrapper_path:
+        if wrapper_name is None:
+            wrapper_name = snapshot.get("wrapper", {}).get("name")
+        module = _load_module_from_path(wrapper_path)
+        _load_attr_from_module(module, wrapper_name or "Wrapper")
+    client = BOAClient._from_json_snapshot(snapshot=snapshot, storage_config=kwargs.pop("storage_config", None))
+    client.client_filepath = filepath
+    if client.wrapper is not None and client.wrapper.experiment_dir is not None:
+        experiment_dir = pathlib.Path(client.wrapper.experiment_dir)
+        if not experiment_dir.exists():
+            client.wrapper.experiment_dir = pathlib.Path(filepath).parent
+    return _reattach_wrapper(client=client, wrapper=wrapper or client.wrapper)
 
 
 def client_to_csv(

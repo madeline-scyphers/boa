@@ -95,6 +95,25 @@ def scheduler_to_df(scheduler: SchedulerOrPath, **kwargs) -> pd.DataFrame:
     return exp_to_df(exp=experiment, **kwargs)
 
 
+def _model_transitions_from_scheduler(scheduler: BOAClient) -> list[int]:
+    transitions = getattr(scheduler.generation_strategy, "model_transitions", None)
+    if transitions is not None:
+        return list(transitions)
+
+    model_transitions = []
+    previous_generation_method = None
+    trials = sorted(scheduler.experiment.trials.values(), key=lambda trial: trial.index)
+    for trial in trials:
+        generation_method = trial.generation_method_str
+        if previous_generation_method is None:
+            previous_generation_method = generation_method
+            continue
+        if generation_method != previous_generation_method:
+            model_transitions.append(trial.index)
+            previous_generation_method = generation_method
+    return model_transitions
+
+
 def plot_metrics_trace(
     schedulers: SchedulersOrPathList,
     metric_names: list[str] = None,
@@ -129,7 +148,7 @@ def plot_metrics_trace(
         for scheduler in schedulers:
             data = scheduler.experiment.fetch_data()
             ys.append(data.df[data.df["metric_name"] == metric_name]["mean"])
-            model_transitions.update(scheduler.generation_strategy.model_transitions)
+            model_transitions.update(_model_transitions_from_scheduler(scheduler))
         ys = np.array(ys)
         ylabel = metric_name.title()
 
