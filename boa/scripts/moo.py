@@ -7,6 +7,7 @@ from boa.controller import Controller
 from boa.metrics.synthetic_funcs import get_synth_func
 from boa.utils import torch_device
 from boa.wrappers.base_wrapper import BaseWrapper
+from boa.ax_api import TrialStatus
 
 tkwargs = {
     "device": torch_device(),
@@ -20,8 +21,8 @@ class WrapperMoo(BaseWrapper):
     def run_model(self, trial) -> None:
         pass
 
-    def set_trial_status(self, trial) -> None:
-        trial.mark_completed()
+    def get_trial_status(self, trial):
+        return TrialStatus.COMPLETED
 
     def fetch_trial_data(self, trial, metric_properties, metric_name, parameters=None, *args, **kwargs):
         parameters = parameters or trial.parameters

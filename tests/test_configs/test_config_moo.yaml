@@ -1,6 +1,6 @@
 # MultiObjective Optimization config
 optimization:
-    objective: RMSE, Meanyyy
+    objective: -RMSE, -Meanyyy
     metrics:
         # List all of your metrics here,
         # only list multiple objectives for a multi objective optimization

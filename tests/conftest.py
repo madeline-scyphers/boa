@@ -166,7 +166,7 @@ def denormed_custom_wrapper_run(tmp_path_factory, cd_to_root_and_back_session):
 
 @pytest.fixture(scope="session")
 def branin_main_run(tmp_path_factory, cd_to_root_and_back_session):
-    yield run_branin.main()
+    yield run_branin.main("", standalone_mode=False)
 
 
 @pytest.fixture(scope="session")

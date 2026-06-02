@@ -26,6 +26,7 @@ from boa.ax_api import (
     OptimizationConfig,
     object_from_json,
     object_to_json,
+    TrialStatus
 )
 from boa.cli import main as cli_main
 from boa.definitions import ROOT
@@ -52,8 +53,8 @@ class WrapperConfigNormalization(BaseWrapper):
     def run_model(self, trial) -> None:
         """"""
 
-    def set_trial_status(self, trial) -> None:
-        trial.mark_completed()
+    def get_trial_status(self, trial):
+        return TrialStatus.COMPLETED
 
     def fetch_trial_data(self, **kwargs) -> dict:
         return 1

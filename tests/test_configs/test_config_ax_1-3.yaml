@@ -1,18 +1,13 @@
 
 optimization:
-    objective: score
+    objective: -branin
+    metrics:
+        branin:
+            metric_type: passthrough
 
 generation_strategy:
     method: fast
-    initialization_budget: 10
-    initialization_random_seed: 42
-    initialize_with_center: True
-    use_existing_trials_for_initialization: True
-    # min_observed_initialization_trials: max(1, initialization_budget // 2)
-    allow_exceeding_initialization_budget: False
-    # Misc options
-    # torch_device: None
-    simplify_parameter_changes: False
+    initialization_budget: 5
 
 # generation_strategy:
 #     method: custom
@@ -32,15 +27,15 @@ generation_strategy:
 #     botorch_acqf_class: PosteriorMean
 
 orchestrator:
-    total_trials: 10
+    total_trials: 30
     
 parameters:
-    x0:
+    x1:
         type: range
         bounds: [-5, 10]
         parameter_type: float
 
-    x1:
+    x2:
         type: range
         bounds: [0, 15]
         parameter_type: float

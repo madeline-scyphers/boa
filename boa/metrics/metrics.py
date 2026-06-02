@@ -180,6 +180,7 @@ class MeanSquaredError(BOASklearnMetric):
 
 MSE = MeanSquaredError
 mean_squared_error = MSE
+mse = MSE
 
 
 class RootMeanSquaredError(BOASklearnMetric):
@@ -213,6 +214,7 @@ class RootMeanSquaredError(BOASklearnMetric):
 
 RMSE = RootMeanSquaredError
 root_mean_squared_error = RMSE
+rmse = RMSE
 
 
 class RSquared(BOASklearnMetric):
@@ -240,6 +242,7 @@ class RSquared(BOASklearnMetric):
 
 r2_score = RSquared
 R2 = RSquared
+r2 = R2
 
 
 class Mean(ModularMetric):
@@ -288,6 +291,7 @@ class NormalizedRootMeanSquaredError(ModularMetric):
 
 NRMSE = NormalizedRootMeanSquaredError
 normalized_root_mean_squared_error = NormalizedRootMeanSquaredError
+nrmse = NRMSE
 
 success = []
 
@@ -329,7 +333,14 @@ def get_boa_metric(name) -> Type[ModularMetric]:
             return m
         raise KeyError
     except KeyError:
-        raise ValueError(f"Invalid Metric Name specified: {name}")
+        try:
+            name_lower = name.lower()
+            m = globals()[name_lower]
+            if issubclass(m, ModularMetric):
+                return m
+            raise KeyError
+        except KeyError:
+            raise ValueError(f"Invalid Metric Name specified: {name}")
 
 
 def _get_boa_metric_any_case(name: str):

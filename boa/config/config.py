@@ -290,7 +290,9 @@ def _optimization_metrics_converter(metrics: Optional[dict[str, BOAMetric | dict
             metric = {"metric": metric}
         else:
             metric = dict(metric)
-        if not metric.get("metric") and not metric.get("name"):
+        if not metric.get("name"):
+            metric["name"] = name
+        if not metric.get("metric"):
             metric["metric"] = name
         converted[name] = BOAMetric(**metric)
     return converted
@@ -538,7 +540,7 @@ class BOAScriptOptions(_Utils):
         default=None,
         metadata={"doc": "Shell command to write your configs out. See `run_model` for more details. "},
     )
-    set_trial_status: Optional[str] = field(
+    get_trial_status: Optional[str] = field(
         default=None,
         metadata={"doc": "Shell command to set your trial status. See `run_model` for more details. "},
     )

@@ -1,5 +1,5 @@
 optimization:
-    objective: rmse
+    objective: -rmse
     metrics:
         rmse:
             name: rmse

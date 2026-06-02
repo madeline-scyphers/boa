@@ -8,7 +8,7 @@ from click.testing import CliRunner
 import boa.async_opt as async_opt
 import boa.plot as plot_mod
 from boa import BOAConfig, Controller, ScriptWrapper, cd_and_cd_back
-from boa.ax_api import TrialStatus
+from boa.ax_api import TrialStatus, FailureRateExceededError
 from boa.client import get_client
 from boa.scripts import synth_func_cli
 from boa.wrappers.base_wrapper import BaseWrapper
@@ -175,9 +175,8 @@ def test_script_wrapper_failed_status_from_real_subprocess(tmp_path):
     wrapper = ScriptWrapper(config=config)
     client = get_client(config=config, wrapper=wrapper)
 
-    client.run_trials(max_trials=1)
-
-    assert client.experiment.trials[0].status == TrialStatus.FAILED
+    with pytest.raises(FailureRateExceededError):
+        client.run_trials(max_trials=1)
 
 
 def test_synthetic_wrapper_returns_metric_values_and_marks_complete(tmp_path):

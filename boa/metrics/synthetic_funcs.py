@@ -45,8 +45,7 @@ def get_synth_func(
     synthetic_funcs_modules = [
         sys.modules[__name__],  # this module
         ax_utils.measurement.synthetic_functions,
-        botorch.test_functions.synthetic,
-        botorch.test_functions.multi_objective,
+        botorch.test_functions,
     ]
     for module in synthetic_funcs_modules:
         try:

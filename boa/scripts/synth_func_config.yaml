@@ -1,15 +1,15 @@
 optimization:
-    objective: rmse
+    objective: -rmse
     metrics:
         rmse:
-            name: rmse
-            metric: RMSE
+            # name: rmse
+            # metric: RMSE
             metric_type: boa
             noise_sd: .1
 
-generation_strategy:
-    method: fast
-    initialization_budget: 5
+# generation_strategy:
+#     method: fast
+#     initialization_budget: 5
 orchestrator:
     total_trials: 20
 

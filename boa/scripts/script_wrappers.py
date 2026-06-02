@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 
 import boa
-from boa.ax_api import Trial
+from boa.ax_api import Trial, TrialStatus
 from boa.definitions import TEST_SCRIPTS_DIR
 
 
@@ -32,11 +32,11 @@ class BraninWrapper(boa.BaseWrapper):
         popen = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
         self._processes.append(popen)
 
-    def set_trial_status(self, trial: Trial) -> None:
+    def get_trial_status(self, trial):
         output_file = boa.get_trial_dir(self.experiment_dir, trial.index) / "output.json"
 
         if output_file.exists():
-            trial.mark_completed()
+            return TrialStatus.COMPLETED
 
     def fetch_trial_data(self, trial: Trial, *args, **kwargs):
         output_file = boa.get_trial_dir(self.experiment_dir, trial.index) / "output.json"

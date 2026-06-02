@@ -1,6 +1,6 @@
 # Single objective optimization config
 optimization:
-    objective: Mean
+    objective: -Mean
     tracking_metrics: [RMSE]
     metrics:
         Mean:

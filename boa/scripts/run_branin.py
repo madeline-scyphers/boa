@@ -2,6 +2,7 @@ import logging
 import tempfile
 import time
 from pathlib import Path
+import click
 
 try:
     from script_wrappers import BraninWrapper  # pragma: no cover
@@ -13,10 +14,20 @@ from boa import Controller, get_dt_now_as_str
 from boa.logger import get_logger
 
 
-def main():
-    with tempfile.TemporaryDirectory() as temp_dir:
-        experiment_dir = Path(temp_dir)
-        return run_opt(exp_dir=experiment_dir)
+@click.command()
+@click.option(
+    "-xd",
+    "--experiment-dir",
+    type=click.Path(path_type=Path),
+    default=None,
+    help="Optional experiment directory. If none provided, will run in a temp directory."
+)
+def main(experiment_dir):
+    if not experiment_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            experiment_dir = Path(temp_dir)
+            return run_opt(exp_dir=experiment_dir)
+    return run_opt(exp_dir=experiment_dir)
 
 
 def run_opt(exp_dir):

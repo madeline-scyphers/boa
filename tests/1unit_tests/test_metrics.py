@@ -9,7 +9,7 @@ from boa import (
     setup_sklearn_metric,
     setup_synthetic_metric,
 )
-from boa.ax_api import MultiObjectiveOptimizationConfig, OptimizationConfig
+from boa.ax_api import MultiObjectiveOptimizationConfig, OptimizationConfig, TrialStatus
 from boa.client import get_client
 
 
@@ -21,8 +21,8 @@ class WrapperForTestss(BaseWrapper):
     def run_model(self, trial) -> None:
         pass
 
-    def set_trial_status(self, trial) -> None:
-        trial.mark_completed()
+    def get_trial_status(self, trial):
+        return TrialStatus.COMPLETED
 
     def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
         if self.fetch_all:

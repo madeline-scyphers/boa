@@ -13,7 +13,7 @@ from boa import (
     client_from_json_file as scheduler_from_json_file,
     split_shell_command,
 )
-from boa.ax_api import FailureRateExceededError
+from boa.ax_api import FailureRateExceededError, TrialStatus
 from boa.cli import main as cli_main
 from boa.definitions import ROOT
 
@@ -53,8 +53,8 @@ class WrapperDunderMain(BaseWrapper):
     def run_model(self, trial) -> None:
         pass
 
-    def set_trial_status(self, trial) -> None:
-        trial.mark_completed()
+    def get_trial_status(self, trial):
+        return TrialStatus.COMPLETED
 
     def fetch_trial_data(self, trial, *args, **kwargs) -> dict:
         return 1 / (trial.index + 1)

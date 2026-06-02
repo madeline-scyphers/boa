@@ -21,8 +21,8 @@ def test_branin_wrapper_runs_real_script_and_fetches_output(tmp_path):
     process = wrapper._processes[-1]
     assert process.wait(timeout=20) == 0
 
-    wrapper.set_trial_status(trial)
-    assert trial.status == TrialStatus.COMPLETED
+    trial_status = wrapper.get_trial_status(trial)
+    assert trial_status == TrialStatus.COMPLETED
 
     fetched = wrapper.fetch_trial_data(trial)
     assert len(fetched["y_pred"]) == wrapper.model_settings["input_size"]

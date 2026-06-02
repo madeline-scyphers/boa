@@ -14,7 +14,7 @@ from types import SimpleNamespace
 from typing import Any, Mapping
 from typing import Optional
 
-from boa.ax_api import TParameterization, Trial, object_to_json
+from boa.ax_api import TParameterization, Trial, object_to_json, TrialStatus
 from boa.config import BOAConfig
 from boa.definitions import PathLike
 from boa.logger import get_logger
@@ -33,7 +33,7 @@ logger = get_logger()
 class BOATrialContext:
     index: int
     parameters: TParameterization
-    metadata: Mapping[str, Any]
+    trial_metadata: Mapping[str, Any]
 
     @property
     def arm(self):
@@ -357,44 +357,11 @@ class BaseWrapper(metaclass=WrapperRegister):
             "\nOr an instantiated wrapper."
         )
 
-    def set_trial_status(self, trial: Trial) -> None:
+    def get_trial_status(self, trial: Trial) -> TrialStatus:
         """
-        Marks the status of a trial to reflect the status of the model run for the trial.
+        return the relevent trial status
 
-        Each trial will be polled periodically to determine its status (completed, failed, still running,
-        etc). This function defines the criteria for determining the status of the model run for a trial (e.g., whether
-        the model run is completed/still running, failed, etc). The trial status is updated accordingly when the trial
-        is polled.
-
-        The approach for determining the trial status will depend on the structure of the particular model and its
-        outputs. One example is checking the log files of the model.
-
-        .. todo::
-            Add examples/links of different approaches
-
-        Parameters
-        ----------
-        trial
-
-        Examples
-        --------
-        trial.mark_completed()
-        trial.mark_failed()
-        trial.mark_abandoned()
-        trial.mark_early_stopped()
-
-        You can also do:
-
-            from ax.core.trial_status import TrialStatus
-            trial.mark_as(TrialStatus.COMPLETED)
-
-        or:
-
-            trial.mark_as(3)  # TrialStatus is an ENUM with COMPLETED being equivalent to 3
-
-        **Relevant ENUM list**
-
-        You can set it to either to text version, or the numerical equivalent
+        You can return it  or the numerical equivalent
 
         ==================  =====
         Relevant ENUM list   Numerical Equivalent
@@ -402,7 +369,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         FAILED                2
         COMPLETED             3
         RUNNING               4 -- you don't need to set it to running, it is already set to running
-        ABANDONED             4
+        ABANDONED             5
         EARLY_STOPPED         7
         ==================  =====
 
@@ -426,7 +393,7 @@ class BaseWrapper(metaclass=WrapperRegister):
         if trial is None:
             if trial_index is None:
                 raise TypeError("Either `trial` or `trial_index` must be provided when fetching metric data.")
-            trial = BOATrialContext(index=trial_index, parameters=parameters, metadata=trial_metadata)
+            trial = BOATrialContext(index=trial_index, parameters=parameters, trial_metadata=trial_metadata)
         trial_index = trial_index if trial_index is not None else trial.index
         # in case users don't subclass with super
         if not hasattr(self, "_metric_cache"):

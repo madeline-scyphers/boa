@@ -7,7 +7,7 @@
 # We could also do this directly instead of in a loop
 {% set param_names2 = ["y0", "y1", "y2"] %}
 optimization:
-    objective: rmse
+    objective: -rmse
     metrics:
         # List all of your metrics here,
         # only list 1 metric for a single objective optimization

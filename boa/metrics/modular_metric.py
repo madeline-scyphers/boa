@@ -123,6 +123,7 @@ class ModularMetric(IMetric, metaclass=MetricRegister):
         weight: Optional[float] = None,
         noise_sd: Optional[float] = 0,
         check_for_nans: Optional[bool] = True,
+        lower_is_better: Optional[bool] = True,
         **kwargs
     ):
         """"""  # remove init docstring from parent class to stop it showing in sphinx
@@ -147,7 +148,7 @@ class ModularMetric(IMetric, metaclass=MetricRegister):
         self.wrapper = wrapper
         self._weight = weight
         self.noise_sd = noise_sd
-        self._lower_is_better = None
+        # self._lower_is_better = lower_is_better
         super().__init__(name=name)
         self.properties = properties or {}
         self._trial_data_cache = {}
@@ -177,12 +178,13 @@ class ModularMetric(IMetric, metaclass=MetricRegister):
         trial_metadata = trial_metadata or {}
         if trial_index in self._trial_data_cache:
             return self._trial_data_cache[trial_index]
-
+        
         parameterization = trial_metadata.get("parameterization", {})
         progression = trial_metadata.get("progression", 0)
-        trial = BOATrialContext(index=trial_index, parameters=parameterization, metadata=trial_metadata)
+        trial = BOATrialContext(index=trial_index, parameters=parameterization, trial_metadata=trial_metadata)
+        # raise Exception(f'parameterization: {parameterization}\n wrapper: {self.wrapper}')
         if self.wrapper:
-            wrapper_kwargs = self.wrapper._fetch_trial_data(
+            wrapper_data = self.wrapper._fetch_trial_data(
                 parameters=parameterization,
                 param_names=self.param_names,
                 trial_index=trial_index,
@@ -191,30 +193,53 @@ class ModularMetric(IMetric, metaclass=MetricRegister):
                 metric_name=self.name,
             )
         elif self.name in trial_metadata:
-            wrapper_kwargs = trial_metadata[self.name]
+            wrapper_data = trial_metadata[self.name]
         else:
-            wrapper_kwargs = parameterization
+            wrapper_data = parameterization
 
-        wrapper_kwargs = wrapper_kwargs if wrapper_kwargs is not None else {}
-        if wrapper_kwargs is not None and not isinstance(wrapper_kwargs, dict):
-            wrapper_kwargs = {"wrapper_args": wrapper_kwargs}
+        sem = self.noise_sd
+        wrapper_data = wrapper_data if wrapper_data is not None else {}
+        eval_kwargs = {}
+        if isinstance(wrapper_data, tuple) and len(wrapper_data) == 2:
+            progression = wrapper_data[0]
+            args = wrapper_data[1]
+            if isinstance(wrapper_data[1], tuple):
+                mean = wrapper_data[1][0]
+                sem = wrapper_data[1][1]
+            else:
+                mean = wrapper_data[1]
 
-        if self.check_for_nans and self._has_invalid_result(wrapper_kwargs):
+        elif wrapper_data is not None and not isinstance(wrapper_data, dict):
+            wrapper_data = {"wrapper_args": wrapper_data}
+
+        if self.check_for_nans and self._has_invalid_result(wrapper_data):
             raise ValueError(f"NaNs in Results for Trial {trial_index}, failing trial")
 
-        eval_source = dict(wrapper_kwargs)
-        sem = eval_source.pop("sem", self.noise_sd)
-        args = eval_source.pop("wrapper_args", [])
-        if args is None:
-            args = []
-        elif not isinstance(args, (list, tuple)):
-            args = [args]
-
-        eval_kwargs = get_dictionary_from_callable(self.metric_to_eval, eval_source)
-        mean = self.f(*args, **eval_kwargs)
-        if self.check_for_nans and self._has_invalid_result(mean):
+        if isinstance(wrapper_data, dict):
+            eval_source = wrapper_data
+            sem = eval_source.pop("sem", self.noise_sd)
+            progression = eval_source.pop("progression", progression)
+            args = eval_source.pop("wrapper_args", [])
+            if args is None:
+                args = []
+            elif not isinstance(args, (list, tuple)):
+                args = [args]
+            eval_kwargs = get_dictionary_from_callable(self.metric_to_eval, eval_source)
+    
+        fetched = self.f(*args, **eval_kwargs)
+        if self.check_for_nans and self._has_invalid_result(fetched):
             raise ValueError(f"NaNs in Results for Trial {trial_index}, failing trial")
 
+        if isinstance(fetched, (int, float)):
+            mean = fetched
+        elif len(fetched) == 2:
+            mean = float(fetched[0])
+            sem = float([fetched[1]])
+        elif fetched:
+            mean = float(fetched[0])
+        else:
+            raise ValueError(f"Wrapper function did not return or metric eval did not return anything for trial index: {trial_index}")
+        
         outcome = (float(mean), float(sem)) if sem is not None else float(mean)
         result = (int(progression), outcome)
         self._trial_data_cache[trial_index] = result

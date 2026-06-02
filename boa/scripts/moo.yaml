@@ -1,6 +1,6 @@
 # MultiObjective Optimization config
 optimization:
-    objective: branin, currin
+    objective: -branin, currin
     metrics:
         branin:
             name: branin

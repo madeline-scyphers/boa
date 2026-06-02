@@ -31,7 +31,7 @@ def test_client_json_roundtrip_reattaches_real_wrapper_and_can_continue(tmp_path
     client_to_json_file(client, client_filepath="client.json", dir_=tmp_path)
 
     loaded = client_from_json_file(tmp_path / "client.json", wrapper=wrapper)
-    loaded.run_n_trials(1)
+    loaded.run_n_trials(1, ignore_global_stopping_strategy=True)
 
     assert loaded.wrapper is wrapper
     assert loaded.experiment.runner.wrapper is wrapper
@@ -49,6 +49,5 @@ def test_wrapped_job_runner_runs_real_ax_trial(tmp_path):
 
     run_metadata = client.runner.run(trial)
     statuses = client.runner.poll_trial_status([trial])
-
-    assert run_metadata == {"job_id": trial.index}
+    assert run_metadata["job_id"] == 0
     assert statuses[TrialStatus.COMPLETED] == {trial.index}

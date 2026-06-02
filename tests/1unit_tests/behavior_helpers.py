@@ -3,6 +3,7 @@ from pathlib import Path
 from boa import BOAConfig
 from boa.client import get_client
 from boa.wrappers.base_wrapper import BaseWrapper
+from boa.ax_api import TrialStatus
 
 
 class DeterministicWrapper(BaseWrapper):
@@ -13,8 +14,8 @@ class DeterministicWrapper(BaseWrapper):
     def run_model(self, trial):
         self.values[trial.index] = sum(float(value) for value in trial.arm.parameters.values())
 
-    def set_trial_status(self, trial):
-        trial.mark_completed()
+    def get_trial_status(self, trial):
+        return TrialStatus.COMPLETED
 
     def fetch_trial_data(self, trial, parameters=None, metric_name=None, **kwargs):
         if trial.index not in self.values:

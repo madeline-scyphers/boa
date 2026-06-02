@@ -6,6 +6,7 @@ import time
 from dataclasses import asdict, replace
 from pprint import pformat
 from typing import Any, Iterable, Optional
+import multiprocessing
 
 from boa.__version__ import __version__
 from boa.ax_api import (
@@ -21,10 +22,15 @@ from boa.ax_api import (
     object_to_json,
     OptimizationConfig,
     OrchestratorOptions,
+    db_settings_from_storage_config,
+    Orchestrator,
     RangeParameterConfig,
     TrialStatus,
     choose_generation_strategy_new,
     optimization_config_from_string,
+    IRunner,
+    Runner,
+    Trial,
 )
 from boa.config import BOAConfig, BOAMetric, MetricType
 from boa.definitions import PathLike
@@ -32,6 +38,26 @@ from boa.logger import get_logger
 from boa.metrics.metrics import get_metric_from_config
 from boa.runner import WrappedJobRunner
 from boa.wrappers.base_wrapper import BaseWrapper
+from boa.metrics.synthetic_funcs import get_synth_func
+from boa.metaclasses import RunnerRegister
+import logging
+import concurrent.futures
+from typing import Any, Dict, Iterable, Set
+from collections import defaultdict
+from boa.utils import serialize_init_args
+from boa.metrics.metrics import PassThrough
+
+
+import os
+import time
+from typing import Any, Mapping
+
+import numpy as np
+from ax.api.client import Client
+from ax.api.configs import RangeParameterConfig
+from ax.api.protocols.metric import IMetric
+from ax.api.protocols.runner import IRunner, TrialStatus
+from ax.api.types import TParameterization
 
 logger = get_logger()
 
@@ -112,6 +138,7 @@ class BOAClient(Client):
         parallelism: int | None = None,
         tolerated_trial_failure_rate: float | None = None,
         initial_seconds_between_polls: int | None = None,
+        total_trials: int | None = None 
     ) -> OrchestratorOptions:
         options = orchestrator_options or self.orchestrator_options or OrchestratorOptions()
         replacements = {}
@@ -121,6 +148,8 @@ class BOAClient(Client):
             replacements["tolerated_trial_failure_rate"] = tolerated_trial_failure_rate
         if initial_seconds_between_polls is not None:
             replacements["init_seconds_between_polls"] = initial_seconds_between_polls
+        if total_trials is not None:
+            replacements["total_trials"] = total_trials
         return replace(options, **replacements) if replacements else options
 
     def run_n_trials(self, max_trials: int, **kwargs) -> None:
@@ -133,39 +162,33 @@ class BOAClient(Client):
         tolerated_trial_failure_rate: float | None = None,
         initial_seconds_between_polls: int | None = None,
         orchestrator_options: OrchestratorOptions | None = None,
+        ignore_global_stopping_strategy: bool = False
     ) -> None:
+        kw = {}
+        if len(self.experiment.trials):
+            total_trials = len(self.experiment.trials)
+            if isinstance(orchestrator_options, OrchestratorOptions):
+                total_trials = max(orchestrator_options.total_trials, total_trials)
+            kw["total_trials"] = total_trials + max_trials
         options = self._resolve_orchestrator_options(
             orchestrator_options=orchestrator_options,
             parallelism=parallelism,
             tolerated_trial_failure_rate=tolerated_trial_failure_rate,
             initial_seconds_between_polls=initial_seconds_between_polls,
+            **kw
         )
-        total_trials = max_trials if max_trials is not None else options.total_trials
-        if total_trials is None:
-            raise ValueError("`max_trials` or `orchestrator.total_trials` must be set to run BOA trials.")
-
-        completed = 0
-        failed = 0
-        while completed + failed < total_trials:
-            remaining = total_trials - completed - failed
-            batch_size = min(remaining, options.max_pending_trials or remaining)
-            next_trials = self.get_next_trials(max_trials=batch_size)
-            if not next_trials:
-                break
-            trials = [self.experiment.trials[index] for index in next_trials]
-            self.runner.run_multiple(trials)
-            statuses = self._wait_for_trials(trials=trials, options=options)
-            for trial_index, status in statuses.items():
-                if status == TrialStatus.COMPLETED:
-                    self._complete_with_metric_data(trial_index=trial_index)
-                    completed += 1
-                else:
-                    self._save_or_update_trial_in_db_if_possible(
-                        experiment=self.experiment,
-                        trial=self.experiment.trials[trial_index],
-                    )
-                    failed += 1
-            self.report_results()
+        orchestrator = Orchestrator(
+            experiment=self._experiment,
+            generation_strategy=self._generation_strategy_or_choose(),
+            options=options,
+            db_settings=db_settings_from_storage_config(self._storage_config)
+            if self._storage_config is not None
+            else None,
+        )
+        max_trials = max_trials or orchestrator.options.total_trials
+        # Note: This Orchestrator call will handle storage internally
+        orchestrator.run_n_trials(max_trials=max_trials, ignore_global_stopping_strategy=ignore_global_stopping_strategy, idle_callback=self.report_results)
+        # orchestrator.run_n_trials(max_trials=max_trials)
 
     def _wait_for_trials(self, trials, options: OrchestratorOptions) -> dict[int, TrialStatus]:
         pending = {trial.index: trial for trial in trials}
@@ -237,7 +260,7 @@ class BOAClient(Client):
         logger.info(f"Saved client to `{self.client_filepath}`.")
         logger.info(f"Saved optimization summary to `{self.optimization_csv}`.")
 
-    def report_results(self, force_refit: bool = False) -> None:
+    def report_results(self, *args, force_refit: bool = False) -> None:
         self.save_data()
         try:
             trials = self.get_best_trials(use_model_predictions=False)
@@ -374,6 +397,7 @@ def _parameter_config_from_dict(parameter: dict[str, Any]):
     parameter = copy.deepcopy(parameter)
     parameter_type = parameter.pop("type")
     if parameter_type == "fixed":
+        parameter.setdefault("parameter_type", type(parameter["value"]).__name__) 
         parameter["values"] = [parameter.pop("value")]
         parameter.setdefault("is_ordered", False)
         return ChoiceParameterConfig(**parameter)
@@ -417,6 +441,7 @@ def _configure_generation_strategy(client: BOAClient, config: BOAConfig) -> None
 
 def get_client(config: BOAConfig, wrapper: BaseWrapper | None = None, runner=None, **kwargs) -> BOAClient:
     client = BOAClient(wrapper=wrapper, orchestrator_options=config.orchestrator, **kwargs)
+    # client = Client(**kwargs)
     parameters = [_parameter_config_from_dict(parameter) for parameter in config.parameters]
     client.configure_experiment(
         parameters=parameters,
@@ -432,6 +457,8 @@ def get_client(config: BOAConfig, wrapper: BaseWrapper | None = None, runner=Non
 
     if runner is None:
         runner = WrappedJobRunner(wrapper=wrapper)
+        # runner = WrappedJobRunner2(wrapper=wrapper)
+        # runner = WrappedJobRunner3(wrapper=wrapper)
     client.configure_runner(runner=runner)
 
     if config.optimization.tracking_metrics:
@@ -447,7 +474,301 @@ def get_client(config: BOAConfig, wrapper: BaseWrapper | None = None, runner=Non
         client.configure_metrics(metrics=metrics)
     if wrapper is not None and not getattr(wrapper, "metric_names", None):
         wrapper.metric_names = list(client.experiment.metrics.keys())
+
+
+
+
+
+
+
+    # client = Client()
+    # # Define six float parameters for the Hartmann6 function
+    # parameters = [
+    #     RangeParameterConfig(
+    #         name="x1", parameter_type="float", bounds=(-5, 10)
+    #     ),
+    #     RangeParameterConfig(
+    #         name="x2", parameter_type="float", bounds=(0, 15)
+    #     ),
+    # ]
+
+    # client.configure_experiment(
+    #     parameters=parameters,
+    #     # The following arguments are only necessary when saving to the DB
+    #     name="branin_experiment",
+    #     description="Optimization of the branin function",
+    #     owner="developer",
+    # )
+    # client.configure_optimization(objective="-branin")
+    # runner = MockRunner()
+    # client.configure_runner(runner=runner)
+    # hartmann6_metric = MockMetric(name="branin")
+    # client.configure_metrics(metrics=[hartmann6_metric])
+
+    # branin_pt = PassThrough(name="branin", wrapper=wrapper)
+    # client.configure_metrics(metrics=[branin_pt])
+
     return client
 
 
 Scheduler = BOAClient
+
+
+branin = get_synth_func("branin")
+
+# Hartmann6 function
+def hartmann6(x1, x2, x3, x4, x5, x6):
+    alpha = np.array([1.0, 1.2, 3.0, 3.2])
+    A = np.array([
+        [10, 3, 17, 3.5, 1.7, 8],
+        [0.05, 10, 17, 0.1, 8, 14],
+        [3, 3.5, 1.7, 10, 17, 8],
+        [17, 8, 0.05, 10, 0.1, 14]
+    ])
+    P = 10**-4 * np.array([
+        [1312, 1696, 5569, 124, 8283, 5886],
+        [2329, 4135, 8307, 3736, 1004, 9991],
+        [2348, 1451, 3522, 2883, 3047, 6650],
+        [4047, 8828, 8732, 5743, 1091, 381]
+    ])
+
+    outer = 0.0
+    for i in range(4):
+        inner = 0.0
+        for j, x in enumerate([x1, x2, x3, x4, x5, x6]):
+            inner += A[i, j] * (x - P[i, j])**2
+        outer += alpha[i] * np.exp(-inner)
+    return -outer
+
+class MockRunner(IRunner):
+    def run_trial(
+        self, trial_index: int, parameterization: TParameterization
+    ) -> dict[str, Any]:
+        file_name = f"{int(time.time())}.txt"
+
+        x1 = parameterization["x1"]
+        x2 = parameterization["x2"]
+
+
+        result = branin(x1, x2)
+
+        with open(file_name, "w") as f:
+            f.write(f"{result}")
+
+        return {"file_name": file_name}
+
+    def poll_trial(
+        self, trial_index: int, trial_metadata: Mapping[str, Any]
+    ) -> TrialStatus:
+        file_name = trial_metadata["file_name"]
+        time_elapsed = time.time() - int(file_name[:4])
+
+        if time_elapsed < 5:
+            return TrialStatus.RUNNING
+
+        return TrialStatus.COMPLETED
+    
+
+class MockMetric(IMetric):
+    def fetch(
+        self,
+        trial_index: int,
+        trial_metadata: Mapping[str, Any],
+    ) -> tuple[int, float | tuple[float, float]]:
+        file_name = trial_metadata["file_name"]
+
+        with open(file_name, 'r') as file:
+            value = float(file.readline())
+            return (0, value)
+
+
+class WrappedJobRunner2(Runner, metaclass=RunnerRegister):
+    def __init__(self, wrapper: BaseWrapper = None, *args, **kwargs):
+
+        self.wrapper = wrapper or BaseWrapper()
+        self.queue = multiprocessing.Manager().Queue()
+        super().__init__(*args, **kwargs)
+
+    def run(self, trial: Trial) -> Dict[str, Any]:
+        """Deploys a trial based on custom runner subclass implementation.
+
+        Add a logging queue handler to the boa and ax root loggers to capture logs from the
+        wrapper.
+
+        Args:
+            trial: The trial to deploy.
+
+        Returns:
+            Dict of run metadata from the deployment process.
+        """
+        parameterization = trial.arm.parameters
+        file_name = f"{int(time.time())}.txt"
+
+        x1 = parameterization["x1"]
+        x2 = parameterization["x2"]
+
+
+        result = branin(x1, x2)
+
+        with open(file_name, "w") as f:
+            f.write(f"{result}")
+
+        return {"file_name": file_name}
+
+    def run_multiple(self, trials) -> dict[int, dict[str, Any]]:
+        """Runs a single evaluation for each of the given trials. Useful when deploying
+        multiple trials at once is more efficient than deploying them one-by-one.
+        Used in Ax ``Scheduler``.
+
+        NOTE: By default simply loops over `run_trial`. Should be overwritten
+        if deploying multiple trials in batch is preferable.
+
+        Args:
+            trials: Iterable of trials to be deployed, each containing arms with
+                parameterizations to be evaluated. Can be a `Trial`
+                if contains only one arm or a `BatchTrial` if contains
+                multiple arms.
+
+        Returns:
+            Dict of trial index to the run metadata of that trial from the deployment
+            process.
+        """
+        results = {}
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            trial_runs = {executor.submit(self.run, trial=trial): trial.index for trial in trials}
+            for future in concurrent.futures.as_completed(trial_runs):
+                trial_index = trial_runs[future]
+                try:
+                    results[trial_index] = future.result()
+                except Exception as e:
+                    logger.exception(f"Error completing run because of {e}!")
+                    raise
+            concurrent.futures.wait(trial_runs)
+
+        return results
+
+    def poll_trial_status(self, trials: Iterable[Trial]) -> Dict[TrialStatus, Set[int]]:
+        """Checks the status of any non-terminal trials and returns their
+        indices as a mapping from TrialStatus to a list of indices. Required
+        for runners used with Ax ``Scheduler``.
+
+        NOTE: Does not need to handle waiting between polling calls while trials
+        are running; this function should just perform a single poll.
+
+        Args:
+            trials: Trials to poll.
+
+        Returns:
+            A dictionary mapping TrialStatus to a list of trial indices that have
+            the respective status at the time of the polling. This does not need to
+            include trials that at the time of polling already have a terminal
+            (ABANDONED, FAILED, COMPLETED) status (but it may).
+        """
+        
+        status_dict = defaultdict(set)
+        for trial in trials:
+            status_dict[TrialStatus.COMPLETED].add(trial.index)
+
+        return status_dict
+
+    def to_dict(self) -> dict:
+        """Convert runner to a dictionary."""
+
+        parents = self.__class__.mro()[1:]  # index 0 is the class itself
+
+        properties = serialize_init_args(self, parents=parents, match_private=True, exclude_fields=["wrapper", "queue"])
+
+        properties["__type"] = self.__class__.__name__
+        return properties
+
+
+class WrappedJobRunner3(Runner, metaclass=RunnerRegister):
+    def __init__(self, wrapper: BaseWrapper = None, *args, **kwargs):
+
+        self.wrapper = wrapper or BaseWrapper()
+        self.queue = multiprocessing.Manager().Queue()
+        super().__init__(*args, **kwargs)
+
+    def run(self, trial: Trial) -> Dict[str, Any]:
+        """Deploys a trial based on custom runner subclass implementation.
+
+        Add a logging queue handler to the boa and ax root loggers to capture logs from the
+        wrapper.
+
+        Args:
+            trial: The trial to deploy.
+
+        Returns:
+            Dict of run metadata from the deployment process.
+        """
+        metadata = self.wrapper.run_model(trial)
+        if metadata is None:
+            metadata = {}
+        metadata["parameterization"] = trial.arm.parameters
+        return metadata
+
+    # def run_multiple(self, trials) -> dict[int, dict[str, Any]]:
+    #     """Runs a single evaluation for each of the given trials. Useful when deploying
+    #     multiple trials at once is more efficient than deploying them one-by-one.
+    #     Used in Ax ``Scheduler``.
+
+    #     NOTE: By default simply loops over `run_trial`. Should be overwritten
+    #     if deploying multiple trials in batch is preferable.
+
+    #     Args:
+    #         trials: Iterable of trials to be deployed, each containing arms with
+    #             parameterizations to be evaluated. Can be a `Trial`
+    #             if contains only one arm or a `BatchTrial` if contains
+    #             multiple arms.
+
+    #     Returns:
+    #         Dict of trial index to the run metadata of that trial from the deployment
+    #         process.
+    #     """
+    #     results = {}
+    #     with concurrent.futures.ThreadPoolExecutor() as executor:
+    #         trial_runs = {executor.submit(self.run, trial=trial): trial.index for trial in trials}
+    #         for future in concurrent.futures.as_completed(trial_runs):
+    #             trial_index = trial_runs[future]
+    #             try:
+    #                 results[trial_index] = future.result()
+    #             except Exception as e:
+    #                 logger.exception(f"Error completing run because of {e}!")
+    #                 raise
+    #         concurrent.futures.wait(trial_runs)
+
+    #     return results
+
+    def poll_trial_status(self, trials: Iterable[Trial]) -> Dict[TrialStatus, Set[int]]:
+        """Checks the status of any non-terminal trials and returns their
+        indices as a mapping from TrialStatus to a list of indices. Required
+        for runners used with Ax ``Scheduler``.
+
+        NOTE: Does not need to handle waiting between polling calls while trials
+        are running; this function should just perform a single poll.
+
+        Args:
+            trials: Trials to poll.
+
+        Returns:
+            A dictionary mapping TrialStatus to a list of trial indices that have
+            the respective status at the time of the polling. This does not need to
+            include trials that at the time of polling already have a terminal
+            (ABANDONED, FAILED, COMPLETED) status (but it may).
+        """
+        
+        status_dict = defaultdict(set)
+        for trial in trials:
+            status_dict[TrialStatus.COMPLETED].add(trial.index)
+
+        return status_dict
+
+    def to_dict(self) -> dict:
+        """Convert runner to a dictionary."""
+
+        parents = self.__class__.mro()[1:]  # index 0 is the class itself
+
+        properties = serialize_init_args(self, parents=parents, match_private=True, exclude_fields=["wrapper", "queue"])
+
+        properties["__type"] = self.__class__.__name__
+        return properties
