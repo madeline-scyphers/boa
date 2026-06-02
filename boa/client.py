@@ -58,6 +58,7 @@ from ax.api.configs import RangeParameterConfig
 from ax.api.protocols.metric import IMetric
 from ax.api.protocols.runner import IRunner, TrialStatus
 from ax.api.types import TParameterization
+from ax.generation_strategy.center_generation_node import CenterGenerationNode
 
 logger = get_logger()
 
@@ -448,10 +449,15 @@ def get_client(config: BOAConfig, wrapper: BaseWrapper | None = None, runner=Non
         parameter_constraints=config.parameter_constraints,
         name=config.script_options.exp_name,
     )
+    if (pruning_target_parameterization := config.optimization.pruning_target_parameterization) == "all":
+        cNode = CenterGenerationNode("")
+        cNode.search_space = client.experiment.search_space
+        pruning_target_parameterization = cNode.compute_center_params()
+        logger.info(f"Pruning all parameters. Pruning target: {pruning_target_parameterization}")
     client.configure_optimization(
         objective=config.optimization.objective,
         outcome_constraints=config.optimization.outcome_constraints,
-        pruning_target_parameterization=config.optimization.pruning_target_parameterization,
+        pruning_target_parameterization=pruning_target_parameterization,
     )
     _configure_generation_strategy(client=client, config=config)
 
