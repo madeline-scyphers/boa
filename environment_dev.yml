@@ -1,7 +1,6 @@
 name: boa-dev
 channels:
 - conda-forge
-- domdfcoding
 dependencies:
 - python>=3.13
   # mac x86 or apple silicone macs on rosetta python need pytorch>2
@@ -15,7 +14,6 @@ dependencies:
 - ipywidgets>=7.5
 - ax-platform>=1
 - ruamel.yaml<1
-- domdfcoding::attr_utils
 - attrs<24
 - jinja2<4
 

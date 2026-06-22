@@ -9,8 +9,6 @@ dependencies:
   # and torchaudio
   # Windows will need to install pytorch from the pytorch channel first
 - pytorch<3
-- numpy<2
-- pandas<3
 - scipy<2
 - scikit-learn<2
 - click<9
@@ -21,7 +19,7 @@ dependencies:
 # something in 0.3.7 was introduced that caused both run_n_trials and run_all_trials to not run
 # the expected number of trials. Removing support for 0.3.7 and above until we can figure out what's going on
 # When fixed, add back into environment_dev.yml and CI.yaml
-- ax-platform  >=0.3.1,<=0.3.6
+- ax-platform  >=1
 - ruamel.yaml <1
 - attrs<24
 - jinja2<4
