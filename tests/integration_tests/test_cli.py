@@ -3,7 +3,6 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from ax.service.scheduler import FailureRateExceededError
 
 from boa import (
     BaseWrapper,
@@ -11,9 +10,10 @@ from boa import (
     cd_and_cd_back,
     get_trial_dir,
     load_jsonlike,
-    scheduler_from_json_file,
+    client_from_json_file as scheduler_from_json_file,
     split_shell_command,
 )
+from boa.ax_api import FailureRateExceededError, TrialStatus
 from boa.cli import main as cli_main
 from boa.definitions import ROOT
 
@@ -26,14 +26,17 @@ try:
         R_INSTALLED = False
     else:
         R_INSTALLED = True
-except subprocess.CalledProcessError:
+except (subprocess.CalledProcessError, FileNotFoundError):
     R_INSTALLED = False
 
 
 class WrapperDunderMain(BaseWrapper):
     def load_config(self, config_path, *args, **kwargs) -> BOAConfig:
         return BOAConfig(
-            objective={"metrics": [{"name": "passthrough"}]},
+            optimization={
+                "objective": "passthrough",
+                "metrics": {"passthrough": {"name": "passthrough", "metric_type": "passthrough"}},
+            },
             params=dict(
                 a=dict(x1=dict(bounds=[-5.0, 10.0], type="range")),
                 b=dict(x2=dict(bounds=[-5.0, 10.0], type="range")),
@@ -44,14 +47,14 @@ class WrapperDunderMain(BaseWrapper):
                 ["params", "b"],
                 ["params_a"],
             ],
-            scheduler=dict(n_trials=5),
+            n_trials=5,
         )
 
     def run_model(self, trial) -> None:
         pass
 
-    def set_trial_status(self, trial) -> None:
-        trial.mark_completed()
+    def get_trial_status(self, trial):
+        return TrialStatus.COMPLETED
 
     def fetch_trial_data(self, trial, *args, **kwargs) -> dict:
         return 1 / (trial.index + 1)
@@ -69,7 +72,7 @@ def test_calling_command_line_test_script_doesnt_error_out_and_produces_correct_
     scheduler = stand_alone_opt_package_run
     wrapper = scheduler.experiment.runner.wrapper
     config = wrapper.config
-    assert len(scheduler.experiment.trials) == config.trials
+    assert len(scheduler.experiment.trials) == config.n_trials
 
 
 # parametrize the test to use the full version (all scripts) or the light version (only run_model.R)
@@ -99,7 +102,8 @@ def test_calling_command_line_r_test_scripts(r_scripts_run, request):
     scheduler = request.getfixturevalue(r_scripts_run)
     wrapper = scheduler.wrapper
     config = wrapper.config
-    assert len(scheduler.experiment.trials) == config.trials
+    expected_trials = config.n_trials or config.orchestrator.total_trials
+    assert len(scheduler.experiment.trials) == expected_trials
 
     assert scheduler
     if "r_full" == r_scripts_run:
@@ -112,7 +116,7 @@ def test_calling_command_line_r_test_scripts(r_scripts_run, request):
 
             pre_num_trials = len(scheduler.experiment.trials)
 
-            scheduler = scheduler_from_json_file(scheduler.scheduler_filepath)
+            scheduler = scheduler_from_json_file(scheduler.client_filepath)
             scheduler.run_n_trials(5)
 
             post_num_trials = len(scheduler.experiment.trials)

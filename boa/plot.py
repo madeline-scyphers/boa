@@ -23,6 +23,11 @@ import boa.plotting
 from boa.plotting import app_view
 
 
+def build_plot_apps(scheduler_path):
+    template = app_view(scheduler=scheduler_path)
+    return {pathlib.Path(__file__).name: template}
+
+
 @click.command(
     epilog=f"Name of Plots to be added here: {', '.join(plot for plot in boa.plotting.__all__ if plot != 'app_view')}"
 )
@@ -39,8 +44,7 @@ def main(scheduler_path):
     Creating a web app with the scheduler json file.
 
     """
-    template = app_view(scheduler=scheduler_path)
-    pn.serve({pathlib.Path(__file__).name: template})
+    pn.serve(build_plot_apps(scheduler_path=scheduler_path))
 
 
 if __name__ == "__main__":

@@ -8,10 +8,8 @@ except ImportError:
     # package not installed
     __version__ = "0.0.0"
 
-from boa.ax_instantiation_utils import *  # noqa
 from boa.config import *  # noqa
 from boa.controller import *  # noqa
-from boa.instantiation_base import *  # noqa
 from boa.metrics.metric_funcs import *  # noqa
 from boa.metrics.metrics import *  # noqa
 from boa.metrics.modular_metric import *  # noqa

@@ -1,14 +1,18 @@
 # MultiObjective Optimization config
-objective:
+optimization:
+    objective: -RMSE, -Meanyyy
     metrics:
         # List all of your metrics here,
         # only list multiple objectives for a multi objective optimization
-        - metric: RMSE  # names default to the metric itself if not specified
-        - name: Meanyyy
-          metric: Mean
+        RMSE:
+            metric: RMSE  # names default to the metric itself if not specified
+            metric_type: boa
+        Meanyyy:
+            name: Meanyyy
+            metric: Mean
+            metric_type: boa
     outcome_constraints: []
-    objective_thresholds: []
-scheduler:
+orchestrator:
     total_trials: 10
 script_options:
     exp_name: "test_experiment"
@@ -17,27 +21,27 @@ parameters:
     x1:
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float
 
     x2:
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float
 
     x3:
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float
 
     x4:
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float
 
     x5:
         type: fixed
         value: .5
-        value_type: float
+        parameter_type: float
 
 parameter_constraints:
     - x2 + x1 >= .1

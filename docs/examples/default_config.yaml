@@ -331,7 +331,7 @@ generation_strategy: {}
 #             in contrast to `total_trials` which is a hard limit, even after reloading the
 #             scheduler, this will run n_trials trials every time you reload the scheduler.
 #             Making it easier to use when reloading the scheduler and continuing to run trials.
-scheduler:
+orchestrator:
   max_pending_trials: '...'
   trial_type: '...'
   batch_size: '...'

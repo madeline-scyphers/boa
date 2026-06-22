@@ -91,11 +91,15 @@ from typing import Iterable, Type
 import numpy as np
 
 from boa.config import BOAMetric, MetricType
-from boa.metrics.metric_funcs import get_sklearn_func
+from boa.metrics.metric_funcs import (
+    get_sklearn_func,
+)
 from boa.metrics.metric_funcs import (
     normalized_root_mean_squared_error as normalized_root_mean_squared_error_,
 )
-from boa.metrics.metric_funcs import setup_sklearn_metric
+from boa.metrics.metric_funcs import (
+    setup_sklearn_metric,
+)
 from boa.metrics.modular_metric import ModularMetric
 from boa.metrics.synthetic_funcs import setup_synthetic_metric
 
@@ -176,6 +180,7 @@ class MeanSquaredError(BOASklearnMetric):
 
 MSE = MeanSquaredError
 mean_squared_error = MSE
+mse = MSE
 
 
 class RootMeanSquaredError(BOASklearnMetric):
@@ -190,7 +195,7 @@ class RootMeanSquaredError(BOASklearnMetric):
         For information on all parameters various metrics in general can be supplied
     """
 
-    _metric_to_eval = "mean_squared_error"
+    _metric_to_eval = "root_mean_squared_error"
 
     def __init__(
         self,
@@ -199,10 +204,6 @@ class RootMeanSquaredError(BOASklearnMetric):
         *args,
         **kwargs,
     ):
-        if isinstance(metric_func_kwargs, dict):
-            metric_func_kwargs.update({"squared": False})
-        else:
-            metric_func_kwargs = {"squared": False}
         super().__init__(
             lower_is_better=lower_is_better,
             metric_func_kwargs=metric_func_kwargs,
@@ -213,6 +214,7 @@ class RootMeanSquaredError(BOASklearnMetric):
 
 RMSE = RootMeanSquaredError
 root_mean_squared_error = RMSE
+rmse = RMSE
 
 
 class RSquared(BOASklearnMetric):
@@ -240,6 +242,7 @@ class RSquared(BOASklearnMetric):
 
 r2_score = RSquared
 R2 = RSquared
+r2 = R2
 
 
 class Mean(ModularMetric):
@@ -288,22 +291,22 @@ class NormalizedRootMeanSquaredError(ModularMetric):
 
 NRMSE = NormalizedRootMeanSquaredError
 normalized_root_mean_squared_error = NormalizedRootMeanSquaredError
+nrmse = NRMSE
 
 success = []
 
 
 def get_metric_from_config(config: BOAMetric, instantiate=True, **kwargs) -> ModularMetric:
-    kwargs["lower_is_better"] = config.minimize
     kwargs["metric_name"] = config.metric
     kw = {**config.to_dict(), **kwargs}
     if kw.get("metric_func_kwargs") is None:
         kw.pop("metric_func_kwargs")
-    if config.metric_type == MetricType.METRIC or config.metric_type == MetricType.BOA_METRIC:
+    if config.metric_type == MetricType.METRIC or config.metric_type == MetricType.BOA:
         metric = get_metric_by_class_name(instantiate=instantiate, **kw)
-    elif config.metric_type == MetricType.SKLEARN_METRIC:
+    elif config.metric_type == MetricType.SKLEARN:
         kw["sklearn_"] = True
         metric = get_metric_by_class_name(instantiate=instantiate, **kw)
-    elif config.metric_type == MetricType.SYNTHETIC_METRIC:
+    elif config.metric_type == MetricType.SYNTHETIC:
         metric = setup_synthetic_metric(instantiate=instantiate, **kw)
     elif config.metric_type == MetricType.PASSTHROUGH:  # only name but no metric type
         metric = PassThroughMetric(**kw)
@@ -330,7 +333,14 @@ def get_boa_metric(name) -> Type[ModularMetric]:
             return m
         raise KeyError
     except KeyError:
-        raise ValueError(f"Invalid Metric Name specified: {name}")
+        try:
+            name_lower = name.lower()
+            m = globals()[name_lower]
+            if issubclass(m, ModularMetric):
+                return m
+            raise KeyError
+        except KeyError:
+            raise ValueError(f"Invalid Metric Name specified: {name}")
 
 
 def _get_boa_metric_any_case(name: str):

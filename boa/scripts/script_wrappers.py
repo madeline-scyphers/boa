@@ -4,9 +4,9 @@ import subprocess
 from pathlib import Path
 
 import numpy as np
-from ax import Trial
 
 import boa
+from boa.ax_api import Trial, TrialStatus
 from boa.definitions import TEST_SCRIPTS_DIR
 
 
@@ -24,7 +24,6 @@ class BraninWrapper(boa.BaseWrapper):
 
         cmd = (
             f"python -m boa.scripts.synth_func_cli --output_dir {trial_dir}"
-            f" --standard_dev {self.config.objective.metrics[0].noise_sd}"
             f" --input_size {self.model_settings['input_size']}"
             f" -- {' '.join(str(val) for val in trial.arm.parameters.values())}"
         )
@@ -33,11 +32,11 @@ class BraninWrapper(boa.BaseWrapper):
         popen = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
         self._processes.append(popen)
 
-    def set_trial_status(self, trial: Trial) -> None:
+    def get_trial_status(self, trial):
         output_file = boa.get_trial_dir(self.experiment_dir, trial.index) / "output.json"
 
         if output_file.exists():
-            trial.mark_completed()
+            return TrialStatus.COMPLETED
 
     def fetch_trial_data(self, trial: Trial, *args, **kwargs):
         output_file = boa.get_trial_dir(self.experiment_dir, trial.index) / "output.json"

@@ -1,5 +1,4 @@
 # weird file name with dash in it because CLI conventions
-import dataclasses
 import os
 import sys
 import tempfile
@@ -8,13 +7,11 @@ from pathlib import Path
 import click
 import pandas as pd
 from attrs import fields_dict
-from ax import Data
-from ax.storage.json_store.decoder import object_from_json
 
-from boa.config import BOAConfig, BOAScriptOptions, MetricType
+from boa.ax_api import TrialStatus
+from boa.config import BOAConfig, BOAScriptOptions
 from boa.controller import Controller
-from boa.storage import scheduler_from_json_file
-from boa.utils import check_min_package_version
+from boa.storage import client_from_json_file
 from boa.wrappers.synthetic_wrapper import SyntheticWrapper
 from boa.wrappers.wrapper_utils import load_jsonlike
 
@@ -27,11 +24,11 @@ from boa.wrappers.wrapper_utils import load_jsonlike
     help="Path to configuration YAML file.",
 )
 @click.option(
-    "-sp",
-    "--scheduler-path",
+    "-cp",
+    "--client-path",
     type=click.Path(),
     default="",
-    help="Path to scheduler json file.",
+    help="Path to client json file.",
 )
 @click.option(
     "-n",
@@ -49,162 +46,87 @@ from boa.wrappers.wrapper_utils import load_jsonlike
     " (useful for testing)."
     " This requires your Wrapper to have the ability to take experiment_dir as an argument"
     " to ``load_config``. The default ``load_config`` does support this."
-    " This is also only done for initial run, not for reloading from scheduler json file.",
+    " This is also only done for initial run, not for reloading from client json file.",
 )
-def main(config_path, scheduler_path, num_trials, temporary_dir):
-    """Asynchronous optimization script. Asynchronously run your optimization.
-    With this script, you can pass in a configuration file that specifies your
-    optimization parameters and objective and BOA will output a
-    optimization.csv file with your parameters.
-
-    BLAH BLAH BLAH
-
-    Parameters
-    ----------
-    config_path
-        Path to configuration YAML file.
-    scheduler_path
-        Path to scheduler json file.
-    num_trials
-        Number of trials to run. Overrides trials in config file.
-
-    Returns
-    -------
-        Scheduler
-    """
+def main(config_path, client_path, num_trials, temporary_dir):
     if temporary_dir:
         with tempfile.TemporaryDirectory() as temp_dir:
-            experiment_dir = Path(temp_dir)
             return run(
                 config_path=config_path,
-                scheduler_path=scheduler_path,
+                client_path=client_path,
                 num_trials=num_trials,
-                experiment_dir=experiment_dir,
+                experiment_dir=Path(temp_dir),
             )
     return run(
         config_path=config_path,
-        scheduler_path=scheduler_path,
+        client_path=client_path,
         num_trials=num_trials,
     )
 
 
-def run(config_path, scheduler_path, num_trials, experiment_dir=None):
-    if experiment_dir:
-        experiment_dir = Path(experiment_dir).resolve()
-    # set num_trials before loading config because scheduler options is frozen
-    config_kw = (
-        dict(
-            n_trials=num_trials,
-            scheduler=dict(total_trials=None, n_trials=None),
-        )
-        if num_trials
-        else {}
-    )
+def run(config_path, client_path, num_trials, experiment_dir=None):
+    experiment_dir = Path(experiment_dir).resolve() if experiment_dir else None
+    config_kw = dict(n_trials=num_trials) if num_trials else {}
 
-    config = None
-    if config_path:
-        config = BOAConfig.from_jsonlike(config_path, **config_kw)
-    if scheduler_path:
-        scheduler_path = Path(scheduler_path).resolve()
-        if not config:
-            sch_jsn = load_jsonlike(scheduler_path)
-            config = BOAConfig(**{**object_from_json(sch_jsn["wrapper"]["config"]), **config_kw})
-    if "steps" in config.generation_strategy:
-        for step in config.generation_strategy["steps"]:
-            step.max_parallelism = None
-    else:
-        config.generation_strategy["max_parallelism_override"] = -1
-    for metric in config.objective.metrics:
-        metric.metric = "passthrough"
-        metric.metric_type = MetricType.PASSTHROUGH
-    if experiment_dir:
-        config.script_options.experiment_dir = experiment_dir
-
-    if scheduler_path:
-        scheduler = scheduler_from_json_file(filepath=scheduler_path)
+    if client_path:
+        client = client_from_json_file(filepath=Path(client_path).resolve())
+        if client.wrapper is None:
+            raise ValueError("Loaded client does not have a BOA wrapper attached.")
+        config = client.wrapper.config
         if num_trials:
-            scheduler.wrapper.config.scheduler = dataclasses.replace(
-                scheduler.wrapper.config.scheduler, total_trials=num_trials
-            )
-            scheduler.wrapper.config.n_trials = num_trials
-            scheduler.options = dataclasses.replace(scheduler.options, total_trials=num_trials)
+            config.n_trials = num_trials
     else:
+        config = BOAConfig.from_jsonlike(config_path, **config_kw)
+        if experiment_dir:
+            config.script_options.experiment_dir = experiment_dir
         controller = Controller(config_path=config_path, wrapper=SyntheticWrapper(config=config))
-        controller.initialize_scheduler(get_exp_kw={"check_for_nans": False})
-        scheduler = controller.scheduler
+        controller.initialize_client()
+        client = controller.client
 
-    if not scheduler.opt_csv.exists() and scheduler.experiment.trials:
-        controller.logger.warning(
-            "No optimization CSV found, but previous trials exist. "
-            "\nLikely cause was a previous run was moved with out the CSV."
+    if client.optimization_csv.exists():
+        exp_attach_data_from_opt_csv(list(client.experiment.metrics.keys()), client)
+
+    n_trials = num_trials or config.n_trials
+    if n_trials is None:
+        raise ValueError("Async optimization requires `num_trials` or `n_trials`.")
+    generate_pending_trials(client=client, n_trials=n_trials)
+    client.save_data(metrics_to_end=True)
+    return client
+
+
+def generate_pending_trials(client, n_trials: int):
+    new_trials = []
+    for _ in range(n_trials):
+        generator_runs = client.generation_strategy.gen(
+            experiment=client.experiment,
+            n=1,
+            num_trials=1,
         )
-
-    if scheduler.opt_csv.exists():
-        exp_attach_data_from_opt_csv(config.objective.metric_names, scheduler)
-
-    generator_runs = scheduler.generation_strategy._gen_multiple(
-        experiment=scheduler.experiment, num_generator_runs=scheduler.wrapper.config.trials
-    )
-
-    for generator_run in generator_runs:
-        trial = scheduler.experiment.new_trial(
-            generator_run=generator_run,
-        )
-        trial.runner = scheduler.runner
-        trial.mark_running()
-
-    if scheduler.experiment.fetch_data().df.empty:
-        trials = scheduler.experiment.trials
-        metrics = scheduler.experiment.metrics
-        scheduler.experiment.attach_data(
-            Data(
-                df=pd.DataFrame(
-                    dict(
-                        trial_index=[i for i in trials.keys() for m in metrics.keys()],
-                        arm_name=[f"{i}_0" for i in trials.keys() for m in metrics.keys()],
-                        metric_name=[m for i in trials.keys() for m in metrics.keys()],
-                        mean=None,
-                        sem=0.0,
-                    )
-                )
-            )
-        )
-
-    scheduler.save_data(metrics_to_end=True, ax_kwargs=dict(always_include_field_columns=True))
-    return scheduler
+        if not generator_runs:
+            break
+        trial = client.experiment.new_trial(generator_run=generator_runs[0][0])
+        new_trials.append(trial)
+    for trial in new_trials:
+        trial.mark_running(no_runner_required=True)
 
 
-def exp_attach_data_from_opt_csv(metric_names, scheduler):
-    df = pd.read_csv(scheduler.opt_csv)
-    isin = df.columns.isin(metric_names).sum() == len(metric_names)
-    if not isin:
+def exp_attach_data_from_opt_csv(metric_names, client):
+    df = pd.read_csv(client.optimization_csv)
+    if not set(metric_names).issubset(df.columns):
         return
-
-    exp_df = scheduler.experiment.fetch_data().df
-    nan_rows = exp_df["mean"].isna()
-    nan_trials = exp_df.loc[nan_rows]["trial_index"].unique()
-    new_data = df.loc[df["trial_index"].isin(nan_trials)]
-    if new_data.empty:
+    ready = df[metric_names].notna().all(axis=1)
+    if not ready.any():
         return
-    metric_data = new_data[list(metric_names)].to_dict()
-    if check_min_package_version("ax-platform", "0.3.3"):
-        kw = dict(combine_with_last_data=True)
-    else:
-        kw = dict(overwrite_existing_data=True)
-    scheduler.experiment.attach_data(
-        Data(
-            df=pd.DataFrame.from_records(
-                dict(
-                    trial_index=[idx for trial_results in metric_data.values() for idx in trial_results.keys()],
-                    arm_name=[f"{idx}_0" for trial_results in metric_data.values() for idx in trial_results.keys()],
-                    metric_name=[metric for metric, trial_results in metric_data.items() for _ in trial_results],
-                    mean=[val for trial_results in metric_data.values() for val in trial_results.values()],
-                    sem=0.0,
-                )
-            )
-        ),
-        **kw,
-    )
+    for _, row in df.loc[ready].iterrows():
+        trial_index = int(row["trial_index"])
+        if trial_index not in client.experiment.trials:
+            continue
+        trial = client.experiment.trials[trial_index]
+        if trial.status == TrialStatus.COMPLETED:
+            continue
+        raw_data = {metric: float(row[metric]) for metric in metric_names}
+        client.attach_data(trial_index=trial_index, raw_data=raw_data)
+        trial.mark_completed(unsafe=True)
 
 
 def get_config_options(script_options: dict = None):

@@ -12,18 +12,22 @@ import ruamel.yaml
 import ruamel.yaml.comments
 from attr import asdict
 from attrs import Factory, converters, define, field, fields_dict
-from ax.modelbridge.dispatch_utils import choose_generation_strategy
-from ax.service.utils.instantiation import TParameterRepresentation
-from ax.service.utils.scheduler_options import SchedulerOptions
-from ax.storage.json_store.encoder import object_to_json
-from ax.utils.common.base import Base as AxBase
 
+from boa.ax_api import (
+    AxBase,
+    CLASS_TO_REVERSE_REGISTRY,
+    GenerationStrategyDispatchStruct,
+    ModelConfig,
+    OrchestratorOptions,
+    TParameterRepresentation,
+    choose_generation_strategy_new,
+    object_to_json,
+)
 from boa.config.converters import (
     _convert_noton_type,
-    _gen_strat_converter,
     _metric_converter,
+    _orchestrator_converter,
     _parameter_normalization,
-    _scheduler_converter,
 )
 from boa.definitions import PathLike
 from boa.utils import StrEnum, deprecation
@@ -37,9 +41,9 @@ __all__ = [
     "BOAObjective",
     "BOAScriptOptions",
     "BOAMetric",
+    "BOAOptimization",
+    "BOAGenerationStrategy",
     "MetricType",
-    # "SchedulerOptions",
-    # "GenerationStep",
 ]
 
 
@@ -60,6 +64,37 @@ def strip_white_space(s: str, strip_all=True):  # pragma: no cover  # Used in do
 #     return NL.join(ln.strip() for ln in s.splitlines())
 
 
+def _get_model_from_reverse_registry(model_name: str) -> type | None:
+    for cls, reverse_registry in CLASS_TO_REVERSE_REGISTRY.items():
+        if isinstance(reverse_registry, dict):
+            if model_name in reverse_registry:
+                return reverse_registry[model_name]
+        elif model_name in reverse_registry:
+            return cls
+    return None
+
+
+def _model_name_from_reverse_registry(model_cls: type) -> str:
+    for cls, reverse_registry in CLASS_TO_REVERSE_REGISTRY.items():
+        if isinstance(reverse_registry, dict):
+            for name, registered_cls in reverse_registry.items():
+                if registered_cls is model_cls:
+                    return name
+        elif cls is model_cls and reverse_registry:
+            return next(iter(reverse_registry))
+    return model_cls.__name__
+
+
+def _convert_registered_classes(obj):
+    if isinstance(obj, dict):
+        return {k: _convert_registered_classes(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_convert_registered_classes(v) for v in obj]
+    if isinstance(obj, str):
+        return _get_model_from_reverse_registry(obj) or obj
+    return obj
+
+
 @define
 class _Utils:
     _filtered_dict_fields: ClassVar[list[str]] = None
@@ -76,13 +111,25 @@ class _Utils:
                 return str(val)
             elif isinstance(val, AxBase):
                 return object_to_json(val)
+            elif isinstance(val, type):
+                return _model_name_from_reverse_registry(val)
             return val
 
-        def remove_type_recurse(d):
+        def serialize_recurse(d):
             if isinstance(d, dict):
-                return {k: remove_type_recurse(v) for k, v in d.items() if k != "__type"}
+                return {k: serialize_recurse(v) for k, v in d.items() if k != "__type"}
             elif isinstance(d, list):
-                return [remove_type_recurse(v) for v in d]
+                return [serialize_recurse(v) for v in d]
+            elif isinstance(d, Enum):
+                return d.value
+            elif isinstance(d, pathlib.Path):
+                return str(d)
+            elif is_dataclass(d):
+                return serialize_recurse(dc_asdict(d))
+            elif isinstance(d, AxBase):
+                return object_to_json(d)
+            elif isinstance(d, type):
+                return _model_name_from_reverse_registry(d)
             return d
 
         # d = object_to_json(self)
@@ -100,15 +147,15 @@ class _Utils:
             ),
         }
 
-        return remove_type_recurse(d)
+        return serialize_recurse(d)
 
 
 class MetricType(StrEnum):
     METRIC = "metric"
-    BOA_METRIC = "boa_metric"
-    SKLEARN_METRIC = "sklearn_metric"
-    SYNTHETIC_METRIC = "synthetic_metric"
-    PASSTHROUGH = "pass_through"
+    BOA = "boa"
+    SKLEARN = "sklearn"
+    SYNTHETIC = "synthetic"
+    PASSTHROUGH = "passthrough"
     INSTANTIATED = "instantiated"
 
 
@@ -228,6 +275,114 @@ class BOAMetric(_Utils):
             self.name = self.metric
         elif self.metric is None:
             self.metric_type = MetricType.PASSTHROUGH
+
+
+def _optimization_metrics_converter(metrics: Optional[dict[str, BOAMetric | dict | str]]) -> dict[str, BOAMetric]:
+    if metrics is None:
+        return {}
+
+    converted = {}
+    for name, metric in metrics.items():
+        if isinstance(metric, BOAMetric):
+            converted[name] = metric
+            continue
+        if isinstance(metric, str):
+            metric = {"metric": metric}
+        else:
+            metric = dict(metric)
+        if not metric.get("name"):
+            metric["name"] = name
+        if not metric.get("metric"):
+            metric["metric"] = name
+        converted[name] = BOAMetric(**metric)
+    return converted
+
+
+@define(kw_only=True)
+class BOAOptimization(_Utils):
+    objective: str = field(
+        metadata={
+            "doc": """Ax objective string describing the optimization goal.
+            Supports single objective, scalarized objective, and multi-objective
+            expressions accepted by Ax's `Client.configure_optimization`."""
+        },
+    )
+    outcome_constraints: Optional[list[str]] = field(
+        factory=list,
+        metadata={
+            "doc": """Ax outcome constraint strings, such as
+            `score >= 0.85` or `training_time <= 2`."""
+        },
+    )
+    metrics: dict[str, BOAMetric] = field(
+        factory=dict,
+        converter=_optimization_metrics_converter,
+        metadata={
+            "doc": """Optional BOA metric configuration keyed by metric name.
+            Metrics referenced by the objective or constraints default to pass-through
+            behavior when they are not configured here."""
+        },
+    )
+    tracking_metrics: list[str] = field(
+        factory=list,
+        metadata={
+            "doc": """Metric names to track without using them in the optimization objective."""
+        },
+    )
+    pruning_target_parameterization: Optional[dict] = field(
+        default=None,
+        metadata={
+            "doc": """Optional target parameterization Ax can use when pruning irrelevant parameters."""
+        },
+    )
+
+
+@define(kw_only=True)
+class BOAGenerationStrategy(_Utils):
+    struct: GenerationStrategyDispatchStruct = field(
+        metadata={
+            "doc": GenerationStrategyDispatchStruct.__doc__
+        },
+    )
+    model_config: Optional[ModelConfig] = field(
+        default=None,
+        metadata={"doc": "Optional Ax ModelConfig used when `struct.method` is `custom`.\n" + ModelConfig.__doc__},
+    )
+    botorch_acqf_class: Optional[type] = field(
+        default=None,
+        metadata={"doc": "Optional BoTorch acquisition function class name used for Bayesian optimization."},
+    )
+
+    def __init__(self, **config):
+        if "struct" in config:
+            struct = config.pop("struct")
+        else:
+            struct = config
+            config = {}
+
+        if isinstance(struct, dict):
+            struct = dict(struct)
+            model_config = struct.pop("model_config", config.pop("model_config", None))
+            botorch_acqf_class = struct.pop("botorch_acqf_class", config.pop("botorch_acqf_class", None))
+            struct = GenerationStrategyDispatchStruct(**struct)
+        else:
+            model_config = config.pop("model_config", None)
+            botorch_acqf_class = config.pop("botorch_acqf_class", None)
+
+        if isinstance(model_config, dict):
+            model_config = ModelConfig(**_convert_registered_classes(model_config))
+        if isinstance(botorch_acqf_class, str):
+            acqf_name = botorch_acqf_class
+            botorch_acqf_class = _get_model_from_reverse_registry(acqf_name)
+            if botorch_acqf_class is None:
+                raise ValueError(f"Could not find `{acqf_name}` in Ax's registered class names.")
+
+        self.__attrs_init__(
+            struct=struct,
+            model_config=model_config,
+            botorch_acqf_class=botorch_acqf_class,
+            **config,
+        )
 
 
 @define
@@ -385,7 +540,7 @@ class BOAScriptOptions(_Utils):
         default=None,
         metadata={"doc": "Shell command to write your configs out. See `run_model` for more details. "},
     )
-    set_trial_status: Optional[str] = field(
+    get_trial_status: Optional[str] = field(
         default=None,
         metadata={"doc": "Shell command to set your trial status. See `run_model` for more details. "},
     )
@@ -445,13 +600,26 @@ class BOAScriptOptions(_Utils):
 @define(kw_only=True)
 class BOAConfig(_Utils):
     """Base doc string"""
-
-    objective: dict | BOAObjective = field(
-        converter=_convert_noton_type(lambda d: BOAObjective(**d), type_=BOAObjective),
+    optimization: dict | BOAOptimization = field(
+        converter=_convert_noton_type(lambda d: BOAOptimization(**d), type_=BOAOptimization),
         metadata={
-            "default_doc": dict(metrics=[dict(name="metric1", metric="RMSE")]),
+            "default_doc": dict(objective="score", outcome_constraints=["training_time <= 2"]),
             "doc_strip_all": False,
-            "doc": BOAObjective.__doc__,
+            "doc": """
+Optimization goal passed to Ax's Client API. The objective is an Ax objective
+string, and outcome constraints are Ax constraint strings. Optional BOA metric
+configuration can be supplied under `metrics`, keyed by metric name.
+
+.. code-block:: yaml
+
+    optimization:
+        objective: score, -training_time
+        outcome_constraints: ["score >= 0.85", "training_time <= 2"]
+        metrics:
+            score:
+                metric_type: passthrough
+        tracking_metrics: [training_time]
+""",
         },
     )
 
@@ -475,10 +643,11 @@ parameter and the value is the dictionary representing the parameter.
     x1:
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float
     x2:
         type: range
-        bounds: [0.0, 1.0]  # value_type is inferred from bounds
+        bounds: [0.0, 1.0]
+        parameter_type: float
 
 .. code-block:: yaml
 
@@ -486,16 +655,15 @@ parameter and the value is the dictionary representing the parameter.
     -   name: x1
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float
 
 .. code-block:: yaml    
 
 
     ## Fixed Types 
-    x3: 4.0  # Fixed type, value is 4.0
     x4:
-        type: fixed
-        value: "some string"  # Fixed type, value is "some string"
+        parameter_type: choice
+        values: ["some string"]  # Fixed type, value is "some string"
 
     ## Choice Options 
     x5:
@@ -504,69 +672,58 @@ parameter and the value is the dictionary representing the parameter.
 """,  # noqa: W291
         },
     )
-    generation_strategy: Optional[dict] = field(
-        factory=dict,
-        converter=_gen_strat_converter,
+    generation_strategy: Optional[dict | BOAGenerationStrategy] = field(
+        default=None,
+        converter=lambda d: None
+        if d is None
+        else d
+        if isinstance(d, BOAGenerationStrategy)
+        else BOAGenerationStrategy(**d),
         metadata={
             "doc_strip_all": False,
             "doc": f"""
-Your generation strategy is how new trials will be generated, that is, what acquisition function
-will be used to select the next trial, what kernel will be used to model the objective function,
-as well as other options such as max parallelism.
-
-This is an optional section. If not specified, Ax will choose a generation strategy for you.
-Based on your objective, parameters, and other options. You can pass options to how Ax chooses
-a generation strategy by passing options under `generation_strategy`.
+Optional Ax >=1 generation strategy dispatch configuration. If not specified,
+Ax's Client chooses a default generation strategy. Top-level keys that belong to
+`GenerationStrategyDispatchStruct` are stored on `generation_strategy.struct`.
+`model_config` and `botorch_acqf_class` are split out because Ax passes them as
+separate arguments to `choose_generation_strategy`.
 
 Taken from Ax's documentation:
-{strip_white_space(choose_generation_strategy.__doc__, strip_all=False)}
-
-See https://ax.dev/tutorials/generation_strategy.html and 
-https://ax.dev/api/modelbridge.html#ax.modelbridge.dispatch_utils.choose_generation_strategy 
-For specific options. 
-
-If you want to specify your own generation strategy, you can do so by passing a list of
-steps under `generation_strategy.steps`
+{strip_white_space(choose_generation_strategy_new.__doc__, strip_all=False)}
 
 .. code-block:: yaml
 
     generation_strategy:
-        # Use Ax's SAASBO algorithm, which is particularly well suited for high dimensional problems
-        use_saasbo: true
-        max_parallelism_cap: 10  # Maximum number of trials allowed to run in parallel
-
-Other options are possible, 
-see https://ax.dev/tutorials/generation_strategy.html#1A.-Manually-configured-generation-strategy
-and Models from ax.modelbridge.registry.py for more options
-Some options include SOBOL, GPEI, Thompson, GPKG (knowledge gradient), and others.
-See https://ax.dev/api/modelbridge.html#ax.modelbridge.generation_node.GenerationStep
-For specific options you can pass to each step
-
-.. code-block:: yaml
+        method: fast
+        initialization_budget: 10
+        initialization_random_seed: 42
 
     generation_strategy:
-    steps:
-        -   model: SOBOL
-            num_trials: 20
-        -   model: GPEI  # Gaussian Process with Expected Improvement
-            num_trials: -1
-            max_parallelism: 10  # Maximum number of trials allowed to run in parallel
+        method: custom
+        model_config:
+            botorch_model_class: EnsembleMapSaasSingleTaskGP
+            mll_class: ExactMarginalLogLikelihood
+        botorch_acqf_class: PosteriorMean
 """,  # noqa: W291
         },
     )
-    scheduler: Optional[dict | SchedulerOptions] = field(
+    orchestrator: Optional[dict | OrchestratorOptions] = field(
         default=None,
-        converter=_convert_noton_type(_scheduler_converter, type_=SchedulerOptions, default_if_none=SchedulerOptions),
+        converter=lambda d: None
+        if d is None
+        else d
+        if isinstance(d, OrchestratorOptions)
+        else _orchestrator_converter(d),
         metadata={
             "default_doc": dict(n_trials=100),
             "doc_strip_all": False,
-            "doc": SchedulerOptions.__doc__
+            "doc": OrchestratorOptions.__doc__
             + (
                 """
         n_trials: Only run this many trials,
             in contrast to `total_trials` which is a hard limit, even after reloading the
-            scheduler, this will run n_trials trials every time you reload the scheduler.
-            Making it easier to use when reloading the scheduler and continuing to run trials.
+            orchestrator, this will run n_trials trials every time you reload the orchestrator.
+            Making it easier to use when reloading the orchestrator and continuing to run trials.
 """
             ),
         },
@@ -593,30 +750,17 @@ For specific options you can pass to each step
     def __init__(self, **config):
         self.orig_config = copy.deepcopy(config)
         parameter_keys = config.get("parameter_keys", None)
-        scheduler = config.get("scheduler", {})
         n_trials = config.get("n_trials", None)
-        if isinstance(scheduler, dict):
-            sch_n_trials = scheduler.pop("n_trials", None)
-            n_trials = sch_n_trials or n_trials  # n_trials is not a valid scheduler option so we pop it
-            total_trials = scheduler.get("total_trials", None)
-        else:
-            total_trials = scheduler.total_trials
-        if total_trials and n_trials:
-            raise TypeError("You can specify either n_trials or total_trials, but not both")
-        if not total_trials and not n_trials:
-            raise TypeError("You must specify either n_trials or total_trials")
-        if n_trials:
+
+        if "scheduler" in config:
+            raise TypeError("`scheduler` has been replaced by `orchestrator` in Ax >=1 BOA configs.")
+
+        orchestrator = config.get("orchestrator", None)
+        if isinstance(orchestrator, dict):
+            orch_n_trials = orchestrator.pop("n_trials", None)
+            n_trials = n_trials or orch_n_trials  # n_trials is BOA-only metadata, not an Ax option.
+        if n_trials is not None:
             config["n_trials"] = n_trials
-            if "scheduler" in config:
-                if isinstance(config["scheduler"], dict):
-                    config["scheduler"].pop("total_trials", None)
-                elif isinstance(config["scheduler"], SchedulerOptions):
-                    if config["scheduler"].total_trials is not None:
-                        d = dc_asdict(config["scheduler"])
-                        d.pop("total_trials", None)
-                        config["scheduler"] = SchedulerOptions(**d)
-                else:
-                    raise TypeError(f"Scheduler must be a dict or SchedulerOptions, but is {type(config['scheduler'])}")
 
         # we instantiate it as None since all defined attributes from above need to exist
         self.mapping = None
@@ -724,7 +868,7 @@ For specific options you can pass to each step
 
     @property
     def trials(self):
-        return self.n_trials or self.scheduler.total_trials
+        return self.n_trials or (self.orchestrator.total_trials if self.orchestrator else None)
 
     @staticmethod
     def wpr_params_to_boa(

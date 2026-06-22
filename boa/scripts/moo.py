@@ -7,6 +7,7 @@ from boa.controller import Controller
 from boa.metrics.synthetic_funcs import get_synth_func
 from boa.utils import torch_device
 from boa.wrappers.base_wrapper import BaseWrapper
+from boa.ax_api import TrialStatus
 
 tkwargs = {
     "device": torch_device(),
@@ -20,11 +21,12 @@ class WrapperMoo(BaseWrapper):
     def run_model(self, trial) -> None:
         pass
 
-    def set_trial_status(self, trial) -> None:
-        trial.mark_completed()
+    def get_trial_status(self, trial):
+        return TrialStatus.COMPLETED
 
-    def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
-        evaluation = problem(torch.tensor([trial.arm.parameters["x0"], trial.arm.parameters["x1"]]))
+    def fetch_trial_data(self, trial, metric_properties, metric_name, parameters=None, *args, **kwargs):
+        parameters = parameters or trial.parameters
+        evaluation = problem(torch.tensor([parameters["x0"], parameters["x1"]]))
         a = float(evaluation[0])
         b = float(evaluation[1])
         return {"branin": a, "currin": b}
@@ -36,7 +38,7 @@ def main():
         config_path = Path(__file__).resolve().parent / "moo.yaml"
         wrapper = WrapperMoo(config_path=config_path, experiment_dir=experiment_dir)
         controller = Controller(wrapper=wrapper)
-        controller.initialize_scheduler()
+        controller.initialize_client()
         return controller.run()
 
 

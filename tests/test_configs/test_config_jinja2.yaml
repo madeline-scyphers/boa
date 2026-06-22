@@ -6,12 +6,15 @@
 {% endfor %}
 # We could also do this directly instead of in a loop
 {% set param_names2 = ["y0", "y1", "y2"] %}
-objective:
+optimization:
+    objective: -rmse
     metrics:
         # List all of your metrics here,
         # only list 1 metric for a single objective optimization
-        -   name: rmse
+        rmse:
+            name: rmse
             metric: RootMeanSquaredError
+            metric_type: boa
 
 parameters:
     # We can use the list of parameter names we created above
@@ -20,7 +23,7 @@ parameters:
     {{ param }}:
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float
     {% endfor %}
     {% for param in param_names2 %}
     {{ param }}:
@@ -38,5 +41,4 @@ parameter_constraints:
     - {{ param }} >= .5
     {% endfor %}
 
-scheduler:
-    n_trials: 1
+n_trials: 1

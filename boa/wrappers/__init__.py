@@ -45,11 +45,11 @@ to the following sections
     script_options:
         write_configs: whatever your write_configs run command is  # only include `write_configs` if you are using a `Write Configs Script`
         run_model: whatever your run_model run command is
-        set_trial_status: whatever your set_trial_status run command is  # only include `set_trial_status` if you are using a `Set Trial Status Script`
+        get_trial_status: whatever your get_trial_status run command is  # only include `get_trial_status` if you are using a `Set Trial Status Script`
         fetch_trial_data: whatever your fetch_trial_data run command is  # only include `fetch_trial_data` if you are using a `Fetch Trial Data Script`
 
 For examples on the formatting of the json files you will output back to BOA, see :meth:`.ScriptWrapper.fetch_trial_data`
-and :meth:`.ScriptWrapper.set_trial_status`
+and :meth:`.ScriptWrapper.get_trial_status`
 
 Here is an example of a `Run Model Script` that handles setting the trial status and outputting
 the data back to BOA as well. So this script is all that is needed (other than the model itself,
@@ -74,7 +74,7 @@ Then the `Run Model Script`
 
 Then the `Set Trial Status Script`
 
-.. literalinclude:: ../../tests/scripts/other_langs/r_package_full/set_trial_status.R
+.. literalinclude:: ../../tests/scripts/other_langs/r_package_full/get_trial_status.R
     :language: R
 
 Finally, the `Fetch Trial Status Script`
@@ -95,7 +95,7 @@ wrapper:
 * :meth:`.BaseWrapper.write_configs`: Defines how to write configurations for the model. This is needed so
   that :doc:`BOA </index>` can pass the parameters it generates in each trial to the model.
 * :meth:`.BaseWrapper.run_model`: Defines how to run the model.
-* :meth:`.BaseWrapper.set_trial_status`: Defines how to determine the status of a trial (i.e., if the model
+* :meth:`.BaseWrapper.get_trial_status`: Defines how to determine the status of a trial (i.e., if the model
   run is completed, still running, failed, etc).
 * :meth:`.BaseWrapper.fetch_trial_data`: Retrieves the trial data (i.e., model outputs) and prepares it for
   the metric(s) used in the objective function.
@@ -153,7 +153,7 @@ The job script also utilizes the YAML file written above as well.
    :pyobject: Wrapper.run_model
 
 
-The :meth:`.BaseWrapper.set_trial_status` function
+The :meth:`.BaseWrapper.get_trial_status` function
 ======================================================================
 
 Marks the status of a trial to reflect the status of the model run associated with that trial.
@@ -168,10 +168,10 @@ outputs. One way to do this is checking the log files of the model.
 In these two examples, the trial status is determined by checking the log file of the model for specific outputs:
 
 .. rli:: https://raw.githubusercontent.com/jemissik/fetch3_nhl/develop/fetch3/optimize/fetch_wrapper.py
-   :pyobject: Fetch3Wrapper.set_trial_status
+   :pyobject: Fetch3Wrapper.get_trial_status
 
 .. rli:: https://raw.githubusercontent.com/madeline-scyphers/palm_wrapper/main/palm_wrapper/optimize/wrapper.py
-   :pyobject: Wrapper.set_trial_status
+   :pyobject: Wrapper.get_trial_status
 
 The :meth:`.BaseWrapper.fetch_trial_data` function
 ======================================================================

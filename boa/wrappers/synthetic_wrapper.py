@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
-from ax import Trial
-
+from boa.ax_api import Trial, TrialStatus
 from boa.wrappers.base_wrapper import BaseWrapper
 
 
@@ -15,8 +14,8 @@ class SyntheticWrapper(BaseWrapper):
     def run_model(self, trial: Trial) -> None:
         pass
 
-    def set_trial_status(self, trial: Trial) -> None:
-        trial.mark_completed()
+    def get_trial_status(self, trial: Trial) -> None:
+        return TrialStatus.COMPLETED
 
     def fetch_trial_data(
         self,

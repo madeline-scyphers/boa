@@ -1,14 +1,16 @@
-objective:
+optimization:
+    objective: metric
     metrics:
-        - name: metric
-scheduler:
-    n_trials: 10
+        metric:
+            name: metric
+            metric_type: passthrough
+n_trials: 10
 
 parameters:
     x0:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
 
 
 script_options:

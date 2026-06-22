@@ -3,6 +3,7 @@ from ax.utils.measurement.synthetic_functions import from_botorch
 from botorch.test_functions.synthetic import Cosine8
 
 import boa
+from boa.ax_api import TrialStatus
 
 cosine8 = from_botorch(Cosine8())
 
@@ -24,10 +25,10 @@ class Wrapper(boa.BaseWrapper):
         # You could also call an external script to start a model run from Bash or elsewhere.
         self.data[trial.index] = black_box_model(X)
 
-    def set_trial_status(self, trial) -> None:
+    def get_trial_status(self, trial):
         data_exists = self.data.get(trial.index)
         if data_exists:
-            trial.mark_completed()
+            return TrialStatus.COMPLETED
 
     def fetch_trial_data(self, trial, *args, **kwargs):
         return self.data[trial.index]

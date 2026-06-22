@@ -1,0 +1,76 @@
+
+optimization:
+    objective: score, -training_time
+    outcome_constraints: ["score >= 0.85", "training_time <= 2"]
+
+# generation_strategy:
+#     method: fast
+#     initialization_budget: 10
+#     initialization_random_seed: 42
+#     initialize_with_center: True
+#     use_existing_trials_for_initialization: True
+#     # min_observed_initialization_trials: max(1, initialization_budget // 2)
+#     allow_exceeding_initialization_budget: False
+#     # Misc options
+#     # torch_device: None
+#     simplify_parameter_changes: False
+#     # model_config:
+#     # botorch_acqf_class:
+
+generation_strategy:
+    method: custom
+    initialization_budget: 10
+    initialization_random_seed: 42
+    initialize_with_center: True
+    use_existing_trials_for_initialization: True
+    # min_observed_initialization_trials: max(1, initialization_budget // 2)
+    allow_exceeding_initialization_budget: False
+    # Misc options
+    # torch_device: None
+    simplify_parameter_changes: False
+    model_config:
+        botorch_model_class: EnsembleMapSaasSingleTaskGP
+        mll_class: ExactMarginalLogLikelihood
+        name: BONSAI
+    botorch_acqf_class: PosteriorMean
+
+parameters:
+    loss:
+        type: choice
+        values: [
+                "hinge",
+                "log_loss",
+                "squared_hinge",
+                "modified_huber",
+                "perceptron",
+            ]
+        parameter_type: str
+        is_ordered: False
+
+    penalty:
+        type: choice
+        values: ["l1", "l2", "elasticnet"]
+        parameter_type: str
+        is_ordered: False
+
+    learning_rate:
+        type: choice
+        values: ["constant", "optimal", "invscaling", "adaptive"]
+        parameter_type: str
+        is_ordered: False
+
+    alpha:
+        type: range
+        bounds: [1e-8, 100]
+        parameter_type: float
+        scaling: log
+
+    eta0:
+        type: range
+        bounds: [1e-8, 1]
+        parameter_type: float
+        scaling: log
+    batch_size:
+        type: range
+        bounds: [5, 500]
+        parameter_type: int

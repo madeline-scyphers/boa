@@ -6,10 +6,8 @@ import time
 from typing import Iterable
 
 from attrs import asdict
-from ax import Trial
-from ax.core.base_trial import TrialStatus
-from ax.storage.json_store.encoder import object_to_json
 
+from boa.ax_api import Trial, TrialStatus, object_to_json
 from boa.logger import get_logger
 from boa.template import JinjaTemplateVars, render_template
 from boa.wrappers.base_wrapper import BaseWrapper
@@ -61,7 +59,7 @@ class ScriptWrapper(BaseWrapper):
         ----------
         trial : Trial
         """
-        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        param_names = self.metric_params
         kw = {"param_names": param_names} if param_names else {}
         self._run_subprocess_script_cmd_if_exists(trial, "write_configs", block=True, **kw)
 
@@ -81,22 +79,22 @@ class ScriptWrapper(BaseWrapper):
         an exit code to your model and if so, you can use that (0 for success, non 0 for various types
         of errors).
         If this is the case, It might be advised to directly right out your trial_status.json
-        file, instead of in a different set_trial_status script. See
-        :meth:`~boa.wrappers.script_wrapper.ScriptWrapper.set_trial_status` for formatting and options
+        file, instead of in a different get_trial_status script. See
+        :meth:`~boa.wrappers.script_wrapper.ScriptWrapper.get_trial_status` for formatting and options
 
         Parameters
         ----------
         trial Trial
         """
-        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        param_names = self.metric_params
         kw = {"param_names": param_names} if param_names else {}
         self._run_subprocess_script_cmd_if_exists(trial, "run_model", **kw)
 
-    def set_trial_status(self, trial: Trial) -> None:
+    def get_trial_status(self, trial: Trial) -> None:
         """
-        Marks the status of a trial to reflect the status of the model run for the trial.
+        Gets the status of a trial to reflect the status of the model run for the trial.
 
-        To mark the trial status, first you can write out your data output to a output.json file
+        To get the trial status, first you can write out your data output to a output.json file
         with or without marking the trial status if you are marking as success
         as without the trial_status key as detailed below (if there is no trial_status.json
         file and there is no trial_status key inside the output.json file,
@@ -140,7 +138,7 @@ class ScriptWrapper(BaseWrapper):
         ==================  =====
         FAILED                2
         COMPLETED             3
-        ABANDONED             4
+        ABANDONED             5
         EARLY_STOPPED         7
         ==================  =====
 
@@ -179,9 +177,9 @@ class ScriptWrapper(BaseWrapper):
         :meth:`~boa.wrappers.script_wrapper.ScriptWrapper.run_model`
         # TODO add sphinx link to ax trial status
         """
-        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        param_names = self.metric_params
         kw = {"param_names": param_names} if param_names else {}
-        self._run_subprocess_script_cmd_if_exists(trial, "set_trial_status", **kw)
+        self._run_subprocess_script_cmd_if_exists(trial, "get_trial_status", **kw)
         data = self._read_subprocess_script_output(trial, file_names=["trial_status", "TrialStatus", *OUTPUT_FILES])
         if data is not None:
             trial_status_keys = [k for k in data.keys() if k.lower() == "trialstatus" or k.lower() == "trial_status"]
@@ -203,9 +201,9 @@ class ScriptWrapper(BaseWrapper):
                         trial_status = TrialStatus[trial_status.upper()]
                     # you can't set a running trial to running, so we leave, which is equivalent
                     if trial_status != TrialStatus.RUNNING:
-                        trial.mark_as(trial_status)
+                        return trial_status
                 except ValueError as e:
-                    raise ValueError(f"Invalid trial status - {trial_status} - passed to `set_trial_status`") from e
+                    raise ValueError(f"Invalid trial status - {trial_status} - passed to `get_trial_status`") from e
 
     def fetch_trial_data(self, trial: Trial, metric_properties: dict, *args, **kwargs) -> dict | None:
         """
@@ -259,7 +257,7 @@ class ScriptWrapper(BaseWrapper):
             A dictionary with the keys matching the keys of the metric function
                 used in the objective or None if no file is found (trial will be marked failed)
         """
-        param_names = {metric.name: metric.param_names for metric in self.config.objective.metrics}
+        param_names = self.metric_params
         kw = {"param_names": param_names} if param_names else {}
         if metric_properties:
             kw["metric_properties"] = metric_properties

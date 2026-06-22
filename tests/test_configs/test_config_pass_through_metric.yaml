@@ -1,23 +1,26 @@
 # Single objective optimization config
-objective:
+optimization:
+    objective: metric1, metric2
     metrics:
         # We can specify a metric as passthrough (it doesn't require a dictionary argument and just passes the value
         # through this way
-        - name: metric1
-          metric: passthrough
+        metric1:
+            name: metric1
+            metric_type: passthrough
         # Also a metric that doesn't have the metric type specified and only the name will
         # default to a passthrough metric
-        - name: metric2
-scheduler:
-    n_trials: 10
+        metric2:
+            name: metric2
+            metric_type: passthrough
+n_trials: 10
 
 # optimization parameters
 parameters:
     x1:
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float
     x2:
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float

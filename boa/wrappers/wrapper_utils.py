@@ -19,13 +19,17 @@ from functools import wraps
 from typing import TYPE_CHECKING, Type
 
 from attrs import asdict
-from ax.core.base_trial import BaseTrial
-from ax.core.parameter import ChoiceParameter, FixedParameter, RangeParameter
-from ax.exceptions.core import AxError
-from ax.storage.json_store.encoder import object_to_json
-from ax.utils.common.docutils import copy_doc
 from ruamel.yaml import YAML
 
+from boa.ax_api import (
+    AxError,
+    BaseTrial,
+    ChoiceParameter,
+    FixedParameter,
+    RangeParameter,
+    copy_doc,
+    object_to_json,
+)
 from boa.definitions import IS_WINDOWS, PathLike, PathLike_tup
 from boa.logger import get_logger
 from boa.template import JinjaTemplateVars, render_template

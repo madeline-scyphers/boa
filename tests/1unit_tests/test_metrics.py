@@ -1,16 +1,16 @@
 import numpy as np
 import pytest
-from ax import MultiObjectiveOptimizationConfig, OptimizationConfig
 
 from boa import (
     BaseWrapper,
     BOAMetric,
-    Controller,
     get_metric_by_class_name,
     get_metric_from_config,
     setup_sklearn_metric,
     setup_synthetic_metric,
 )
+from boa.ax_api import MultiObjectiveOptimizationConfig, OptimizationConfig, TrialStatus
+from boa.client import get_client
 
 
 class WrapperForTestss(BaseWrapper):
@@ -21,8 +21,8 @@ class WrapperForTestss(BaseWrapper):
     def run_model(self, trial) -> None:
         pass
 
-    def set_trial_status(self, trial) -> None:
-        trial.mark_completed()
+    def get_trial_status(self, trial):
+        return TrialStatus.COMPLETED
 
     def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
         if self.fetch_all:
@@ -48,6 +48,24 @@ class WrapperForTestss(BaseWrapper):
 class WrapperPassThrough(WrapperForTestss):
     def fetch_trial_data(self, trial, metric_properties, metric_name, *args, **kwargs):
         return trial.index
+
+
+def _configured_wrapper(config, wrapper_cls, tmp_path, **kwargs):
+    metric_names = list(config.optimization.metrics) + list(config.optimization.tracking_metrics)
+    return wrapper_cls(config=config, experiment_dir=tmp_path, metric_names=metric_names, **kwargs)
+
+
+def _metric_map(config, wrapper):
+    return {
+        name: get_metric_from_config(config=metric_config, wrapper=wrapper)
+        for name, metric_config in config.optimization.metrics.items()
+    }
+
+
+def _mean_sem(outcome):
+    if isinstance(outcome, tuple):
+        return outcome
+    return outcome, None
 
 
 def test_load_metric_by_name():
@@ -77,40 +95,35 @@ def test_load_metric_by_name():
 
 
 def test_load_metric_from_config(synth_config, generic_config):
-    metrics = synth_config.objective.metrics
+    metrics = synth_config.optimization.metrics.values()
     for metric_c in metrics:
         metric = get_metric_from_config(metric_c)
         assert metric.name == "Hartmann4"
         assert metric.metric_to_eval.name == "FromBotorch_Hartmann4"
 
-    metrics = generic_config.objective.metrics
+    metrics = generic_config.optimization.metrics.values()
     for metric_c in metrics:
-        if not metric_c.info_only:
+        if metric_c.name not in generic_config.optimization.tracking_metrics:
             metric = get_metric_from_config(metric_c)
             assert metric.name == "rmse"
-            assert metric.metric_to_eval.__name__ == "mean_squared_error"
+            assert metric.metric_to_eval.__name__ == "root_mean_squared_error"
 
 
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_and_test_sem_passing(moo_config, tmp_path):
-    controller = Controller(config=moo_config, wrapper=WrapperForTestss, experiment_dir=tmp_path)
-    controller.initialize_scheduler()
-
-    scheduler = controller.scheduler
-    experiment = controller.experiment
-    wrapper = controller.wrapper
+    wrapper = _configured_wrapper(moo_config, WrapperForTestss, tmp_path)
+    metrics = _metric_map(moo_config, wrapper)
 
     prev_f_ret = None
-    for _ in range(5):
-        trial = experiment.new_trial(generator_run=scheduler.generation_strategy.gen(experiment))
-        for name, metric in experiment.metrics.items():
-            ok = metric.fetch_trial_data(trial)
-            data = ok.value
-            sem = wrapper._metric_cache[trial.index][name].pop("sem", None)
-            f_ret = metric.f(**controller.wrapper._metric_cache[trial.index][name])
-            assert f_ret == data.df["mean"].iloc[0]
+    for trial_index in range(5):
+        for name, metric in metrics.items():
+            _, outcome = metric.fetch(trial_index=trial_index, trial_metadata={})
+            mean, sem_from_fetch = _mean_sem(outcome)
+            sem = wrapper._metric_cache[trial_index][name].pop("sem", None)
+            f_ret = metric.f(**wrapper._metric_cache[trial_index][name])
+            assert f_ret == mean
 
             if sem:
-                assert data.df["sem"].iloc[0] == sem
+                assert sem_from_fetch == sem
 
             assert f_ret != prev_f_ret
             prev_f_ret = f_ret
@@ -119,74 +132,60 @@ def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_and_test_se
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_all_data_and_test_sem_fails_with_wrong_metrics(
     moo_config, caplog, tmp_path
 ):
-    orig_metrics = moo_config.objective.metrics
-    moo_config.objective.metrics = orig_metrics[:1]
-    controller = Controller(config=moo_config, wrapper=WrapperForTestss, experiment_dir=tmp_path)
-    controller.initialize_scheduler()
-
-    scheduler = controller.scheduler
-    experiment = controller.experiment
-
-    trial = experiment.new_trial(generator_run=scheduler.generation_strategy.gen(experiment))
+    moo_config.optimization.objective = "RMSE"
+    moo_config.optimization.metrics.pop("Meanyyy")
+    wrapper = _configured_wrapper(moo_config, WrapperForTestss, tmp_path)
+    metrics = _metric_map(moo_config, wrapper)
     with pytest.raises(ValueError):
-        for name, metric in experiment.metrics.items():
-            metric.fetch_trial_data(trial)
+        for metric in metrics.values():
+            metric.fetch(trial_index=0, trial_metadata={})
 
 
 def test_metric_fetch_trial_data_works_with_wrapper_fetch_trial_data_single_and_test_sem_passing(moo_config, tmp_path):
-    controller = Controller(config=moo_config, wrapper=WrapperForTestss, fetch_all=False, experiment_dir=tmp_path)
-    controller.initialize_scheduler()
-
-    scheduler = controller.scheduler
-    experiment = controller.experiment
-    wrapper = controller.wrapper
+    wrapper = _configured_wrapper(moo_config, WrapperForTestss, tmp_path, fetch_all=False)
+    metrics = _metric_map(moo_config, wrapper)
 
     prev_f_ret = None
-    for _ in range(5):
-        trial = experiment.new_trial(generator_run=scheduler.generation_strategy.gen(experiment))
-        for name, metric in experiment.metrics.items():
-            ok = metric.fetch_trial_data(trial)
-            data = ok.value
+    for trial_index in range(5):
+        for name, metric in metrics.items():
+            _, outcome = metric.fetch(trial_index=trial_index, trial_metadata={})
+            mean, sem_from_fetch = _mean_sem(outcome)
+            trial = type("TrialContext", (), {"index": trial_index})()
             kw = wrapper.fetch_trial_data(trial, {}, name)
             sem = kw.pop("sem", None)
             f_ret = metric.f(**kw)
-            assert f_ret == data.df["mean"].iloc[0]
+            assert f_ret == mean
 
             if sem:
-                assert data.df["sem"].iloc[0] == sem
+                assert sem_from_fetch == sem
 
             assert f_ret != prev_f_ret
             prev_f_ret = f_ret
 
 
 def test_can_create_info_only_metrics(generic_config, tmp_path):
-    controller = Controller(config=generic_config, wrapper=WrapperForTestss, experiment_dir=tmp_path)
-    controller.initialize_scheduler()
+    wrapper = _configured_wrapper(generic_config, WrapperForTestss, tmp_path)
+    client = get_client(config=generic_config, wrapper=wrapper, runner=object())
 
-    assert isinstance(controller.scheduler.experiment.optimization_config, OptimizationConfig)
-    assert not isinstance(controller.scheduler.experiment.optimization_config, MultiObjectiveOptimizationConfig)
+    assert isinstance(client.experiment.optimization_config, OptimizationConfig)
+    assert not isinstance(client.experiment.optimization_config, MultiObjectiveOptimizationConfig)
 
-    assert len(controller.scheduler.experiment.tracking_metrics) > 0
+    assert len(client.experiment.tracking_metrics) > 0
 
 
 def test_pass_through_metric_passes_through_value(pass_through_config, tmp_path):
-    controller = Controller(
-        config=pass_through_config, wrapper=WrapperPassThrough, fetch_all=False, experiment_dir=tmp_path
-    )
-    controller.initialize_scheduler()
+    wrapper = _configured_wrapper(pass_through_config, WrapperPassThrough, tmp_path, fetch_all=False)
+    metrics = _metric_map(pass_through_config, wrapper)
 
-    scheduler = controller.scheduler
-    experiment = controller.experiment
-    wrapper = controller.wrapper
-
-    for _ in range(5):
-        trial = experiment.new_trial(generator_run=scheduler.generation_strategy.gen(experiment))
-        for name, metric in experiment.metrics.items():
-            ok = metric.fetch_trial_data(trial)
-            data = ok.value
+    for trial_index in range(5):
+        for name, metric in metrics.items():
+            _, outcome = metric.fetch(trial_index=trial_index, trial_metadata={})
+            mean, sem = _mean_sem(outcome)
+            trial = type("TrialContext", (), {"index": trial_index})()
             f_ret = metric.f(wrapper.fetch_trial_data(trial, {}, name))
-            assert f_ret == data.df["mean"].iloc[0]
-            assert f_ret == trial.index
+            assert f_ret == mean
+            assert f_ret == trial_index
+            assert sem == metric.noise_sd
 
 
 def test_can_override_metric_func_kwargs():

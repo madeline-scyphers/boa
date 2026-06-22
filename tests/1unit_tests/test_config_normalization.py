@@ -3,6 +3,7 @@ from unittest import TestCase
 import pytest
 
 from boa import BOAConfig
+from boa.ax_api import ScalarizedObjective, optimization_config_from_string
 
 
 def test_wpr_params_to_boa(denormed_param_parse_config):
@@ -37,7 +38,7 @@ def test_boa_params_to_wpr(denormed_param_parse_config):
 
 def test_config_run_cmd_sets_to_run_model():
     config = {
-        "objective": {"metrics": [{"name": "a"}]},
+        "optimization": {"objective": "a", "metrics": {"a": {"name": "a", "metric_type": "passthrough"}}},
         "parameters": {"x": 10},
         "n_trials": 1,
         "script_options": {"run_cmd": "some command"},
@@ -48,7 +49,7 @@ def test_config_run_cmd_sets_to_run_model():
 
 def test_config_run_cmd_and_run_model_error():
     config = {
-        "objective": {"metrics": [{"name": "a"}]},
+        "optimization": {"objective": "a", "metrics": {"a": {"name": "a", "metric_type": "passthrough"}}},
         "parameters": {"x": 10},
         "n_trials": 1,
         "script_options": {
@@ -60,23 +61,36 @@ def test_config_run_cmd_and_run_model_error():
         BOAConfig(**config)
 
 
-def test_config_weights_can_be_set_on_obj_passed_to_metrics():
-    weights = [1, 2]
+def test_config_weighted_objective_expression_configures_scalarized_objective():
     config = {
-        "objective": {"metrics": [{"name": "a"}, {"name": "b"}], "weights": weights},
+        "optimization": {
+            "objective": "-a - 2*b",
+            "metrics": {
+                "a": {"name": "a", "metric_type": "passthrough"},
+                "b": {"name": "b", "metric_type": "passthrough"},
+            },
+        },
         "parameters": {"x": 10},
         "n_trials": 1,
         "script_options": {"run_cmd": "some command"},
     }
     c = BOAConfig(**config)
-    for metric, weight in zip(c.objective.metrics, weights):
-        assert metric.weight == weight
+    optimization_config = optimization_config_from_string(objective_str=c.optimization.objective)
+    assert isinstance(optimization_config.objective, ScalarizedObjective)
+    assert optimization_config.objective.weights == [-1.0, -2.0]
 
 
 def test_config_obj_weights_and_metric_weights_error():
     weights = [1, 2]
     config = {
-        "objective": {"metrics": [{"name": "a", "weight": 1}, {"name": "b", "weight": 2}], "weights": weights},
+        "optimization": {
+            "objective": "-a - 2*b",
+            "weights": weights,
+            "metrics": {
+                "a": {"name": "a", "weight": 1, "metric_type": "passthrough"},
+                "b": {"name": "b", "weight": 2, "metric_type": "passthrough"},
+            },
+        },
         "parameters": {"x": 10},
         "n_trials": 1,
         "script_options": {"run_cmd": "some command"},

@@ -1,80 +1,57 @@
-import botorch.acquisition
-import botorch.models
-import gpytorch.kernels
-import gpytorch.mlls
-import pytest
-from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
-from ax.modelbridge.registry import Models
+from botorch.acquisition.analytic import PosteriorMean
+from botorch.acquisition.monte_carlo import qUpperConfidenceBound
+from botorch.models.gp_regression import SingleTaskGP
+from botorch.models.map_saas import EnsembleMapSaasSingleTaskGP
+from gpytorch.kernels import RBFKernel
+from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikelihood
+from gpytorch.mlls.leave_one_out_pseudo_likelihood import LeaveOneOutPseudoLikelihood
 
 from boa import (
-    Controller,
     ScriptWrapper,
-    WrappedJobRunner,
-    get_experiment,
-    get_generation_strategy,
 )
-from boa.utils import check_min_package_version
+from boa.client import get_client
 
 
-def test_gen_steps_from_config(gen_strat1_config):
-    gs1 = get_generation_strategy(gen_strat1_config)
+def test_gen_steps_from_config(gen_strat1_config, tmp_path):
+    generation_strategy = gen_strat1_config.generation_strategy
 
-    gs2 = GenerationStrategy(
-        steps=[
-            GenerationStep(model=Models.SOBOL, num_trials=5),
-            GenerationStep(model=Models.GPEI, num_trials=-1),
-        ],
-    )
-    # we call repr to ensure that the generation strategy is correctly initialized
-    # because in ax 0.3.6, GS dynamically adds an attribute to the GS object
-    # So, we can't directly compare the objects yet, because their __dict__ size will change
-    # during runtime and raise a RuntimeError
-    # Stupid I know, as of 2024-07-05 they still haven't merged the PR to fix this
-    repr(gs1)
-    repr(gs2)
+    assert generation_strategy.struct.method == "fast"
+    assert generation_strategy.struct.initialization_budget == 5
+    assert generation_strategy.model_config is None
+    assert generation_strategy.botorch_acqf_class is None
 
-    assert gs1 == gs2
+    wrapper = ScriptWrapper(config=gen_strat1_config, experiment_dir=tmp_path)
+    client = get_client(config=gen_strat1_config, wrapper=wrapper, runner=object())
+    assert list(client.generation_strategy.nodes_by_name) == ["CenterOfSearchSpace", "Sobol", "MBM"]
 
 
-def test_auto_gen_use_saasbo(saasbo_config, tmp_path):
-    controller = Controller(config=saasbo_config, wrapper=ScriptWrapper(config=saasbo_config, experiment_dir=tmp_path))
-    exp = get_experiment(
-        config=controller.config, runner=WrappedJobRunner(wrapper=controller.wrapper), wrapper=controller.wrapper
-    )
-    gs = get_generation_strategy(config=controller.config, experiment=exp)
-    if check_min_package_version("ax-platform", "0.3.5"):
-        assert "SAASBO" in gs.name
-    else:
-        assert "FullyBayesian" in gs.name
+def test_auto_gen_use_saasbo(saasbo_config):
+    generation_strategy = saasbo_config.generation_strategy
+
+    assert generation_strategy.struct.method == "custom"
+    assert generation_strategy.model_config.botorch_model_class is EnsembleMapSaasSingleTaskGP
+    assert generation_strategy.model_config.mll_class is ExactMarginalLogLikelihood
+    assert generation_strategy.model_config.name == "BONSAI"
+    assert generation_strategy.botorch_acqf_class is PosteriorMean
 
 
-@pytest.importorskip(
-    "ax-platform", minversion="0.3.5", reason="BOTORCH_MODULAR model is not available in BOA with Ax version < 0.3.5."
-)
 def test_modular_botorch(gen_strat_modular_botorch_config, tmp_path):
-    controller = Controller(
-        config=gen_strat_modular_botorch_config,
-        wrapper=ScriptWrapper(config=gen_strat_modular_botorch_config, experiment_dir=tmp_path),
-    )
-    exp = get_experiment(
-        config=controller.config, runner=WrappedJobRunner(wrapper=controller.wrapper), wrapper=controller.wrapper
-    )
-    gs = get_generation_strategy(config=controller.config, experiment=exp)
-    cfg_botorch_modular = gen_strat_modular_botorch_config.orig_config["generation_strategy"]["steps"][-1]
-    step = gs._steps[-1]
-    assert step.model == Models.BOTORCH_MODULAR
-    mdl_kw = step.model_kwargs
-    assert mdl_kw["botorch_acqf_class"] == getattr(
-        botorch.acquisition, cfg_botorch_modular["model_kwargs"]["botorch_acqf_class"]
-    )
-    assert mdl_kw["acquisition_options"] == cfg_botorch_modular["model_kwargs"]["acquisition_options"]
+    generation_strategy = gen_strat_modular_botorch_config.generation_strategy
+    model_config = generation_strategy.model_config
 
-    assert mdl_kw["surrogate"].mll_class == getattr(
-        gpytorch.mlls, cfg_botorch_modular["model_kwargs"]["surrogate"]["mll_class"]
-    )
-    assert mdl_kw["surrogate"].botorch_model_class == getattr(
-        botorch.models, cfg_botorch_modular["model_kwargs"]["surrogate"]["botorch_model_class"]
-    )
-    assert mdl_kw["surrogate"].covar_module_class == getattr(
-        gpytorch.kernels, cfg_botorch_modular["model_kwargs"]["surrogate"]["covar_module_class"]
-    )
+    assert generation_strategy.struct.method == "custom"
+    assert model_config.botorch_model_class is SingleTaskGP
+    assert model_config.covar_module_class is RBFKernel
+    assert model_config.mll_class is LeaveOneOutPseudoLikelihood
+    assert model_config.name == "custom_single_task_gp"
+    assert generation_strategy.botorch_acqf_class is qUpperConfidenceBound
+
+    wrapper = ScriptWrapper(config=gen_strat_modular_botorch_config, experiment_dir=tmp_path)
+    client = get_client(config=gen_strat_modular_botorch_config, wrapper=wrapper, runner=object())
+    generator_spec = client.generation_strategy.nodes_by_name["MBM"].generator_specs[0]
+    surrogate_model_config = generator_spec.generator_kwargs["surrogate_spec"].model_configs[0]
+
+    assert generator_spec.generator_kwargs["botorch_acqf_class"] is qUpperConfidenceBound
+    assert surrogate_model_config.botorch_model_class is SingleTaskGP
+    assert surrogate_model_config.covar_module_class is RBFKernel
+    assert surrogate_model_config.mll_class is LeaveOneOutPseudoLikelihood

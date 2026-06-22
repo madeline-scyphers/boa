@@ -14,10 +14,12 @@ from abc import ABCMeta
 from functools import wraps
 from pathlib import Path
 
-from ax.storage.json_store.registry import CORE_DECODER_REGISTRY, CORE_ENCODER_REGISTRY
-from ax.storage.metric_registry import CORE_METRIC_REGISTRY
-from ax.storage.runner_registry import CORE_RUNNER_REGISTRY
-
+from boa.ax_api import (
+    CORE_DECODER_REGISTRY,
+    CORE_ENCODER_REGISTRY,
+    CORE_METRIC_REGISTRY,
+    CORE_RUNNER_REGISTRY,
+)
 from boa.logger import get_logger
 from boa.wrappers.wrapper_utils import cd_and_cd_back_dec
 
@@ -42,7 +44,7 @@ class WrapperRegister(ABCMeta):
         cls.mk_experiment_dir = write_exception_to_log(cd_and_cd_back_dec()(cls.mk_experiment_dir))
         cls.write_configs = write_exception_to_log(cd_and_cd_back_dec()(cls.write_configs))
         cls.run_model = write_exception_to_log(cd_and_cd_back_dec()(cls.run_model))
-        cls.set_trial_status = write_exception_to_log(cd_and_cd_back_dec()(cls.set_trial_status))
+        cls.get_trial_status = write_exception_to_log(cd_and_cd_back_dec()(cls.get_trial_status))
         cls.fetch_trial_data = write_exception_to_log(cd_and_cd_back_dec()(cls.fetch_trial_data))
         cls._fetch_trial_data = write_exception_to_log(cd_and_cd_back_dec()(cls._fetch_trial_data))
         try:

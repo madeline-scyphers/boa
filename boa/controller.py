@@ -13,16 +13,11 @@ import time
 from pathlib import Path
 from typing import Type
 
-from ax import Experiment
-from ax.service.utils.report_utils import exp_to_df
-
 from boa.__version__ import __version__ as VERSION
-from boa.ax_instantiation_utils import get_experiment, get_scheduler
+from boa.client import BOAClient, get_client
 from boa.config import BOAConfig
 from boa.definitions import PathLike
 from boa.logger import get_logger
-from boa.runner import WrappedJobRunner
-from boa.scheduler import Scheduler
 from boa.utils import yaml_dump
 from boa.wrappers.base_wrapper import BaseWrapper
 from boa.wrappers.wrapper_utils import get_dt_now_as_str, initialize_wrapper
@@ -33,7 +28,7 @@ HEADER_BAR = """
 LOG_INFO = (
     """BOA Experiment Run
 Output Experiment Dir: {exp_dir}
-Scheduler File Path: {scheduler_path}
+Client File Path: {client_path}
 Optimization CSV File Path: {opt_csv_path}
 Start Time: {start_time}
 Version: """
@@ -44,10 +39,9 @@ Version: """
 class Controller:
     """
     Controls the instantiation of your :class:`.BaseWrapper` and the
-    necessary Ax objects to start your Experiment and control
-    the BOA scheduler. Once the Controller sets up your Experiment, it starts
-    the scheduler, which runs your trials. It then
-    saves the scheduler to a json file.
+    necessary Ax objects to start your experiment and control
+    the BOA client. Once the Controller sets up your experiment, it starts
+    the client, which runs your trials. It then saves the client to a json file.
 
     Parameters
     ----------
@@ -89,19 +83,19 @@ class Controller:
 
         self.logger = self.start_logger()
 
-        self.experiment: Experiment = None
-        self.scheduler: Scheduler = None
+        self.client: BOAClient = None
 
     @classmethod
-    def from_scheduler(cls, scheduler, working_dir=None, **kwargs):
-        wrapper = scheduler.experiment.runner.wrapper
+    def from_client(cls, client, working_dir=None, **kwargs):
+        wrapper = client.wrapper or kwargs.pop("wrapper", None)
+        if wrapper is None:
+            raise ValueError("Loaded client does not have a BOA wrapper attached. Pass an instantiated wrapper.")
 
         inst = cls(wrapper=wrapper, working_dir=working_dir, **kwargs)
         if inst.wrapper.config_path:
             inst.logger.info(f"Config path: {inst.wrapper.config_path}")
 
-        inst.scheduler = scheduler
-        inst.experiment = scheduler.experiment
+        inst.client = client
         return inst
 
     @staticmethod
@@ -114,89 +108,77 @@ class Controller:
         get_logger("ax", filename=str(Path(self.wrapper.experiment_dir) / "optimization.log"))
         return self.logger
 
-    def initialize_scheduler(self, get_exp_kw=None, get_scheduler_kw=None) -> tuple[Scheduler, BaseWrapper]:
+    def initialize_client(self, **kwargs) -> tuple[BOAClient, BaseWrapper]:
         """
-        Sets experiment and scheduler
-
-        Parameters
-        ----------
-        get_exp_kw
-            keyword arguments for :meth:`.get_experiment`
-        get_scheduler_kw
-            keyword arguments for :meth:`.get_scheduler`
+        Sets and configures the BOA client.
 
         Returns
         -------
-        returns a tuple with the first element being the scheduler
+        returns a tuple with the first element being the client
         and the second element being your wrapper (both initialized
         and ready to go)
         """
-        get_exp_kw = get_exp_kw or {}
-        get_scheduler_kw = get_scheduler_kw or {}
+        self.client = get_client(config=self.config, wrapper=self.wrapper, **kwargs)
+        return self.client, self.wrapper
 
-        self.experiment = get_experiment(
-            self.config, WrappedJobRunner(wrapper=self.wrapper), self.wrapper, **get_exp_kw
-        )
-        self.scheduler = get_scheduler(self.experiment, config=self.config, **get_scheduler_kw)
-        return self.scheduler, self.wrapper
-
-    def run(self, scheduler: Scheduler = None, wrapper: BaseWrapper = None) -> Scheduler:
+    def run(self, client: BOAClient = None, wrapper: BaseWrapper = None) -> BOAClient:
         """
-        Run trials for scheduler
+        Run trials for client
 
         Parameters
         ----------
-        scheduler
-            initialed scheduler or None, if None, defaults to
-            ``self.scheduler`` (the scheduler set up in :meth:`.Controller.initialize_scheduler`
+        client
+            initialized client or None, if None, defaults to
+            ``self.client`` (the client set up in :meth:`.Controller.initialize_client`)
         wrapper
             initialed wrapper or None, if None, defaults to
             ``self.wrapper`` (the wrapper set up in :meth:`.Controller.initialize_wrapper`
 
         Returns
         -------
-        The scheduler after all trials have been run or the
+        The client after all trials have been run or the
         experiment has been stopped for another reason.
         """
         start = time.time()
         start_tm = get_dt_now_as_str()
-        scheduler = scheduler or self.scheduler
+        client = client or self.client
         wrapper = wrapper or self.wrapper
         self.logger.info(
             f"\n{HEADER_BAR}"
             f"""\n\n{LOG_INFO.format(
                 exp_dir=wrapper.experiment_dir,
                 start_time=start_tm,
-                scheduler_path=Path(wrapper.experiment_dir) / scheduler.scheduler_filepath,
-                opt_csv_path=Path(wrapper.experiment_dir) / scheduler.opt_csv)}"""
+                client_path=client.client_filepath,
+                opt_csv_path=client.optimization_csv)}"""
             f"\n{HEADER_BAR}"
         )
 
-        if not scheduler or not wrapper:
-            raise ValueError("Scheduler and wrapper must be defined, or setup in setup method!")
+        if not client or not wrapper:
+            raise ValueError("Client and wrapper must be defined, or setup in setup method!")
 
         try:
             final_msg = "Trials Completed!"
             if self.config.n_trials:
-                scheduler.run_n_trials(self.config.n_trials)
+                client.run_trials(max_trials=self.config.n_trials)
             else:
-                scheduler.run_all_trials()
+                client.run_trials()
         except BaseException as e:
             final_msg = f"Error Completing because of {repr(e)}"
             raise
         finally:
+            client.save_data()
             self.logger.info(
                 f"\n{HEADER_BAR}"
                 f"\n{final_msg}"
                 f"""\n{LOG_INFO.format(
                     exp_dir=self.wrapper.experiment_dir,
                     start_time=start_tm,
-                    scheduler_path=Path(wrapper.experiment_dir) / scheduler.scheduler_filepath,
-                    opt_csv_path=Path(wrapper.experiment_dir) / scheduler.opt_csv)}"""
+                    client_path=client.client_filepath,
+                    opt_csv_path=client.optimization_csv)}"""
                 f"\nEnd Time: {get_dt_now_as_str()}"
                 f"\nTotal Run Time: {time.time() - start}"
                 "\n"
-                f"\n{exp_to_df(scheduler.experiment)}"
+                f"\n{client.summarize()}"
                 f"\n{HEADER_BAR}"
             )
-        return scheduler
+        return client

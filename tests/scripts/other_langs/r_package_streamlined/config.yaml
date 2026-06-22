@@ -1,34 +1,36 @@
-objective:
+optimization:
+    objective: metric
     metrics:
-        - name: metric
-scheduler:
-    n_trials: 15
+        metric:
+            name: metric
+            metric_type: passthrough
+n_trials: 15
 
 parameters:
     x0:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x1:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x2:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x3:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x4:
         'bounds': [ 0, 1 ]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
     x5:
         'bounds': [ 0, 1]
         'type': 'range'
-        'value_type': 'float'
+        'parameter_type': 'float'
 
 script_options:
     # notice here that this is a shell command

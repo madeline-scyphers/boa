@@ -1,20 +1,21 @@
-objective:
+optimization:
+    objective: -rmse
     metrics:
-        - name: rmse
-          metric: RootMeanSquaredError
-          properties:
-              # You can add any property you want to the metric
-              # Use this to pass any information you want to the metric
-              # Through your wrapper
-              any_property: any_value
+        rmse:
+            name: rmse
+            metric: RootMeanSquaredError
+            metric_type: boa
+            properties:
+                # You can add any property you want to the metric
+                # Use this to pass any information you want to the metric
+                # Through your wrapper
+                any_property: any_value
 
 generation_strategy:
-    steps:
-        - model: SOBOL
-          num_trials: 5
-        - model: GPEI
-          num_trials: -1
-scheduler:
+    method: fast
+    initialization_budget: 5
+
+orchestrator:
     total_trials: 10
 script_options:
     exp_name: "test_experiment"
@@ -29,30 +30,30 @@ parameters:
     x1:
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float
 
     x2:
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float
 
     x3:
         type: range
         bounds: [0, 1]
-        value_type: float
+        parameter_type: float
 
     x4:
         type: range
         bounds: [0, 1]
         value: .5  # dummy value for testing
-        value_type: float
+        parameter_type: float
 
     x5: # dummy value for testing
         type: fixed
         bounds: [ 0, 1 ]
         value: .5  # dummy value for testing
-        value_type: float
+        parameter_type: float
 
 parameter_constraints:
-    - x2 + x1 => >.1
+    - x2 + x1 >= .1
     - x2 + x1 + .6*x1 <= .6

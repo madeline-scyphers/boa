@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from ax import Trial
 from stand_alone_model_func import run_branin_from_trial
 
 import boa
+from boa.ax_api import Trial, TrialStatus
 
 
 class WrapperStandAlone(boa.BaseWrapper):
@@ -14,10 +14,10 @@ class WrapperStandAlone(boa.BaseWrapper):
     def run_model(self, trial: Trial) -> None:
         self.data[trial.index] = run_branin_from_trial(trial)
 
-    def set_trial_status(self, trial: Trial) -> None:
+    def get_trial_status(self, trial: Trial) -> None:
         data_exists = self.data.get(trial.index) is not None
         if data_exists:
-            trial.mark_completed()
+            return TrialStatus.COMPLETED
 
     def fetch_trial_data(self, trial: Trial, metric_properties: dict, metric_name: str, *args, **kwargs) -> dict:
         # return dict(a=self.data[trial.index])

@@ -9,13 +9,16 @@ import botorch.acquisition
 import botorch.models
 import gpytorch.kernels
 import gpytorch.mlls
-from ax.modelbridge.generation_node import GenerationStep
-from ax.modelbridge.registry import Models
-from ax.models.torch.botorch_modular.surrogate import Surrogate
-from ax.service.utils.instantiation import TParameterRepresentation
-from ax.service.utils.scheduler_options import SchedulerOptions
 
-from boa.utils import check_min_package_version
+from boa.ax_api import (  # SurrogateSpec,
+    GenerationStep,
+    Models,
+    OrchestratorOptions,
+    SchedulerOptions,
+    Surrogate,
+    TParameterRepresentation,
+)
+from boa.utils import check_min_package_version, deprecation
 
 if TYPE_CHECKING:
     from .config import BOAMetric
@@ -46,59 +49,6 @@ def _metric_converter(ls: list[BOAMetric | dict]) -> list[BOAMetric]:
     return ls
 
 
-def _gen_strat_converter(gs: Optional[dict] = None) -> dict:
-    if len(gs) > 1 and "steps" in gs:
-        raise ValueError("Cannot specify both `steps` and options for automatic generation strategy.")
-    if gs.get("steps"):
-        steps = []
-        for i, step in enumerate(gs["steps"]):
-            if isinstance(step, GenerationStep):
-                gs["steps"][i] = step
-                steps.append(step)
-                continue
-            if step["model"] == "BOTORCH_MODULAR" and not check_min_package_version("ax-platform", "0.3.5"):
-                raise ValueError(
-                    "BOTORCH_MODULAR model is not available in BOA with Ax version < 0.3.5. "
-                    "Please upgrade to a newer version of Ax."
-                )
-
-            if "model_kwargs" in step:
-                if "botorch_acqf_class" in step["model_kwargs"] and not isinstance(
-                    step["model_kwargs"]["botorch_acqf_class"], botorch.acquisition.AcquisitionFunction
-                ):
-                    step["model_kwargs"]["botorch_acqf_class"] = getattr(
-                        botorch.acquisition, step["model_kwargs"]["botorch_acqf_class"]
-                    )
-
-                if "surrogate" in step["model_kwargs"]:
-                    if "mll_class" in step["model_kwargs"]["surrogate"] and not isinstance(
-                        step["model_kwargs"]["surrogate"]["mll_class"], gpytorch.mlls.MarginalLogLikelihood
-                    ):
-                        step["model_kwargs"]["surrogate"]["mll_class"] = getattr(
-                            gpytorch.mlls, step["model_kwargs"]["surrogate"]["mll_class"]
-                        )
-                    if "botorch_model_class" in step["model_kwargs"]["surrogate"] and not isinstance(
-                        step["model_kwargs"]["surrogate"]["botorch_model_class"], botorch.models.model.Model
-                    ):
-                        step["model_kwargs"]["surrogate"]["botorch_model_class"] = getattr(
-                            botorch.models, step["model_kwargs"]["surrogate"]["botorch_model_class"]
-                        )
-                    if "covar_module_class" in step["model_kwargs"]["surrogate"] and not isinstance(
-                        step["model_kwargs"]["surrogate"]["covar_module_class"], gpytorch.kernels.Kernel
-                    ):
-                        step["model_kwargs"]["surrogate"]["covar_module_class"] = getattr(
-                            gpytorch.kernels, step["model_kwargs"]["surrogate"]["covar_module_class"]
-                        )
-
-                    step["model_kwargs"]["surrogate"] = Surrogate(**step["model_kwargs"]["surrogate"])
-
-            try:
-                step["model"] = Models[step["model"]]
-            except KeyError:
-                step["model"] = Models(step["model"])
-            gs["steps"][i] = GenerationStep(**step)
-    return gs
-
 
 def _load_stopping_strategy(d: Optional[dict], module: ModuleType):
 
@@ -122,18 +72,18 @@ def _load_stopping_strategy(d: Optional[dict], module: ModuleType):
     return instance
 
 
-def _scheduler_converter(scheduler_options: dict) -> SchedulerOptions:
-    if "early_stopping_strategy" in scheduler_options:
-        scheduler_options["early_stopping_strategy"] = _load_stopping_strategy(
-            d=scheduler_options["early_stopping_strategy"], module=early_stopping_strats
+def _orchestrator_converter(orchestrator_options: dict) -> OrchestratorOptions:
+    if "early_stopping_strategy" in orchestrator_options:
+        orchestrator_options["early_stopping_strategy"] = _load_stopping_strategy(
+            d=orchestrator_options["early_stopping_strategy"], module=early_stopping_strats
         )
 
-    if "global_stopping_strategy" in scheduler_options:
-        scheduler_options["global_stopping_strategy"] = _load_stopping_strategy(
-            d=scheduler_options["global_stopping_strategy"], module=global_stopping_strats
+    if "global_stopping_strategy" in orchestrator_options:
+        orchestrator_options["global_stopping_strategy"] = _load_stopping_strategy(
+            d=orchestrator_options["global_stopping_strategy"], module=global_stopping_strats
         )
 
-    return SchedulerOptions(**scheduler_options)
+    return OrchestratorOptions(**orchestrator_options)
 
 
 def _parameter_normalization(

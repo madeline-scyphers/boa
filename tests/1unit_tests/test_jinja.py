@@ -1,5 +1,6 @@
 from boa import BOAConfig, load_json_from_str, load_jsonlike, load_yaml_from_str
 from boa.definitions import ROOT, PathLike
+from boa.template import JinjaTemplateVars, render_template, render_template_from_path
 
 TEST_CONFIG_DIR = ROOT / "tests" / "test_configs"
 
@@ -41,3 +42,16 @@ def test_template_with_commented_out_vars_in_style_of_config_format():
     """
     config = load_json_from_str(json_config)
     assert config["x"] == 1
+
+
+def test_render_template_from_path_includes_standard_template_vars(tmp_path):
+    template_path = tmp_path / "config.yaml.j2"
+    template_path.write_text(
+        "{{ config_dir_name }}|{{ config_file_name }}|{{ custom }}|{{ load_py('math').sqrt(9) }}"
+    )
+
+    rendered = render_template_from_path(template_path, custom="value")
+
+    assert rendered == f"{tmp_path.name}|config.yaml.j2|value|3.0"
+    assert JinjaTemplateVars(template_path).config_dir == tmp_path
+    assert render_template("{{ missing }}") == "{{ missing }}"
