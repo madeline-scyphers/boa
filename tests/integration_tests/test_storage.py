@@ -10,6 +10,7 @@ import pytest
 from boa import (
     BaseWrapper,
     BOAConfig,
+    cd_and_cd_back,
     load_jsonlike,
     client_from_json_file as scheduler_from_json_file,
     client_to_json_file as scheduler_to_json_file,
@@ -204,6 +205,40 @@ def test_can_pass_custom_wrapper_path_when_loading_scheduler_from_cli(stand_alon
 
     # post should be 2 * pre + 5 because we ran opt twice and then ran 5 more trials
     assert post_num_trials == 2 * pre_num_trials + 5
+
+
+def test_cli_can_resume_saved_client_json_with_custom_wrapper(tmp_path):
+    config_path = TEST_DIR / "test_configs/test_config_param_parse_with_wrapper_load.yaml"
+    wrapper_path = TEST_DIR / "integration_tests/test_storage.py"
+    wrapper_name = WrapperConfigNormalization.__name__
+
+    with cd_and_cd_back(tmp_path):
+        scheduler = cli_main(
+            split_shell_command(
+                f"--config-path {config_path}"
+                f" --wrapper-path {wrapper_path}"
+                f" --wrapper-name {wrapper_name}"
+                " --rel-to-here"
+            ),
+            standalone_mode=False,
+        )
+        pre_num_trials = len(scheduler.experiment.trials)
+        client_path = scheduler.client_filepath
+        optimization_csv = scheduler.optimization_csv
+
+        scheduler = cli_main(
+            split_shell_command(
+                f"--client-path {client_path}" f" --wrapper-path {wrapper_path}" f" --wrapper-name {wrapper_name}"
+            ),
+            standalone_mode=False,
+        )
+
+    assert client_path.exists()
+    assert optimization_csv.exists()
+    assert scheduler.client_filepath == client_path
+    assert scheduler.optimization_csv == optimization_csv
+    assert len(scheduler.experiment.trials) == pre_num_trials + scheduler.wrapper.config.n_trials
+    assert all(trial.status == TrialStatus.COMPLETED for trial in scheduler.experiment.trials.values())
 
 
 def test_boa_version_in_scheduler(stand_alone_opt_package_run, tmp_path_factory):

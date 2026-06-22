@@ -79,7 +79,13 @@ def main(config_path, client_path, wrapper_path, wrapper_name, temporary_dir, re
                 rel_to_config=rel_to_config,
                 experiment_dir=experiment_dir,
             )
-    return run(config_path, client_path=client_path, wrapper_path=wrapper_path, rel_to_config=rel_to_config)
+    return run(
+        config_path,
+        client_path=client_path,
+        wrapper_path=wrapper_path,
+        wrapper_name=wrapper_name,
+        rel_to_config=rel_to_config,
+    )
 
 
 def run(config_path, client_path, rel_to_config, wrapper_path=None, wrapper_name=None, experiment_dir=None):
@@ -133,9 +139,21 @@ def run(config_path, client_path, rel_to_config, wrapper_path=None, wrapper_name
     if wrapper_name:
         options["wrapper_name"] = wrapper_name
 
+    if client_path:
+        wrapper_path_for_load = options["wrapper_path"] if wrapper_path or "wrapper_path" in script_options else None
+        wrapper_name_for_load = wrapper_name or script_options.get("wrapper_name")
+        client = client_from_json_file(
+            filepath=client_path,
+            wrapper_path=wrapper_path_for_load,
+            wrapper_name=wrapper_name_for_load or None,
+        )
+        if not config_path:
+            working_dir = get_working_dir_from_client(client)
+            if working_dir:
+                options["working_dir"] = working_dir
+
     with cd_and_cd_back(options["working_dir"]):
         if client_path:
-            client = client_from_json_file(filepath=client_path)
             controller = Controller.from_client(client=client, **options)
         else:
             if options["wrapper_path"] and Path(options["wrapper_path"]).exists():
@@ -196,6 +214,16 @@ def get_config_options(experiment_dir, rel_path, script_options: dict = None, wr
         wrapper_name=wrapper_name,
         wrapper_path=wrapper_path,
     )
+
+
+def get_working_dir_from_client(client):
+    wrapper = client.wrapper
+    if not wrapper:
+        return None
+    if wrapper.working_dir:
+        return wrapper.working_dir
+    script_options = getattr(getattr(wrapper, "config", None), "script_options", None)
+    return getattr(script_options, "working_dir", None)
 
 
 def _prepend_rel_path(rel_path, path):
